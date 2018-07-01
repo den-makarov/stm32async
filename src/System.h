@@ -17,84 +17,60 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifdef STM32F4
-#include "stm32f4xx.h"
-#endif
+#include "HardwareLayout.h"
 
 #include <cstdlib>
-#include <utility>
 
 #ifndef STM32ASYNC_SYSTEM_H_
 #define STM32ASYNC_SYSTEM_H_
 
-namespace Stm32async {
-
-/**
- * @brief Helper class used to configure interrupt parameters.
- */
-class Interrupt
+namespace Stm32async
 {
-public:
-    /**
-     * @brief Interrupt Number Definition
-     */
-    IRQn_Type irqn;
-    uint32_t prio, subPrio;
 
-    Interrupt (IRQn_Type _irqn, uint32_t _prio, uint32_t _subPrio):
-        irqn{_irqn},
-        prio{_prio},
-        subPrio{_subPrio}
-    {
-       // empty
-    }
-
-    Interrupt (Interrupt && irq):
-        irqn{irq.irqn},
-        prio{irq.prio},
-        subPrio{irq.subPrio}
-    {
-       // empty
-    }
-
-    inline void start () const
-    {
-        HAL_NVIC_SetPriority(irqn, prio, subPrio);
-        HAL_NVIC_EnableIRQ(irqn);
-    }
-
-    inline void stop () const
-    {
-        HAL_NVIC_DisableIRQ(irqn);
-    }
-};
-
+#define DECLARE_SINGLETON(name) \
+    private: \
+        static name * instance; \
+    public: \
+        inline void initInstance () { instance = this; } \
+        static System * getInstance () { return instance; }
 
 /**
  * @brief Singleton class collecting helper methods for general system settings.
  */
-class System
+class System final
 {
+    DECLARE_SINGLETON(System);
+
 public:
 
-    System (Interrupt && sysTickIrq);
+    System (HardwareLayout::Interrupt && sysTickIrq);
 
-    inline void initInstance ()
-    {
-        instance = this;
-    }
-
-    static System * getInstance ()
-    {
-        return instance;
-    }
-
-    void initHSE (bool external);
-    void initLSE (bool external);
+    void initHSE (const HardwareLayout::Port & _port, uint32_t pin);
+    void initHSI ();
+    void initLSE (const HardwareLayout::Port & _port, uint32_t pin);
+    void initLSI ();
     void initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR = 0);
     void initAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
     void initRTC ();
     void initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR);
+
+    void start (uint32_t fLatency, int32_t msAdjustment = 0);
+    void stop ();
+
+    inline RCC_OscInitTypeDef & getOscParameters ()
+    {
+        return oscParameters;
+    }
+
+    inline RCC_ClkInitTypeDef & getClkParameters ()
+    {
+        return clkParameters;
+    }
+
+    inline RCC_PeriphCLKInitTypeDef & getPeriphClkParameters ()
+    {
+        return periphClkParameters;
+    }
 
     inline uint32_t getHSEFreq () const
     {
@@ -111,19 +87,33 @@ public:
         return mcuFreq;
     }
 
-    void start (uint32_t fLatency, int32_t msAdjustment = 0);
+private:
+
+    RCC_OscInitTypeDef oscParameters;
+    RCC_ClkInitTypeDef clkParameters;
+    RCC_PeriphCLKInitTypeDef periphClkParameters;
+    HardwareLayout::Interrupt sysTickIrq;
+    const HardwareLayout::Port * hsePort;
+    const HardwareLayout::Port * lsePort;
+    uint32_t mcuFreq;
+};
+
+/**
+ * @brief Class that implements microcontroller clock output.
+ */
+class MCO final
+{
+public:
+
+    MCO (const HardwareLayout::Port & _port, uint32_t pin);
+    void start (uint32_t source, uint32_t div);
     void stop ();
 
 private:
 
-    static System * instance;
-    RCC_OscInitTypeDef oscParams;
-    RCC_ClkInitTypeDef clkParams;
-    RCC_PeriphCLKInitTypeDef periphClkParams;
-    Interrupt sysTickIrq;
-    uint32_t mcuFreq;
+    const HardwareLayout::Port & port;
+    GPIO_InitTypeDef parameters;
 };
-
 
 } // end namespace
 #endif

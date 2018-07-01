@@ -18,8 +18,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "stm32async/System.h"
+// Peripherie used in this projects
+#include "stm32async/HardwareLayout/PortA.h"
+#include "stm32async/HardwareLayout/PortC.h"
+#include "stm32async/HardwareLayout/PortH.h"
 
+// Used devices
+#include "stm32async/System.h"
+#include "stm32async/IOPort.h"
+
+// Common includes
 #include <functional>
 
 using namespace Stm32async;
@@ -31,91 +39,67 @@ public:
     typedef typename std::pair<uint32_t, uint32_t> FreqSettings;
 
 private:
-    
+
+    // Used ports
+    HardwareLayout::PortA portA;
+    HardwareLayout::PortC portC;
+    HardwareLayout::PortH portH;
+
+    // System and MCO
     System sys;
-    GPIO_InitTypeDef mcoParameters;
-    GPIO_InitTypeDef ledParameters;
+    MCO mco;
+
+    // LED
+    IOPort ledBlue, ledRed;
 
 public:
-    
+
     MyApplication () :
-        // system
-        sys{Interrupt{SysTick_IRQn, 0, 0}}
+        // System and MCO
+        sys { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
+        mco { portA, GPIO_PIN_8 },
+        ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
+        ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP }
     {
-        // empt
+        sys.initHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
+        sys.initLSE(portC, GPIO_PIN_14 | GPIO_PIN_15);
     }
-    
+
     virtual ~MyApplication ()
     {
         // empty
     }
-    
+
     void initClock (uint32_t pllp)
     {
-        // Set system frequency to 168MHz
-        sys.initHSE(/*external=*/ true);
+        sys.initInstance();
         sys.initPLL(16, 336, pllp, 7);
-        sys.initLSE(/*external=*/ true);
         sys.initAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
         sys.start(FLASH_LATENCY_3);
-        sys.initInstance();
-    }
-
-    void activateClockOutput (uint32_t source, uint32_t div)
-    {
-        __GPIOA_CLK_ENABLE();
-        mcoParameters.Pin = GPIO_PIN_8;
-        mcoParameters.Mode = GPIO_MODE_AF_PP;
-        mcoParameters.Pull = GPIO_NOPULL;
-        mcoParameters.Speed = GPIO_SPEED_FREQ_HIGH;
-        mcoParameters.Alternate = GPIO_AF0_MCO;
-        HAL_GPIO_Init(GPIOA, &mcoParameters);
-        HAL_RCC_MCOConfig(RCC_MCO1, source, div);
-    }
-
-    void stopClockOutput ()
-    {
-        HAL_GPIO_DeInit(GPIOA, mcoParameters.Pin);
-        __GPIOA_CLK_DISABLE();
-    }
-
-    void activateLED ()
-    {
-        __GPIOC_CLK_ENABLE();
-        ledParameters.Pin = GPIO_PIN_2;
-        ledParameters.Mode = GPIO_MODE_OUTPUT_PP;
-        ledParameters.Pull = GPIO_NOPULL;
-        ledParameters.Speed = GPIO_SPEED_FREQ_LOW;
-        HAL_GPIO_Init(GPIOC, &ledParameters);
-    }
-
-    void stopLED ()
-    {
-        HAL_GPIO_DeInit(GPIOC, ledParameters.Pin);
-        __GPIOC_CLK_DISABLE();
     }
 
     void run (uint32_t pllp)
     {
         initClock(pllp);
-        activateClockOutput(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
-        activateLED();
+        mco.start(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
+        ledBlue.start();
+        ledRed.start();
+        ledRed.setHigh();
+        HAL_Delay(500);
+        ledRed.setLow();
 
-        bool ledValue = true;
         for (int i = 0; i < 30; ++i)
         {
             // main loop
-            HAL_GPIO_WritePin(GPIOC, ledParameters.Pin, (GPIO_PinState)ledValue);
-            ledValue = !ledValue;
+            ledBlue.toggle();
             HAL_Delay(500);
         }
 
-        stopLED();
-        stopClockOutput();
+        ledBlue.stop();
+        mco.stop();
         sys.stop();
     }
 };
-
 
 MyApplication * appPtr = NULL;
 
@@ -124,10 +108,10 @@ int main (void)
     // Note: check the Value of the External oscillator mounted in PCB
     // and set this value in the file stm32f4xx_hal_conf.h
     HAL_Init();
-    
+
     MyApplication app;
     appPtr = &app;
-    
+
     uint32_t pllp = 2;
     while (true)
     {
@@ -140,13 +124,14 @@ int main (void)
     }
 }
 
-
 extern "C"
 {
-    // System
-    void SysTick_Handler (void)
-    {
-        HAL_IncTick();
-    }
+
+// System
+void SysTick_Handler (void)
+{
+    HAL_IncTick();
+}
+
 }
 

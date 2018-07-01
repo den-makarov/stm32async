@@ -27,132 +27,125 @@ using namespace Stm32async;
 
 System * System::instance = NULL;
 
-System::System (Interrupt && _sysTickIrq):
-    sysTickIrq{std::move(_sysTickIrq)},
-    mcuFreq{0}
+System::System (HardwareLayout::Interrupt && _sysTickIrq) :
+    sysTickIrq { std::move(_sysTickIrq) },
+    hsePort { NULL },
+    lsePort { NULL },
+    mcuFreq { 0 }
 {
-    oscParams.OscillatorType = RCC_OSCILLATORTYPE_NONE;
-    oscParams.HSEState = RCC_HSE_OFF;
-    oscParams.HSIState = RCC_HSI_OFF;
-    oscParams.LSEState = RCC_LSE_OFF;
-    oscParams.LSIState = RCC_LSI_OFF;
-    clkParams.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_NONE;
+    oscParameters.HSEState = RCC_HSE_OFF;
+    oscParameters.HSIState = RCC_HSI_OFF;
+    oscParameters.LSEState = RCC_LSE_OFF;
+    oscParameters.LSIState = RCC_LSI_OFF;
+    clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1
+                              | RCC_CLOCKTYPE_PCLK2;
 }
 
-
-void System::initHSE (bool external)
+void System::initHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
-    if (external)
-    {
-        oscParams.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
-        oscParams.HSEState = RCC_HSE_ON;
-        clkParams.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
-    }
-    else
-    {
-        oscParams.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
-        oscParams.HSIState = RCC_HSI_ON;
-        clkParams.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-    }
+    hsePort = &_port;
+    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
+    oscParameters.HSEState = RCC_HSE_ON;
+    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
 }
 
-
-void System::initLSE (bool external)
+void System::initHSI ()
 {
-    if (external)
-    {
-        oscParams.OscillatorType |= RCC_OSCILLATORTYPE_LSE;
-        oscParams.LSEState = RCC_LSE_ON;
-    }
-    else
-    {
-        oscParams.OscillatorType |= RCC_OSCILLATORTYPE_LSI;
-        oscParams.LSIState = RCC_LSI_ON;
-    }
+    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
+    oscParameters.HSIState = RCC_HSI_ON;
+    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
 }
 
+void System::initLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
+{
+    lsePort = &_port;
+    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSE;
+    oscParameters.LSEState = RCC_LSE_ON;
+}
+
+void System::initLSI ()
+{
+    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSI;
+    oscParameters.LSIState = RCC_LSI_ON;
+}
 
 void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
 {
-    oscParams.PLL.PLLState = RCC_PLL_ON;
-    if (oscParams.HSEState == RCC_HSE_ON)
+    oscParameters.PLL.PLLState = RCC_PLL_ON;
+    if (oscParameters.HSEState == RCC_HSE_ON)
     {
-
-        oscParams.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+        oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     }
     else
     {
-        oscParams.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+        oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI;
     }
-    oscParams.PLL.PLLM = PLLM;
-    oscParams.PLL.PLLN = PLLN;
-    oscParams.PLL.PLLP = PLLP;
-    oscParams.PLL.PLLQ = PLLQ;
-    #ifdef STM32F410Rx
-    oscParams.PLL.PLLR = PLLR;
-    #endif
-    clkParams.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    oscParameters.PLL.PLLM = PLLM;
+    oscParameters.PLL.PLLN = PLLN;
+    oscParameters.PLL.PLLP = PLLP;
+    oscParameters.PLL.PLLQ = PLLQ;
+#ifdef STM32F410Rx
+    oscParameters.PLL.PLLR = PLLR;
+#endif
+    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 }
-
 
 void System::initAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider)
 {
-    clkParams.AHBCLKDivider =  AHBCLKDivider;
-    clkParams.APB1CLKDivider = APB1CLKDivider;
-    clkParams.APB2CLKDivider = APB2CLKDivider;
+    clkParameters.AHBCLKDivider = AHBCLKDivider;
+    clkParameters.APB1CLKDivider = APB1CLKDivider;
+    clkParameters.APB2CLKDivider = APB2CLKDivider;
 }
-
 
 void System::initRTC ()
 {
-    if (oscParams.LSIState == RCC_LSI_ON)
+    if (oscParameters.LSIState == RCC_LSI_ON)
     {
-        periphClkParams.PeriphClockSelection |= RCC_PERIPHCLK_RTC;
-        periphClkParams.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+        periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_RTC;
+        periphClkParameters.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
     }
-    if (oscParams.LSEState == RCC_LSE_ON)
+    if (oscParameters.LSEState == RCC_LSE_ON)
     {
-        periphClkParams.PeriphClockSelection |= RCC_PERIPHCLK_RTC;
-        periphClkParams.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+        periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_RTC;
+        periphClkParameters.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
     }
 }
-
 
 void System::initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
 {
-    periphClkParams.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
-    periphClkParams.PLLI2S.PLLI2SN = PLLI2SN;
-    periphClkParams.PLLI2S.PLLI2SR = PLLI2SR;
+    periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
+    periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
+    periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
 }
-
 
 void System::start (uint32_t fLatency, int32_t msAdjustment)
 {
     __HAL_RCC_PWR_CLK_ENABLE();
-    if (oscParams.LSEState == RCC_LSE_ON)
+    if (hsePort != NULL)
     {
-        __HAL_RCC_GPIOC_CLK_ENABLE();
+        hsePort->enableClock();
     }
-    if (oscParams.HSEState == RCC_HSE_ON)
+    if (lsePort != NULL)
     {
-        __HAL_RCC_GPIOH_CLK_ENABLE();
+        lsePort->enableClock();
     }
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-    HAL_RCC_OscConfig(&oscParams);
-    HAL_RCC_ClockConfig(&clkParams, fLatency);
+    HAL_RCC_OscConfig(&oscParameters);
+    HAL_RCC_ClockConfig(&clkParameters, fLatency);
 
     /* STM32F405x/407x/415x/417x Revision Z devices: prefetch is supported  */
     if (HAL_GetREVID() == 0x1001)
     {
-    /* Enable the Flash prefetch */
-    __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+        /* Enable the Flash prefetch */
+        __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
     }
 
-    HAL_RCCEx_PeriphCLKConfig(&periphClkParams);
+    HAL_RCCEx_PeriphCLKConfig(&periphClkParameters);
 
     mcuFreq = HAL_RCC_GetHCLKFreq();
-    HAL_SYSTICK_Config(mcuFreq/1000 + msAdjustment);
+    HAL_SYSTICK_Config(mcuFreq / 1000 + msAdjustment);
     HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
     /* SysTick_IRQn interrupt configuration */
@@ -162,13 +155,41 @@ void System::start (uint32_t fLatency, int32_t msAdjustment)
 void System::stop ()
 {
     HAL_RCC_DeInit();
-    if (oscParams.HSEState == RCC_HSE_ON)
+    if (hsePort != NULL)
     {
-        __HAL_RCC_GPIOH_CLK_DISABLE();
+        hsePort->disableClock();
     }
-    if (oscParams.LSEState == RCC_LSE_ON)
+    if (lsePort != NULL)
     {
-        __HAL_RCC_GPIOC_CLK_DISABLE();
+        lsePort->disableClock();
     }
     __HAL_RCC_PWR_CLK_DISABLE();
 }
+
+/************************************************************************
+ * Class MCO
+ ************************************************************************/
+
+MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin) :
+    port { _port }
+{
+    parameters.Pin = pin;
+    parameters.Mode = GPIO_MODE_AF_PP;
+    parameters.Pull = GPIO_NOPULL;
+    parameters.Speed = GPIO_SPEED_FREQ_HIGH;
+    parameters.Alternate = GPIO_AF0_MCO;
+}
+
+void MCO::start (uint32_t source, uint32_t div)
+{
+    port.enableClock();
+    HAL_GPIO_Init(port.instance, &parameters);
+    HAL_RCC_MCOConfig(RCC_MCO1, source, div);
+}
+
+void MCO::stop ()
+{
+    HAL_GPIO_DeInit(port.instance, parameters.Pin);
+    port.disableClock();
+}
+
