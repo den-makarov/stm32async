@@ -20,11 +20,18 @@
 #ifndef HARDWARE_LAYOUT_H_
 #define HARDWARE_LAYOUT_H_
 
-#ifdef STM32F4
-#include "stm32f4xx.h"
-#endif
-
 #include <utility>
+
+//TODO: take following stuff away in order to
+//      simplify client`s specific controller
+
+#if defined(STM32F4)
+    #include "stm32f4xx.h"
+#elif defined(STM32F1)
+    #include "stm32f1xx.h"
+#else
+    #error "Please select first the target STM32Fxxx device used in your application (in stm32fxxx.h file)"
+#endif
 
 namespace HardwareLayout
 {
@@ -36,12 +43,6 @@ class Interrupt
 {
 public:
 
-    /**
-     * @brief Interrupt Number Definition
-     */
-    IRQn_Type irqn;
-    uint32_t prio, subPrio;
-
     Interrupt (IRQn_Type _irqn, uint32_t _prio, uint32_t _subPrio) :
         irqn { _irqn },
         prio { _prio },
@@ -50,6 +51,7 @@ public:
         // empty
     }
 
+//TODO: use move semantic?
     Interrupt (Interrupt && irq) :
         irqn { irq.irqn },
         prio { irq.prio },
@@ -68,6 +70,14 @@ public:
     {
         HAL_NVIC_DisableIRQ(irqn);
     }
+
+protected:
+
+    /**
+     * @brief Interrupt Number Definition
+     */
+    IRQn_Type irqn;
+    uint32_t prio, subPrio;
 };
 
 /**
@@ -76,8 +86,6 @@ public:
 class HalDevice
 {
 public:
-
-    size_t id;
 
     HalDevice (size_t _id) :
         id { _id }
@@ -92,6 +100,10 @@ public:
 
     virtual void enableClock () const =0;
     virtual void disableClock () const =0;
+
+protected:
+
+    size_t id;
 };
 
 /**
@@ -104,40 +116,45 @@ public:
 
     HalSharedDevice (size_t _id) :
         HalDevice { _id },
-        occupations { 0 }
+        objectsCount { 0 }
     {
         // empty
-    }
-
-    inline bool isUsed () const
-    {
-        return occupations > 0;
     }
 
     virtual void enableClock () const
     {
         onClockEnable();
-        ++occupations;
+        ++objectsCount;
     }
 
     virtual void disableClock () const
     {
-        if (occupations > 0)
-        {
-            --occupations;
-        }
         if (!isUsed())
         {
-            onClockDisable();
+            return;
+        }
+        else
+        {
+            --objectsCount;
+            if(!isUsed())
+            {
+                onClockDisable();
+            }
         }
     }
 
 protected:
 
     /**
-     * @brief Counter: how many devices currently use this port
+     * @brief Counter: how many clients currently use
+     * @brief this instance with common clocking domain
      */
-    mutable size_t occupations;
+    mutable size_t objectsCount;
+
+    inline bool isUsed () const
+    {
+        return objectsCount > 0;
+    }
 
     virtual void onClockEnable () const =0;
     virtual void onClockDisable () const =0;
@@ -150,17 +167,21 @@ class Port : public HalSharedDevice
 {
 public:
 
-    /**
-     * @brief General Purpose I/O
-     */
-    GPIO_TypeDef * instance;
-
     explicit Port (size_t _id, GPIO_TypeDef * _instance) :
         HalSharedDevice { _id },
         instance { _instance }
     {
         // empty
     }
+
+    GPIO_TypeDef * getInstance () const {return instance;}
+
+protected:
+
+    /**
+     * @brief General Purpose I/O
+     */
+    GPIO_TypeDef * instance;
 };
 
 } // end namespace

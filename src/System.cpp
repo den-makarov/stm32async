@@ -33,26 +33,34 @@ System::System (HardwareLayout::Interrupt && _sysTickIrq) :
     lsePort { NULL },
     mcuFreq { 0 }
 {
-    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_NONE;
+    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_OFF;
-    oscParameters.HSIState = RCC_HSI_OFF;
+    // By default at least next one should be enabled
+    oscParameters.HSIState = RCC_HSI_ON;
     oscParameters.LSEState = RCC_LSE_OFF;
     oscParameters.LSIState = RCC_LSI_OFF;
-    clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1
-                              | RCC_CLOCKTYPE_PCLK2;
+
+    clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | 
+                              RCC_CLOCKTYPE_SYSCLK | 
+                              RCC_CLOCKTYPE_PCLK1 | 
+                              RCC_CLOCKTYPE_PCLK2;
 }
 
 void System::initHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
     hsePort = &_port;
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
     oscParameters.HSEState = RCC_HSE_ON;
+    oscParameters.HSIState = RCC_HSI_OFF;
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
 }
 
 void System::initHSI ()
 {
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSE;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
+    oscParameters.HSEState = RCC_HSE_OFF;
     oscParameters.HSIState = RCC_HSI_ON;
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
 }
@@ -60,16 +68,44 @@ void System::initHSI ()
 void System::initLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
     lsePort = &_port;
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSE;
     oscParameters.LSEState = RCC_LSE_ON;
+    oscParameters.LSIState = RCC_LSI_OFF;
 }
 
 void System::initLSI ()
 {
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSE;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSI;
     oscParameters.LSIState = RCC_LSI_ON;
+    oscParameters.LSEState = RCC_LSE_OFF;
 }
 
+#ifdef STM32F1
+/** 
+  * @brief Configure PLLs
+  * @brief PLL2 configuration: PLL2CLK = (HSE / HSEPrediv2Value) * PLL2MUL = (25 / 5) * 8 = 40 MHz
+  * @brief PREDIV1 configuration: PREDIV1CLK = PLL2CLK / HSEPredivValue = 40 / 5 = 8 MHz
+  * @brief PLL configuration: PLLCLK = PREDIV1CLK * PLLMUL = 8 * 9 = 72 MHz
+  * @brief Enable HSE Oscillator and activate PLL with HSE as source
+  */
+void System::initPLL ()
+{
+    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    oscParameters.HSEState = RCC_HSE_ON;
+    oscParameters.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
+    oscParameters.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
+    oscParameters.PLL.PLLState = RCC_PLL_ON;
+    oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    oscParameters.PLL.PLLMUL = RCC_PLL_MUL9;
+    oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
+    oscParameters.PLL2.PLL2MUL = RCC_PLL2_MUL8;
+    oscParameters.PLL2.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
+}
+#endif /* STM32F1 */
+
+#ifdef STM32F4
 void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
 {
     oscParameters.PLL.PLLState = RCC_PLL_ON;
@@ -90,6 +126,7 @@ void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ
 #endif
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 }
+#endif /* STM32F4 */
 
 void System::initAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider)
 {
@@ -112,13 +149,32 @@ void System::initRTC ()
     }
 }
 
-void System::initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
+//TODO: Hmm, what to do?
+/*void System::initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
 {
     periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
     periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
     periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
-}
+}*/
 
+#ifdef STM32F1
+void System::start ()
+{
+    if (HAL_RCC_OscConfig(&oscParameters) != HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
+    //TODO: second parameter must be configurable
+    if (HAL_RCC_ClockConfig(&clkParameters, FLASH_LATENCY_2)!= HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
+}
+#endif /* STM32F1 */
+
+#ifdef STM32F4
 void System::start (uint32_t fLatency, int32_t msAdjustment)
 {
     __HAL_RCC_PWR_CLK_ENABLE();
@@ -151,6 +207,7 @@ void System::start (uint32_t fLatency, int32_t msAdjustment)
     /* SysTick_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(sysTickIrq.irqn, sysTickIrq.prio, sysTickIrq.subPrio);
 }
+#endif /* STM32F4 */
 
 void System::stop ()
 {
@@ -177,19 +234,19 @@ MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin) :
     parameters.Mode = GPIO_MODE_AF_PP;
     parameters.Pull = GPIO_NOPULL;
     parameters.Speed = GPIO_SPEED_FREQ_HIGH;
-    parameters.Alternate = GPIO_AF0_MCO;
+    //parameters.Alternate = GPIO_AF0_MCO;
 }
 
 void MCO::start (uint32_t source, uint32_t div)
 {
     port.enableClock();
-    HAL_GPIO_Init(port.instance, &parameters);
+    HAL_GPIO_Init(port.getInstance(), &parameters);
     HAL_RCC_MCOConfig(RCC_MCO1, source, div);
 }
 
 void MCO::stop ()
 {
-    HAL_GPIO_DeInit(port.instance, parameters.Pin);
+    HAL_GPIO_DeInit(port.getInstance(), parameters.Pin);
     port.disableClock();
 }
 

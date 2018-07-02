@@ -36,7 +36,7 @@ public:
      * @brief Default constructor.
      */
     IOPort (const HardwareLayout::Port & _port, uint32_t pins = GPIO_PIN_All, uint32_t mode = GPIO_MODE_INPUT,
-            uint32_t pull = GPIO_NOPULL, uint32_t speed = GPIO_SPEED_LOW, bool callStart = false);
+            uint32_t pull = GPIO_NOPULL, uint32_t speed = GPIO_SPEED_FREQ_LOW, bool callStart = false);
 
     void start ();
     void stop ();
@@ -51,7 +51,9 @@ public:
      */
     inline void setAlternate (uint32_t alternate)
     {
-        parameters.Alternate = alternate;
+        UNUSED(alternate);
+        //There isn't field Alternate in GPIO_InitTypeDef
+        //parameters.Alternate = alternate;
     }
 
     /**
@@ -63,7 +65,7 @@ public:
      */
     inline void setHigh ()
     {
-        HAL_GPIO_WritePin(port.instance, parameters.Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(port.getInstance(), parameters.Pin, GPIO_PIN_SET);
     }
 
     /**
@@ -75,7 +77,7 @@ public:
      */
     inline void setLow ()
     {
-        HAL_GPIO_WritePin(port.instance, parameters.Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(port.getInstance(), parameters.Pin, GPIO_PIN_RESET);
     }
 
     /**
@@ -83,7 +85,7 @@ public:
      */
     inline void toggle ()
     {
-        HAL_GPIO_TogglePin(port.instance, parameters.Pin);
+        HAL_GPIO_TogglePin(port.getInstance(), parameters.Pin);
     }
 
     /**
@@ -91,7 +93,7 @@ public:
      */
     inline void putInt (uint32_t val)
     {
-        port.instance->ODR = val;
+        port.getInstance()->ODR = val;
     }
 
     /**
@@ -99,7 +101,7 @@ public:
      */
     inline uint32_t getInt () const
     {
-        return port.instance->IDR;
+        return port.getInstance()->IDR;
     }
 
 protected:

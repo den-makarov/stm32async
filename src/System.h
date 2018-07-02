@@ -17,9 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "HardwareLayout.h"
-
 #include <cstdlib>
+
+#include "HardwareLayout.h"
 
 #ifndef STM32ASYNC_SYSTEM_H_
 #define STM32ASYNC_SYSTEM_H_
@@ -39,7 +39,7 @@ namespace Stm32async
  */
 class System final
 {
-    DECLARE_SINGLETON(System);
+    DECLARE_SINGLETON(System)
 
 public:
 
@@ -49,12 +49,25 @@ public:
     void initHSI ();
     void initLSE (const HardwareLayout::Port & _port, uint32_t pin);
     void initLSI ();
+
+#ifdef STM32F1
+    void initPLL ();
+#endif /* STM32F1 */
+
+#ifdef STM32F4
     void initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR = 0);
+#endif /* STM32F4 */
     void initAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
     void initRTC ();
-    void initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR);
 
+#ifdef STM32F1
+    void start ();
+#endif /* STM32F1 */
+
+#ifdef STM32F4
     void start (uint32_t fLatency, int32_t msAdjustment = 0);
+#endif /* STM32F4 */
+
     void stop ();
 
     inline RCC_OscInitTypeDef & getOscParameters ()
