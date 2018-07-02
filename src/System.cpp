@@ -82,6 +82,30 @@ void System::initLSI ()
     oscParameters.LSEState = RCC_LSE_OFF;
 }
 
+#ifdef STM32F107
+/** 
+  * @brief Configure PLLs
+  * @brief PLL2 configuration: PLL2CLK = (HSE / HSEPrediv2Value) * PLL2MUL = (25 / 5) * 8 = 40 MHz
+  * @brief PREDIV1 configuration: PREDIV1CLK = PLL2CLK / HSEPredivValue = 40 / 5 = 8 MHz
+  * @brief PLL configuration: PLLCLK = PREDIV1CLK * PLLMUL = 8 * 9 = 72 MHz
+  * @brief Enable HSE Oscillator and activate PLL with HSE as source
+  */
+void System::initPLL ()
+{
+    oscParameters.OscillatorType        = RCC_OSCILLATORTYPE_HSE;
+    oscParameters.HSEState              = RCC_HSE_ON;
+    oscParameters.HSEPredivValue        = RCC_HSE_PREDIV_DIV5;
+    oscParameters.Prediv1Source         = RCC_PREDIV1_SOURCE_PLL2;
+    oscParameters.PLL.PLLState          = RCC_PLL_ON;
+    oscParameters.PLL.PLLSource         = RCC_PLLSOURCE_HSE;
+    oscParameters.PLL.PLLMUL            = RCC_PLL_MUL9;
+    oscParameters.PLL2.PLL2State        = RCC_PLL2_ON;
+    oscParameters.PLL2.PLL2MUL          = RCC_PLL2_MUL8;
+    oscParameters.PLL2.HSEPrediv2Value  = RCC_HSE_PREDIV2_DIV5;
+}
+#endif /* STM32F107 */
+
+#ifdef STM32F4
 void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
 {
     oscParameters.PLL.PLLState = RCC_PLL_ON;
@@ -102,6 +126,7 @@ void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ
 #endif
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 }
+#endif /* STM32F4 */
 
 void System::initAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider)
 {
@@ -132,6 +157,24 @@ void System::initRTC ()
     periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
 }*/
 
+#ifdef STM32F107
+void System::start ()
+{
+    if (HAL_RCC_OscConfig(&oscinitstruct) != HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
+    //TODO: second parameter must be configurable
+    if (HAL_RCC_ClockConfig(&clkinitstruct, FLASH_LATENCY_2)!= HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
+}
+#endif /* STM32F107 */
+
+#ifdef STM32F4
 void System::start (uint32_t fLatency, int32_t msAdjustment)
 {
     __HAL_RCC_PWR_CLK_ENABLE();
@@ -164,6 +207,7 @@ void System::start (uint32_t fLatency, int32_t msAdjustment)
     /* SysTick_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(sysTickIrq.irqn, sysTickIrq.prio, sysTickIrq.subPrio);
 }
+#endif /* STM32F4 */
 
 void System::stop ()
 {
