@@ -69,12 +69,6 @@ class Interrupt
 {
 public:
 
-    /**
-     * @brief Interrupt Number Definition
-     */
-    IRQn_Type irqn;
-    uint32_t prio, subPrio;
-
     Interrupt (IRQn_Type _irqn, uint32_t _prio, uint32_t _subPrio) :
         irqn { _irqn },
         prio { _prio },
@@ -101,6 +95,14 @@ public:
     {
         HAL_NVIC_DisableIRQ(irqn);
     }
+
+protected:
+
+    /**
+     * @brief Interrupt Number Definition
+     */
+    IRQn_Type irqn;
+    uint32_t prio, subPrio;
 };
 
 /**
@@ -109,8 +111,6 @@ public:
 class HalDevice
 {
 public:
-
-    size_t id;
 
     HalDevice (size_t _id) :
         id { _id }
@@ -125,6 +125,10 @@ public:
 
     virtual void enableClock () const =0;
     virtual void disableClock () const =0;
+
+protected:
+
+    size_t id;
 };
 
 /**
@@ -188,17 +192,19 @@ class Port : public HalSharedDevice
 {
 public:
 
-    /**
-     * @brief General Purpose I/O
-     */
-    GPIO_TypeDef * instance;
-
     explicit Port (size_t _id, GPIO_TypeDef * _instance) :
         HalSharedDevice { _id },
         instance { _instance }
     {
         // empty
     }
+
+protected:
+
+    /**
+     * @brief General Purpose I/O
+     */
+    GPIO_TypeDef * instance;
 };
 
 } // end namespace
