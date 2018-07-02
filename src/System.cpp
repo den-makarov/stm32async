@@ -35,7 +35,8 @@ System::System (HardwareLayout::Interrupt && _sysTickIrq) :
 {
     oscParameters.OscillatorType = RCC_OSCILLATORTYPE_NONE;
     oscParameters.HSEState = RCC_HSE_OFF;
-    oscParameters.HSIState = RCC_HSI_OFF;
+    // By default at least next one should be enabled
+    oscParameters.HSIState = RCC_HSI_ON;
     oscParameters.LSEState = RCC_LSE_OFF;
     oscParameters.LSIState = RCC_LSI_OFF;
     clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1
@@ -46,13 +47,17 @@ void System::initHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
     hsePort = &_port;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_ON;
+    oscParameters.HSIState = RCC_HSI_OFF;
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
 }
 
 void System::initHSI ()
 {
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSE;
+    oscParameters.HSEState = RCC_HSE_OFF;
     oscParameters.HSIState = RCC_HSI_ON;
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
 }
@@ -112,12 +117,13 @@ void System::initRTC ()
     }
 }
 
-void System::initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
+//TODO: Hmm, what to do?
+/*void System::initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
 {
     periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
     periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
     periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
-}
+}*/
 
 void System::start (uint32_t fLatency, int32_t msAdjustment)
 {
