@@ -92,16 +92,16 @@ void System::initLSI ()
   */
 void System::initPLL ()
 {
-    oscParameters.OscillatorType        = RCC_OSCILLATORTYPE_HSE;
-    oscParameters.HSEState              = RCC_HSE_ON;
-    oscParameters.HSEPredivValue        = RCC_HSE_PREDIV_DIV5;
-    oscParameters.Prediv1Source         = RCC_PREDIV1_SOURCE_PLL2;
-    oscParameters.PLL.PLLState          = RCC_PLL_ON;
-    oscParameters.PLL.PLLSource         = RCC_PLLSOURCE_HSE;
-    oscParameters.PLL.PLLMUL            = RCC_PLL_MUL9;
-    oscParameters.PLL2.PLL2State        = RCC_PLL2_ON;
-    oscParameters.PLL2.PLL2MUL          = RCC_PLL2_MUL8;
-    oscParameters.PLL2.HSEPrediv2Value  = RCC_HSE_PREDIV2_DIV5;
+    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    oscParameters.HSEState = RCC_HSE_ON;
+    oscParameters.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
+    oscParameters.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
+    oscParameters.PLL.PLLState = RCC_PLL_ON;
+    oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    oscParameters.PLL.PLLMUL = RCC_PLL_MUL9;
+    oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
+    oscParameters.PLL2.PLL2MUL = RCC_PLL2_MUL8;
+    oscParameters.PLL2.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
 }
 #endif /* STM32F107 */
 
