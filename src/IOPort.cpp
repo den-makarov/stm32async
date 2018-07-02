@@ -42,11 +42,11 @@ IOPort::IOPort (const HardwareLayout::Port & _port, uint32_t pins, uint32_t mode
 void IOPort::start ()
 {
     port.enableClock();
-    HAL_GPIO_Init(port.instance, &parameters);
+    HAL_GPIO_Init(port.getInstance(), &parameters);
 }
 
 void IOPort::stop ()
 {
-    HAL_GPIO_DeInit(port.instance, parameters.Pin);
+    HAL_GPIO_DeInit(port.getInstance(), parameters.Pin);
     port.disableClock();
 }

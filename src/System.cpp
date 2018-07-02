@@ -82,7 +82,7 @@ void System::initLSI ()
     oscParameters.LSEState = RCC_LSE_OFF;
 }
 
-#ifdef STM32F107
+#ifdef STM32F1
 /** 
   * @brief Configure PLLs
   * @brief PLL2 configuration: PLL2CLK = (HSE / HSEPrediv2Value) * PLL2MUL = (25 / 5) * 8 = 40 MHz
@@ -103,7 +103,7 @@ void System::initPLL ()
     oscParameters.PLL2.PLL2MUL = RCC_PLL2_MUL8;
     oscParameters.PLL2.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
 }
-#endif /* STM32F107 */
+#endif /* STM32F1 */
 
 #ifdef STM32F4
 void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
@@ -157,22 +157,22 @@ void System::initRTC ()
     periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
 }*/
 
-#ifdef STM32F107
+#ifdef STM32F1
 void System::start ()
 {
-    if (HAL_RCC_OscConfig(&oscinitstruct) != HAL_OK)
+    if (HAL_RCC_OscConfig(&oscParameters) != HAL_OK)
     {
         /* Initialization Error */
         while(1);
     }
     //TODO: second parameter must be configurable
-    if (HAL_RCC_ClockConfig(&clkinitstruct, FLASH_LATENCY_2)!= HAL_OK)
+    if (HAL_RCC_ClockConfig(&clkParameters, FLASH_LATENCY_2)!= HAL_OK)
     {
         /* Initialization Error */
         while(1);
     }
 }
-#endif /* STM32F107 */
+#endif /* STM32F1 */
 
 #ifdef STM32F4
 void System::start (uint32_t fLatency, int32_t msAdjustment)
@@ -234,19 +234,19 @@ MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin) :
     parameters.Mode = GPIO_MODE_AF_PP;
     parameters.Pull = GPIO_NOPULL;
     parameters.Speed = GPIO_SPEED_FREQ_HIGH;
-    parameters.Alternate = GPIO_AF0_MCO;
+    //parameters.Alternate = GPIO_AF0_MCO;
 }
 
 void MCO::start (uint32_t source, uint32_t div)
 {
     port.enableClock();
-    HAL_GPIO_Init(port.instance, &parameters);
+    HAL_GPIO_Init(port.getInstance(), &parameters);
     HAL_RCC_MCOConfig(RCC_MCO1, source, div);
 }
 
 void MCO::stop ()
 {
-    HAL_GPIO_DeInit(port.instance, parameters.Pin);
+    HAL_GPIO_DeInit(port.getInstance(), parameters.Pin);
     port.disableClock();
 }
 
