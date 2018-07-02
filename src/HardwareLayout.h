@@ -77,6 +77,7 @@ public:
         // empty
     }
 
+//TODO: use move semantic?
     Interrupt (Interrupt && irq) :
         irqn { irq.irqn },
         prio { irq.prio },
