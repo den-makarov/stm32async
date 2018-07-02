@@ -33,21 +33,24 @@ System::System (HardwareLayout::Interrupt && _sysTickIrq) :
     lsePort { NULL },
     mcuFreq { 0 }
 {
-    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_NONE;
+    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_OFF;
     // By default at least next one should be enabled
     oscParameters.HSIState = RCC_HSI_ON;
     oscParameters.LSEState = RCC_LSE_OFF;
     oscParameters.LSIState = RCC_LSI_OFF;
-    clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1
-                              | RCC_CLOCKTYPE_PCLK2;
+
+    clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | 
+                              RCC_CLOCKTYPE_SYSCLK | 
+                              RCC_CLOCKTYPE_PCLK1 | 
+                              RCC_CLOCKTYPE_PCLK2;
 }
 
 void System::initHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
     hsePort = &_port;
-    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSI;
+    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
     oscParameters.HSEState = RCC_HSE_ON;
     oscParameters.HSIState = RCC_HSI_OFF;
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
@@ -55,8 +58,8 @@ void System::initHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 
 void System::initHSI ()
 {
-    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSE;
+    oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_OFF;
     oscParameters.HSIState = RCC_HSI_ON;
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
@@ -65,14 +68,18 @@ void System::initHSI ()
 void System::initLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
     lsePort = &_port;
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSE;
     oscParameters.LSEState = RCC_LSE_ON;
+    oscParameters.LSIState = RCC_LSI_OFF;
 }
 
 void System::initLSI ()
 {
+    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSE;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSI;
     oscParameters.LSIState = RCC_LSI_ON;
+    oscParameters.LSEState = RCC_LSE_OFF;
 }
 
 void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
