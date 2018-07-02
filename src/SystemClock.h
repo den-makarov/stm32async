@@ -21,8 +21,8 @@
 
 #include "HardwareLayout.h"
 
-#ifndef STM32ASYNC_SYSTEM_H_
-#define STM32ASYNC_SYSTEM_H_
+#ifndef STM32ASYNC_SYSTEMCLOCK_H_
+#define STM32ASYNC_SYSTEMCLOCK_H_
 
 namespace Stm32async
 {
@@ -31,44 +31,43 @@ namespace Stm32async
     private: \
         static name * instance; \
     public: \
-        inline void initInstance () { instance = this; } \
-        static System * getInstance () { return instance; }
+        static name * getInstance () { return instance; }
 
 /**
- * @brief Singleton class collecting helper methods for general system settings.
+ * @brief Singleton class collecting helper methods for general system clock settings.
  */
-class System final
+class SystemClock final
 {
-    DECLARE_SINGLETON(System)
+    DECLARE_SINGLETON(SystemClock)
 
 public:
 
-    System (HardwareLayout::Interrupt && sysTickIrq);
+    SystemClock (HardwareLayout::Interrupt && sysTickIrq);
 
-    void initHSE (const HardwareLayout::Port & _port, uint32_t pin);
-    void initHSI ();
-    void initLSE (const HardwareLayout::Port & _port, uint32_t pin);
-    void initLSI ();
+    void setHSE (const HardwareLayout::Port & _port, uint32_t pin);
+    void setHSI ();
+    void setLSE (const HardwareLayout::Port & _port, uint32_t pin);
+    void setLSI ();
 
-#ifdef STM32F1
-    void initPLL ();
-#endif /* STM32F1 */
+    #ifdef STM32F1
+    void setPLL ();
+    #endif /* STM32F1 */
 
-#ifdef STM32F4
-    void initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR = 0);
-#endif /* STM32F4 */
-    void initAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
-    void initRTC ();
+    #ifdef STM32F4
+    void setPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR = 0);
+    #endif /* STM32F4 */
 
-#ifdef STM32F1
+    void setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
+    void setRTC ();
+    void setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR);
+
     void start ();
-#endif /* STM32F1 */
-
-#ifdef STM32F4
-    void start (uint32_t fLatency, int32_t msAdjustment = 0);
-#endif /* STM32F4 */
-
     void stop ();
+
+    inline void setLatency (uint32_t _fLatency)
+    {
+        fLatency = _fLatency;
+    }
 
     inline RCC_OscInitTypeDef & getOscParameters ()
     {
@@ -109,6 +108,7 @@ private:
     const HardwareLayout::Port * hsePort;
     const HardwareLayout::Port * lsePort;
     uint32_t mcuFreq;
+    uint32_t fLatency;
 };
 
 /**

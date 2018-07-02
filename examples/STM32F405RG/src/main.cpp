@@ -24,7 +24,7 @@
 #include "stm32async/HardwareLayout/PortH.h"
 
 // Used devices
-#include "stm32async/System.h"
+#include <stm32async/SystemClock.h>
 #include "stm32async/IOPort.h"
 
 // Common includes
@@ -34,10 +34,6 @@ using namespace Stm32async;
 
 class MyApplication
 {
-public:
-
-    typedef typename std::pair<uint32_t, uint32_t> FreqSettings;
-
 private:
 
     // Used ports
@@ -46,7 +42,7 @@ private:
     HardwareLayout::PortH portH;
 
     // System and MCO
-    System sys;
+    SystemClock sysClock;
     MCO mco;
 
     // LED
@@ -56,13 +52,14 @@ public:
 
     MyApplication () :
         // System and MCO
-        sys { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
+        sysClock { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
         mco { portA, GPIO_PIN_8 },
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP }
     {
-        sys.initHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
-        sys.initLSE(portC, GPIO_PIN_14 | GPIO_PIN_15);
+        // External resonators use system pins
+        sysClock.setHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
+        sysClock.setLSE(portC, GPIO_PIN_14 | GPIO_PIN_15);
     }
 
     virtual ~MyApplication ()
@@ -72,10 +69,10 @@ public:
 
     void initClock (uint32_t pllp)
     {
-        sys.initInstance();
-        sys.initPLL(16, 336, pllp, 7);
-        sys.initAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
-        sys.start(FLASH_LATENCY_3);
+        SystemClock::getInstance()->setPLL(16, 336, pllp, 7);
+        SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
+        SystemClock::getInstance()->setLatency(FLASH_LATENCY_3);
+        SystemClock::getInstance()->start();
     }
 
     void run (uint32_t pllp)
@@ -97,7 +94,7 @@ public:
 
         ledBlue.stop();
         mco.stop();
-        sys.stop();
+        sysClock.stop();
     }
 };
 

@@ -51,7 +51,13 @@ public:
         // empty
     }
 
-//TODO: use move semantic?
+    /**
+     * @brief Move constructor
+     *
+     * This constructor can be used in order to initialize some device that needs an
+     * interrupt using anonymous class:
+     *    device { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
+     */
     Interrupt (Interrupt && irq) :
         irqn { irq.irqn },
         prio { irq.prio },
@@ -70,8 +76,6 @@ public:
     {
         HAL_NVIC_DisableIRQ(irqn);
     }
-
-protected:
 
     /**
      * @brief Interrupt Number Definition
@@ -121,6 +125,11 @@ public:
         // empty
     }
 
+    inline bool isUsed () const
+    {
+        return objectsCount > 0;
+    }
+
     virtual void enableClock () const
     {
         onClockEnable();
@@ -146,15 +155,9 @@ public:
 protected:
 
     /**
-     * @brief Counter: how many clients currently use
-     * @brief this instance with common clocking domain
+     * @brief Counter: how many clients currently use this instance with common clocking domain
      */
     mutable size_t objectsCount;
-
-    inline bool isUsed () const
-    {
-        return objectsCount > 0;
-    }
 
     virtual void onClockEnable () const =0;
     virtual void onClockDisable () const =0;
@@ -174,7 +177,7 @@ public:
         // empty
     }
 
-    GPIO_TypeDef * getInstance () const {return instance;}
+    GPIO_TypeDef * getInstance () const { return instance; }
 
 protected:
 

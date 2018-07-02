@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "System.h"
+#include <stm32async/SystemClock.h>
 
 using namespace Stm32async;
 
@@ -25,13 +25,14 @@ using namespace Stm32async;
  * Class System
  ************************************************************************/
 
-System * System::instance = NULL;
+SystemClock * SystemClock::instance = NULL;
 
-System::System (HardwareLayout::Interrupt && _sysTickIrq) :
+SystemClock::SystemClock (HardwareLayout::Interrupt && _sysTickIrq) :
     sysTickIrq { std::move(_sysTickIrq) },
     hsePort { NULL },
     lsePort { NULL },
-    mcuFreq { 0 }
+    mcuFreq { 0 },
+    fLatency { FLASH_LATENCY_7 }
 {
     oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_OFF;
@@ -44,9 +45,10 @@ System::System (HardwareLayout::Interrupt && _sysTickIrq) :
                               RCC_CLOCKTYPE_SYSCLK | 
                               RCC_CLOCKTYPE_PCLK1 | 
                               RCC_CLOCKTYPE_PCLK2;
+    instance = this;
 }
 
-void System::initHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
+void SystemClock::setHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
     hsePort = &_port;
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSI;
@@ -56,7 +58,7 @@ void System::initHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
 }
 
-void System::initHSI ()
+void SystemClock::setHSI ()
 {
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSE;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
@@ -65,7 +67,7 @@ void System::initHSI ()
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
 }
 
-void System::initLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
+void SystemClock::setLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
     lsePort = &_port;
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
@@ -74,7 +76,7 @@ void System::initLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
     oscParameters.LSIState = RCC_LSI_OFF;
 }
 
-void System::initLSI ()
+void SystemClock::setLSI ()
 {
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSE;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSI;
@@ -90,7 +92,7 @@ void System::initLSI ()
   * @brief PLL configuration: PLLCLK = PREDIV1CLK * PLLMUL = 8 * 9 = 72 MHz
   * @brief Enable HSE Oscillator and activate PLL with HSE as source
   */
-void System::initPLL ()
+void SystemClock::setPLL ()
 {
     oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSE;
     oscParameters.HSEState = RCC_HSE_ON;
@@ -106,7 +108,7 @@ void System::initPLL ()
 #endif /* STM32F1 */
 
 #ifdef STM32F4
-void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
+void SystemClock::setPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
 {
     oscParameters.PLL.PLLState = RCC_PLL_ON;
     if (oscParameters.HSEState == RCC_HSE_ON)
@@ -128,14 +130,14 @@ void System::initPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ
 }
 #endif /* STM32F4 */
 
-void System::initAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider)
+void SystemClock::setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider)
 {
     clkParameters.AHBCLKDivider = AHBCLKDivider;
     clkParameters.APB1CLKDivider = APB1CLKDivider;
     clkParameters.APB2CLKDivider = APB2CLKDivider;
 }
 
-void System::initRTC ()
+void SystemClock::setRTC ()
 {
     if (oscParameters.LSIState == RCC_LSI_ON)
     {
@@ -149,16 +151,15 @@ void System::initRTC ()
     }
 }
 
-//TODO: Hmm, what to do?
-/*void System::initI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
+void SystemClock::setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
 {
     periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
     periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
     periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
-}*/
+}
 
 #ifdef STM32F1
-void System::start ()
+void SystemClock::start ()
 {
     if (HAL_RCC_OscConfig(&oscParameters) != HAL_OK)
     {
@@ -175,7 +176,7 @@ void System::start ()
 #endif /* STM32F1 */
 
 #ifdef STM32F4
-void System::start (uint32_t fLatency, int32_t msAdjustment)
+void SystemClock::start ()
 {
     __HAL_RCC_PWR_CLK_ENABLE();
     if (hsePort != NULL)
@@ -201,7 +202,7 @@ void System::start (uint32_t fLatency, int32_t msAdjustment)
     HAL_RCCEx_PeriphCLKConfig(&periphClkParameters);
 
     mcuFreq = HAL_RCC_GetHCLKFreq();
-    HAL_SYSTICK_Config(mcuFreq / 1000 + msAdjustment);
+    HAL_SYSTICK_Config(mcuFreq / 1000);
     HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
     /* SysTick_IRQn interrupt configuration */
@@ -209,7 +210,7 @@ void System::start (uint32_t fLatency, int32_t msAdjustment)
 }
 #endif /* STM32F4 */
 
-void System::stop ()
+void SystemClock::stop ()
 {
     HAL_RCC_DeInit();
     if (hsePort != NULL)
