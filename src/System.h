@@ -17,9 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "HardwareLayout.h"
-
 #include <cstdlib>
+
+#include "HardwareLayout.h"
 
 #ifndef STM32ASYNC_SYSTEM_H_
 #define STM32ASYNC_SYSTEM_H_
