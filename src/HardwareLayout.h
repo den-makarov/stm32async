@@ -142,35 +142,40 @@ public:
         // empty
     }
 
-    inline bool isUsed () const
-    {
-        return occupations > 0;
-    }
-
     virtual void enableClock () const
     {
         onClockEnable();
-        ++occupations;
+        ++objectsCount;
     }
 
     virtual void disableClock () const
     {
-        if (occupations > 0)
-        {
-            --occupations;
-        }
         if (!isUsed())
         {
-            onClockDisable();
+            return;
+        }
+        else
+        {
+            --objectsCount;
+            if(!isUsed())
+            {
+                onClockDisable();
+            }
         }
     }
 
 protected:
 
     /**
-     * @brief Counter: how many devices currently use this port
+     * @brief Counter: how many clients currently use
+     * @brief this instance with common clocking domain
      */
-    mutable size_t occupations;
+    mutable size_t objectsCount;
+
+    inline bool isUsed () const
+    {
+        return objectsCount > 0;
+    }
 
     virtual void onClockEnable () const =0;
     virtual void onClockDisable () const =0;
