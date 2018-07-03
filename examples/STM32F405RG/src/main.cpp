@@ -28,13 +28,15 @@
 // Used devices
 #include "stm32async/SystemClock.h"
 #include "stm32async/IOPort.h"
-#include "stm32async/AsyncUsart.h"
+#include "stm32async/UsartLogger.h"
 
 // Common includes
 #include <functional>
 #include <cstring>
 
 using namespace Stm32async;
+
+#define USART_DEBUG_MODULE "Main: "
 
 class MyApplication
 {
@@ -55,7 +57,7 @@ private:
 
     // USART
     HardwareLayout::Usart1 usart1;
-    AsyncUsart loggerUsart;
+    UsartLogger usartLogger;
 
 public:
 
@@ -66,9 +68,9 @@ public:
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
         usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, HardwareLayout::Interrupt {USART1_IRQn, 1, 0} },
-        loggerUsart { usart1 }
+        usartLogger { usart1, 115200 }
     {
-        // External resonators use system pins
+        // External oscillators use system pins
         sysClock.setHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
         sysClock.setLSE(portC, GPIO_PIN_14 | GPIO_PIN_15);
     }
@@ -86,9 +88,17 @@ public:
         SystemClock::getInstance()->start();
     }
 
-    void run (uint32_t pllp)
+    void run (uint32_t runId, uint32_t pllp)
     {
         initClock(pllp);
+        usartLogger.initInstance();
+
+        USART_DEBUG("--------------------------------------------------------");
+        USART_DEBUG("Oscillator frequency: " << SystemClock::getInstance()->getHSEFreq()
+                    << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL
+                    << UsartLogger::TAB << "pllp=" << pllp);
+
         mco.start(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
         ledBlue.start();
         ledRed.start();
@@ -98,14 +108,6 @@ public:
         HAL_Delay(500);
         ledRed.setLow();
 
-        loggerUsart.setTimeout(1000);
-        if (loggerUsart.start(UART_MODE_TX, 115200, UART_WORDLENGTH_8B, UART_STOPBITS_1, UART_PARITY_NONE) == HAL_OK)
-        {
-            const char * h = "Hello world!\n\r";
-            loggerUsart.transmit(NULL, h, ::strlen(h));
-            loggerUsart.waitForRelease();
-        }
-
         for (int i = 0; i < 30; ++i)
         {
             // main loop
@@ -113,7 +115,7 @@ public:
             HAL_Delay(500);
         }
 
-        loggerUsart.stop();
+        usartLogger.clearInstance();
         ledBlue.stop();
         mco.stop();
         sysClock.stop();
@@ -121,7 +123,7 @@ public:
 
     inline AsyncUsart & getLoggerUsart ()
     {
-        return loggerUsart;
+        return usartLogger.getUsart();
     }
 };
 
@@ -136,11 +138,11 @@ int main (void)
     MyApplication app;
     appPtr = &app;
 
-    uint32_t pllp = 2;
+    uint32_t pllp = 2, runId = 0;
     while (true)
     {
-        app.run(pllp);
-        ++pllp;
+        app.run(++runId, pllp);
+        pllp += 2;
         if (pllp > 8)
         {
             pllp = 2;

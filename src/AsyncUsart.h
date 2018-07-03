@@ -48,6 +48,14 @@ public:
                              uint32_t parity = UART_PARITY_NONE);
 
     /**
+     * @brief Procedure waits in a blocking mode until USART is ready.
+     */
+    void ensureReady ()
+    {
+        while (HAL_UART_GetState(&parameters) != HAL_UART_STATE_READY);
+    }
+
+    /**
      * @brief Close the transmission session.
      */
     void stop ();

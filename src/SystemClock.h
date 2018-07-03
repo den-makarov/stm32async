@@ -32,7 +32,7 @@ namespace Stm32async
  */
 class SystemClock final
 {
-	DECLARE_STATIC_INSTANCE(SystemClock)
+    DECLARE_STATIC_INSTANCE(SystemClock)
 
 public:
 
