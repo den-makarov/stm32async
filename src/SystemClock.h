@@ -27,18 +27,12 @@
 namespace Stm32async
 {
 
-#define DECLARE_SINGLETON(name) \
-    private: \
-        static name * instance; \
-    public: \
-        static name * getInstance () { return instance; }
-
 /**
  * @brief Singleton class collecting helper methods for general system clock settings.
  */
 class SystemClock final
 {
-    DECLARE_SINGLETON(SystemClock)
+	DECLARE_STATIC_INSTANCE(SystemClock)
 
 public:
 

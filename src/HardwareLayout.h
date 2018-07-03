@@ -20,19 +20,13 @@
 #ifndef HARDWARE_LAYOUT_H_
 #define HARDWARE_LAYOUT_H_
 
+#include "Stm32async.h"
+
 #include <utility>
 
-//TODO: take following stuff away in order to
-//      simplify client`s specific controller
-
-#if defined(STM32F4)
-    #include "stm32f4xx.h"
-#elif defined(STM32F1)
-    #include "stm32f1xx.h"
-#else
-    #error "Please select first the target STM32Fxxx device used in your application (in stm32fxxx.h file)"
-#endif
-
+/**
+ * @brief Namespace containing classes that describe hardware configuration.
+ */
 namespace HardwareLayout
 {
 
@@ -43,6 +37,13 @@ class Interrupt
 {
 public:
 
+    /**
+     * @brief Standard initialization constructor.
+     *
+     * @param External interrupt number. This parameter is an enumerator of IRQn_Type enumeration.
+     * @param The preemption priority for the IRQn channel. This parameter can be a value between 0 and 15.
+     * @param The subpriority level for the IRQ channel. This parameter can be a value between 0 and 15.
+     */
     Interrupt (IRQn_Type _irqn, uint32_t _prio, uint32_t _subPrio) :
         irqn { _irqn },
         prio { _prio },
@@ -52,11 +53,16 @@ public:
     }
 
     /**
-     * @brief Move constructor
+     * @brief Move constructor.
      *
      * This constructor can be used in order to initialize some device that needs an
      * interrupt using anonymous class:
-     *    device { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
+     *
+     *    device { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } }
+     *
+     * @param External interrupt number. This parameter is an enumerator of IRQn_Type enumeration.
+     * @param The preemption priority for the IRQn channel. This parameter can be a value between 0 and 15.
+     * @param The subpriority level for the IRQ channel. This parameter can be a value between 0 and 15.
      */
     Interrupt (Interrupt && irq) :
         irqn { irq.irqn },
@@ -66,22 +72,41 @@ public:
         // empty
     }
 
+    /**
+     * @brief Helper method that can be used in order to enable this interrupt.
+     */
     inline void enable () const
     {
         HAL_NVIC_SetPriority(irqn, prio, subPrio);
         HAL_NVIC_EnableIRQ(irqn);
     }
 
+    /**
+     * @brief Helper method that can be used in order to disable this interrupt.
+     */
     inline void disable () const
     {
         HAL_NVIC_DisableIRQ(irqn);
     }
 
     /**
-     * @brief Interrupt Number Definition
+     * @brief External interrupt number. This parameter is an enumerator of IRQn_Type enumeration.
      */
     IRQn_Type irqn;
-    uint32_t prio, subPrio;
+
+    /**
+     * @brief The preemption priority for the IRQn channel. This parameter can be a value between 0 and 15.
+     *
+     * A lower priority value indicates a higher priority.
+     */
+    uint32_t prio;
+
+    /**
+     * @brief The subpriority level for the IRQ channel. This parameter can be a value between 0 and 15.
+     *
+     * A lower priority value indicates a higher priority.
+     */
+    uint32_t subPrio;
 };
 
 /**
@@ -168,6 +193,8 @@ protected:
  */
 class Port : public HalSharedDevice
 {
+    DECLARE_INSTANCE(GPIO_TypeDef);
+
 public:
 
     explicit Port (size_t _id, GPIO_TypeDef * _instance) :
@@ -176,15 +203,6 @@ public:
     {
         // empty
     }
-
-    GPIO_TypeDef * getInstance () const { return instance; }
-
-protected:
-
-    /**
-     * @brief General Purpose I/O
-     */
-    GPIO_TypeDef * instance;
 };
 
 } // end namespace
