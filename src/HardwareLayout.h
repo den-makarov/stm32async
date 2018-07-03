@@ -155,6 +155,11 @@ public:
         return objectsCount > 0;
     }
 
+    inline size_t getObjectsCount () const
+    {
+        return objectsCount;
+    }
+
     virtual void enableClock () const
     {
         onClockEnable();
@@ -186,6 +191,62 @@ protected:
 
     virtual void onClockEnable () const =0;
     virtual void onClockDisable () const =0;
+};
+
+/**
+ * @brief Helper class used to configure DMA device.
+ */
+class Dma : public HalSharedDevice
+{
+    DECLARE_INSTANCE(DMA_TypeDef);
+
+public:
+
+    Dma (size_t _id, DMA_TypeDef * dma) :
+        HalSharedDevice { _id },
+        instance { dma }
+    {
+        // empty
+    }
+};
+
+/**
+ * @brief Helper class used to configure DMA stream.
+ */
+class DmaStream
+{
+public:
+
+    /**
+     * @brief Specifies the DMA device used for this stream
+     */
+    const Dma * dma;
+
+    /**
+     * @brief Specifies the stream
+     */
+    DMA_Stream_TypeDef * stream;
+
+    /**
+     * @brief Specifies the channel used for the specified stream
+     */
+    uint32_t channel;
+
+    DmaStream (const Dma * _dma, DMA_Stream_TypeDef * _stream, uint32_t _channel) :
+        dma { _dma },
+        stream { _stream },
+        channel { _channel }
+    {
+        // empty
+    }
+
+    DmaStream (DmaStream && dma) :
+        dma { dma.dma },
+        stream { dma.stream },
+        channel { dma.channel }
+    {
+        // empty
+    }
 };
 
 /**
@@ -261,15 +322,56 @@ public:
      */
     Interrupt txRxIrq;
 
+    /**
+     * @brief TX DMA channel
+     */
+    DmaStream txDma;
+
+    /**
+     * @brief Interrupt Number Definition for TX DMA channel
+     */
+    Interrupt txDmaIrq;
+
+    /**
+     * @brief RX DMA channel
+     */
+    DmaStream rxDma;
+
+    /**
+     * @brief Interrupt Number Definition for RX DMA channel
+     */
+    Interrupt rxDmaIrq;
+
     explicit Usart (size_t _id,  USART_TypeDef *_instance, Port & _txPort, uint32_t _txPin, Port & _rxPort,
-                    uint32_t _rxPin, uint32_t _alternate, Interrupt && _txRxIrq) :
+                    uint32_t _rxPin, uint32_t _alternate,
+                    Interrupt && _txRxIrq,
+                    DmaStream && _txDma, Interrupt && _txDmaIrq,
+                    DmaStream && _rxDma, Interrupt && _rxDmaIrq) :
         HalDevice { _id },
         instance { _instance },
         txPin { _txPort, _txPin, _alternate },
         rxPin { _rxPort, _rxPin, _alternate },
-        txRxIrq { std::move(_txRxIrq) }
+        txRxIrq { std::move(_txRxIrq) },
+        txDma { std::move(_txDma) },
+        txDmaIrq { std::move(_txDmaIrq) },
+        rxDma { std::move(_rxDma) },
+        rxDmaIrq { std::move(_rxDmaIrq) }
     {
         // empty
+    }
+
+    void enableIrq () const
+    {
+        txRxIrq.enable();
+        txDmaIrq.enable();
+        rxDmaIrq.enable();
+    }
+
+    void disableIrq () const
+    {
+        txRxIrq.disable();
+        txDmaIrq.disable();
+        rxDmaIrq.disable();
     }
 };
 

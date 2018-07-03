@@ -19,6 +19,8 @@
  ******************************************************************************/
 
 // Peripherie used in this projects
+#include "stm32async/HardwareLayout/Dma1.h"
+#include "stm32async/HardwareLayout/Dma2.h"
 #include "stm32async/HardwareLayout/PortA.h"
 #include "stm32async/HardwareLayout/PortB.h"
 #include "stm32async/HardwareLayout/PortC.h"
@@ -48,6 +50,10 @@ private:
     HardwareLayout::PortC portC;
     HardwareLayout::PortH portH;
 
+    // DMA
+    HardwareLayout::Dma1 dma1;
+    HardwareLayout::Dma2 dma2;
+
     // System and MCO
     SystemClock sysClock;
     MCO mco;
@@ -67,7 +73,12 @@ public:
         mco { portA, GPIO_PIN_8 },
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
-        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, HardwareLayout::Interrupt {USART1_IRQn, 1, 0} },
+        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7,
+                 HardwareLayout::Interrupt { USART1_IRQn, 1, 0 },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4 },
+                 HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_4 },
+                 HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 }},
         usartLogger { usart1, 115200 }
     {
         // External oscillators use system pins
@@ -115,9 +126,22 @@ public:
             HAL_Delay(500);
         }
 
-        usartLogger.clearInstance();
         ledBlue.stop();
+        ledRed.stop();
         mco.stop();
+
+        // Log resource occupations after all devices (expect USART1 for logging, HSE, LSE) are stopped
+        // Desired: two at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
+        USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portB=" << portB.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portC=" << portC.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portH=" << portH.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "dma2=" << dma2.getObjectsCount() << UsartLogger::ENDL);
+        usartLogger.getUsart().waitForRelease();
+        usartLogger.clearInstance();
+
         sysClock.stop();
     }
 
@@ -159,22 +183,26 @@ void SysTick_Handler (void)
     HAL_IncTick();
 }
 
-// UART
-void USART1_IRQHandler(void)
+// UART: uses both USART and DMA interrupts
+void DMA2_Stream7_IRQHandler (void)
+{
+    appPtr->getLoggerUsart().processDmaTxInterrupt();
+}
+
+void USART1_IRQHandler (void)
 {
     appPtr->getLoggerUsart().processInterrupt();
 }
 
-void HAL_UART_TxCpltCallback (UART_HandleTypeDef * channel)
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef * /*channel*/)
 {
     appPtr->getLoggerUsart().processCallback(SharedDevice::State::TX_CMPL);
 }
 
-void HAL_UART_ErrorCallback (UART_HandleTypeDef * channel)
+void HAL_UART_ErrorCallback (UART_HandleTypeDef * /*channel*/)
 {
     appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
 }
-
 
 }
 

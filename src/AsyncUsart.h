@@ -61,18 +61,36 @@ public:
     void stop ();
 
     /**
-     * @brief Send an amount of data in interrupt mode.
+     * @brief Send an amount of data in DMA mode.
      */
     inline HAL_StatusTypeDef transmit (DeviceClient * _client, const char * buffer, size_t n)
+    {
+        startCommunication(_client, State::TX, State::TX_CMPL);
+        return HAL_UART_Transmit_DMA(&parameters, (unsigned char *) buffer, n);
+    }
+
+    /**
+     * @brief Send an amount of data in interrupt mode.
+     */
+    inline HAL_StatusTypeDef transmitIt (DeviceClient * _client, const char * buffer, size_t n)
     {
         startCommunication(_client, State::TX, State::TX_CMPL);
         return HAL_UART_Transmit_IT(&parameters, (unsigned char *) buffer, n);
     }
 
     /**
-     * @brief Receive an amount of data in interrupt mode.
+     * @brief Receive an amount of data in DMA mode.
      */
     inline HAL_StatusTypeDef receive (DeviceClient * _client, const char * buffer, size_t n)
+    {
+        startCommunication(_client, State::RX, State::RX_CMPL);
+        return HAL_UART_Receive_DMA(&parameters, (unsigned char *) buffer, n);
+    }
+
+    /**
+     * @brief Receive an amount of data in interrupt mode.
+     */
+    inline HAL_StatusTypeDef receiveIt (DeviceClient * _client, const char * buffer, size_t n)
     {
         startCommunication(_client, State::RX, State::RX_CMPL);
         return HAL_UART_Receive_IT(&parameters, (unsigned char *) buffer, n);

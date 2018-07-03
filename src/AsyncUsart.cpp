@@ -41,6 +41,28 @@ AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     #ifdef UART_ADVFEATURE_NO_INIT
         usartParameters.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
     #endif
+
+    txDma.Instance = device.txDma.stream;
+    txDma.Init.Channel = device.txDma.channel;
+    txDma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    txDma.Init.PeriphInc = DMA_PINC_DISABLE;
+    txDma.Init.MemInc = DMA_MINC_ENABLE;
+    txDma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    txDma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    txDma.Init.Mode = DMA_NORMAL;
+    txDma.Init.Priority = DMA_PRIORITY_LOW;
+    txDma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+
+    rxDma.Instance = device.rxDma.stream;
+    rxDma.Init.Channel = device.rxDma.channel;
+    rxDma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    rxDma.Init.PeriphInc = DMA_PINC_DISABLE;
+    rxDma.Init.MemInc = DMA_MINC_ENABLE;
+    rxDma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    rxDma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    rxDma.Init.Mode = DMA_NORMAL;
+    rxDma.Init.Priority = DMA_PRIORITY_LOW;
+    rxDma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 }
 
 HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
@@ -56,15 +78,41 @@ HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
     parameters.Init.WordLength = wordLength;
     parameters.Init.StopBits = stopBits;
     parameters.Init.Parity = parity;
-    device.txRxIrq.enable();
-    return HAL_UART_Init(&parameters);
+    HAL_StatusTypeDef status = HAL_UART_Init(&parameters);
+    if (status != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+
+    device.txDma.dma->enableClock();
+    __HAL_LINKDMA(&parameters, hdmatx, txDma);
+    status = HAL_DMA_Init(&txDma);
+    if (status != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+
+    device.rxDma.dma->enableClock();
+    __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+    status = HAL_DMA_Init(&rxDma);
+    if (status != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+
+    device.enableIrq();
+    return HAL_OK;
 }
 
 void AsyncUsart::stop ()
 {
+    device.disableIrq();
+    HAL_DMA_DeInit(&txDma);
+    HAL_DMA_DeInit(&rxDma);
     HAL_UART_DeInit(&parameters);
-    device.txRxIrq.disable();
     txPin.stop();
     rxPin.stop();
+    device.txDma.dma->disableClock();
+    device.rxDma.dma->disableClock();
     device.disableClock();
 }

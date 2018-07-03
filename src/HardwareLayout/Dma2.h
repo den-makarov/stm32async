@@ -17,37 +17,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef HARDWARE_LAYOUT_USART1_H_
-#define HARDWARE_LAYOUT_USART1_H_
+#ifndef HARDWARE_LAYOUT_DMA2_H_
+#define HARDWARE_LAYOUT_DMA2_H_
 
 #include "../HardwareLayout.h"
 
-#ifdef USART1
+#ifdef DMA2
 
 namespace HardwareLayout
 {
 
-class Usart1 : public HardwareLayout::Usart
+class Dma2 : public HardwareLayout::Dma
 {
 public:
-    explicit Usart1 (HardwareLayout::Port & txPort, uint32_t txPin, HardwareLayout::Port & rxPort, uint32_t rxPin,
-                     HardwareLayout::Interrupt && txRxIrq,
-                     HardwareLayout::DmaStream && txDma, HardwareLayout::Interrupt && txDmaIrq,
-                     HardwareLayout::DmaStream && rxDma, HardwareLayout::Interrupt && rxDmaIrq) :
-        Usart { 1, USART1, txPort, txPin, rxPort, rxPin, GPIO_AF7_USART1,
-                std::move(txRxIrq),
-                std::move(txDma), std::move(txDmaIrq),
-                std::move(rxDma), std::move(rxDmaIrq) }
+    explicit Dma2 () :
+        Dma { 2, DMA2 }
     {
         // empty
     }
-    virtual void enableClock () const
+    virtual void onClockEnable () const
     {
-        __HAL_RCC_USART1_CLK_ENABLE();
+        __HAL_RCC_DMA2_CLK_ENABLE();
     }
-    virtual void disableClock () const
+    virtual void onClockDisable () const
     {
-        __HAL_RCC_USART1_CLK_DISABLE();
+        __HAL_RCC_DMA2_CLK_DISABLE();
     }
 };
 
