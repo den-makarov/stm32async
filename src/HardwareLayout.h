@@ -205,5 +205,74 @@ public:
     }
 };
 
+
+/**
+ * @brief Helper class that defines a set of pins of the same port.
+ */
+class Pins
+{
+public:
+    /**
+     * @brief Related port
+     */
+    Port & port;
+
+    /**
+     * @brief Pin indices
+     */
+    uint32_t pins;
+
+    /**
+     * @brief Peripheral to be connected to the selected pins
+     */
+    uint32_t alternate;
+
+    explicit Pins (Port & _port, uint32_t _pins, uint32_t _alternate) :
+        port { _port },
+        pins { _pins },
+        alternate { _alternate }
+
+    {
+        // empty
+    }
+};
+
+/**
+ * @brief Parameters of USART device.
+ */
+class Usart : public HalDevice
+{
+    DECLARE_INSTANCE(USART_TypeDef);
+
+public:
+
+    /**
+     * @brief TX pin
+     */
+    Pins txPin;
+
+    /**
+     * @brief RX pin
+     */
+    Pins rxPin;
+
+    /**
+     * @brief Interrupt Number Definition
+     */
+    Interrupt txRxIrq;
+
+    explicit Usart (size_t _id,  USART_TypeDef *_instance, Port & _txPort, uint32_t _txPin, Port & _rxPort,
+                    uint32_t _rxPin, uint32_t _alternate, Interrupt && _txRxIrq) :
+        HalDevice { _id },
+        instance { _instance },
+        txPin { _txPort, _txPin, _alternate },
+        rxPin { _rxPort, _rxPin, _alternate },
+        txRxIrq { std::move(_txRxIrq) }
+    {
+        // empty
+    }
+};
+
+
 } // end namespace
 #endif

@@ -20,15 +20,19 @@
 
 // Peripherie used in this projects
 #include "stm32async/HardwareLayout/PortA.h"
+#include "stm32async/HardwareLayout/PortB.h"
 #include "stm32async/HardwareLayout/PortC.h"
 #include "stm32async/HardwareLayout/PortH.h"
+#include "stm32async/HardwareLayout/Usart1.h"
 
 // Used devices
-#include <stm32async/SystemClock.h>
+#include "stm32async/SystemClock.h"
 #include "stm32async/IOPort.h"
+#include "stm32async/AsyncUsart.h"
 
 // Common includes
 #include <functional>
+#include <cstring>
 
 using namespace Stm32async;
 
@@ -38,6 +42,7 @@ private:
 
     // Used ports
     HardwareLayout::PortA portA;
+    HardwareLayout::PortB portB;
     HardwareLayout::PortC portC;
     HardwareLayout::PortH portH;
 
@@ -48,6 +53,10 @@ private:
     // LED
     IOPort ledBlue, ledRed;
 
+    // USART
+    HardwareLayout::Usart1 usart1;
+    AsyncUsart loggerUsart;
+
 public:
 
     MyApplication () :
@@ -55,7 +64,9 @@ public:
         sysClock { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
         mco { portA, GPIO_PIN_8 },
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
-        ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP }
+        ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
+        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, HardwareLayout::Interrupt {USART1_IRQn, 1, 0} },
+        loggerUsart { usart1 }
     {
         // External resonators use system pins
         sysClock.setHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
@@ -81,9 +92,19 @@ public:
         mco.start(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
         ledBlue.start();
         ledRed.start();
+        ledRed.setLow();
+
         ledRed.setHigh();
         HAL_Delay(500);
         ledRed.setLow();
+
+        loggerUsart.setTimeout(1000);
+        if (loggerUsart.start(UART_MODE_TX, 115200, UART_WORDLENGTH_8B, UART_STOPBITS_1, UART_PARITY_NONE) == HAL_OK)
+        {
+            const char * h = "Hello world!\n\r";
+            loggerUsart.transmit(NULL, h, ::strlen(h));
+            loggerUsart.waitForRelease();
+        }
 
         for (int i = 0; i < 30; ++i)
         {
@@ -92,9 +113,15 @@ public:
             HAL_Delay(500);
         }
 
+        loggerUsart.stop();
         ledBlue.stop();
         mco.stop();
         sysClock.stop();
+    }
+
+    inline AsyncUsart & getLoggerUsart ()
+    {
+        return loggerUsart;
     }
 };
 
@@ -129,6 +156,23 @@ void SysTick_Handler (void)
 {
     HAL_IncTick();
 }
+
+// UART
+void USART1_IRQHandler(void)
+{
+    appPtr->getLoggerUsart().processInterrupt();
+}
+
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef * channel)
+{
+    appPtr->getLoggerUsart().processCallback(SharedDevice::State::TX_CMPL);
+}
+
+void HAL_UART_ErrorCallback (UART_HandleTypeDef * channel)
+{
+    appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
+}
+
 
 }
 
