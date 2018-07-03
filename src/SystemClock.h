@@ -59,7 +59,9 @@ public:
 
     void setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
     void setRTC ();
+    #ifdef STM32F4
     void setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR);
+    #endif /* STM32F4 */
 
     void start ();
     void stop ();

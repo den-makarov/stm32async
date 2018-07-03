@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include <stm32async/SystemClock.h>
+#include <SystemClock.h>
 
 using namespace Stm32async;
 
@@ -32,7 +32,11 @@ SystemClock::SystemClock (HardwareLayout::Interrupt && _sysTickIrq) :
     hsePort { NULL },
     lsePort { NULL },
     mcuFreq { 0 },
+#if defined(STM32F4)
     fLatency { FLASH_LATENCY_7 }
+#elif defined(STM32F1)
+    fLatency { FLASH_LATENCY_2 }
+#endif
 {
     oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_OFF;
@@ -151,12 +155,14 @@ void SystemClock::setRTC ()
     }
 }
 
+#ifdef STM32F4
 void SystemClock::setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
 {
     periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
     periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
     periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
 }
+#endif /* STM32F4 */
 
 #ifdef STM32F1
 void SystemClock::start ()

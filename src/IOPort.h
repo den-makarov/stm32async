@@ -51,9 +51,11 @@ public:
      */
     inline void setAlternate (uint32_t alternate)
     {
-        #ifdef STM32F4
+        #if defined(STM32F4)
         //There isn't field Alternate in GPIO_InitTypeDef on some MCUs
         parameters.Alternate = alternate;
+        #elif defined(STM32F1)
+            UNUSED(alternate);
         #endif
     }
 

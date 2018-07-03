@@ -24,7 +24,7 @@
 //#include "HardwareLayout/PortH.h"
 
 // Used devices
-#include "System.h"
+#include "SystemClock.h"
 #include "IOPort.h"
 
 // Common includes
@@ -46,7 +46,7 @@ private:
     //HardwareLayout::PortH portH;
 
     // System and MCO
-    System sys;
+    SystemClock sys;
     //MCO mco;
 
     // LED
@@ -70,14 +70,9 @@ public:
     
     void initClock ()
     {
-        sys.initInstance();
-        //sys.initHSE(&portH, GPIO_PIN_0 | GPIO_PIN_1);
-        sys.initPLL();
-        //sys.initPLL(16, 336, pllp, 7);
-        //sys.initLSE(&portC, GPIO_PIN_14 | GPIO_PIN_15);
-        sys.initAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV2, RCC_HCLK_DIV1);
+        sys.setPLL();
+        sys.setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV2, RCC_HCLK_DIV1);
         sys.start();
-        //sys.start(FLASH_LATENCY_3);
     }
 
     void run ()

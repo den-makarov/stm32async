@@ -118,7 +118,7 @@ Project {
             condition: stm32async == true
             files: [
                 STM32ASYNC_PATH+"/IOPort.cpp",
-                STM32ASYNC_PATH+"/System.cpp"
+                STM32ASYNC_PATH+"/SystemClock.cpp"
             ]
         }
 
