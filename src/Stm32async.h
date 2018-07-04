@@ -25,6 +25,10 @@
     #error "Please select first the target STM32Fxxx device used in your application (in stm32fxxx.h file)"
 #endif
 
+#include <cstring>
+#include <cstdlib>
+
+
 #ifndef STM32ASYNC_H_
 #define STM32ASYNC_H_
 
@@ -33,6 +37,9 @@
  */
 namespace Stm32async
 {
+
+typedef int32_t duration_sec;
+typedef uint64_t time_ms;
 
 /**
  * @brief Helper define that allows us to declare a static "instance" attribute within a device
@@ -51,6 +58,61 @@ namespace Stm32async
         name * instance; \
     public: \
         name * getInstance () const { return instance; }
+
+
+/**
+ * @brief Template class providing operator () for converting a string argument
+ *        to a value of type type T
+ */
+template<typename T, size_t size, const char * strings[]> class ConvertClass
+{
+public:
+    /**
+     * @brief Converts a string to an enumeration literal.
+     *
+     * @return True if conversion was successful.
+     */
+    bool operator() (const char * image, T& value) const
+    {
+        for (size_t i = 0; i < size; ++i)
+        {
+            if (::strcmp(image, strings[i]) == 0)
+            {
+                // everything's OK:
+                value = static_cast<T>(i);
+                return true;
+            }
+        }
+
+        // not found:
+        value = static_cast<T>(0);
+        return false;
+    }
+};
+// end ConvertClass
+
+/**
+ * @brief Template class providing operator () for converting type T argument
+ *        to a string
+ */
+template<typename T, size_t size, const char * strings[]> class AsStringClass
+{
+public:
+    /**
+     * @brief Returns identifier for given enumeration value.
+     */
+    const char * & operator() (const T & val) const
+    {
+        if (val >= 0 && val < size)
+        {
+            return strings[val];
+        }
+        else
+        {
+            return strings[size];
+        }
+    }
+};
 
 } // end namespace
 #endif

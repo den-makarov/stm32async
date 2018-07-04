@@ -29,18 +29,18 @@
 
 // Used devices
 #include "stm32async/SystemClock.h"
+#include "stm32async/Rtc.h"
 #include "stm32async/IOPort.h"
 #include "stm32async/UsartLogger.h"
 
 // Common includes
 #include <functional>
-#include <cstring>
 
 using namespace Stm32async;
 
 #define USART_DEBUG_MODULE "Main: "
 
-class MyApplication
+class MyApplication : public Rtc::EventHandler
 {
 private:
 
@@ -56,23 +56,27 @@ private:
 
     // System and MCO
     SystemClock sysClock;
+    Rtc rtc;
     MCO mco;
 
-    // LED
+    // LEDs
     IOPort ledBlue, ledRed;
 
-    // USART
+    // USART logger
     HardwareLayout::Usart1 usart1;
     UsartLogger usartLogger;
 
 public:
 
     MyApplication () :
-        // System and MCO
+        // System, RTC and MCO
         sysClock { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
+        rtc { HardwareLayout::Interrupt { RTC_WKUP_IRQn, 10, 0 } },
         mco { portA, GPIO_PIN_8 },
+        // LEDs
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
+        // USART logger
         usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7,
                  HardwareLayout::Interrupt { USART1_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4 },
@@ -93,6 +97,7 @@ public:
 
     void initClock (uint32_t pllp)
     {
+        SystemClock::getInstance()->setRTC();
         SystemClock::getInstance()->setPLL(16, 336, pllp, 7);
         SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
         SystemClock::getInstance()->setLatency(FLASH_LATENCY_3);
@@ -110,25 +115,35 @@ public:
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL
                     << UsartLogger::TAB << "pllp=" << pllp);
 
+        // For RTC, it is necessary to reset the state since it will not be
+        // automatically reset after MCU programming.
+        rtc.stop();
+        rtc.setHandler(this);
+        do
+        {
+            Rtc::Start::Status status = rtc.start(8 * 2047 + 7, RTC_WAKEUPCLOCK_RTCCLK_DIV2);
+            USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")");
+        }
+        while (rtc.getHalStatus() != HAL_OK);
+
         mco.start(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
         ledBlue.start();
         ledRed.start();
-        ledRed.setLow();
 
         ledRed.setHigh();
         HAL_Delay(500);
         ledRed.setLow();
 
-        for (int i = 0; i < 30; ++i)
+        for (int i = 0; i < 15; ++i)
         {
-            // main loop
-            ledBlue.toggle();
-            HAL_Delay(500);
+            // main loop empty for 15 sec
+            HAL_Delay(1000);
         }
 
         ledBlue.stop();
         ledRed.stop();
         mco.stop();
+        rtc.stop();
 
         // Log resource occupations after all devices (expect USART1 for logging, HSE, LSE) are stopped
         // Desired: two at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
@@ -139,10 +154,15 @@ public:
                     << UsartLogger::TAB << "portH=" << portH.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma2=" << dma2.getObjectsCount() << UsartLogger::ENDL);
-        usartLogger.getUsart().waitForRelease();
         usartLogger.clearInstance();
 
         sysClock.stop();
+    }
+
+    void onRtcWakeUp ()
+    {
+        USART_DEBUG("time=" << Rtc::getInstance()->getTimeSec());
+        ledBlue.toggle();
     }
 
     inline AsyncUsart & getLoggerUsart ()
@@ -181,6 +201,14 @@ extern "C"
 void SysTick_Handler (void)
 {
     HAL_IncTick();
+}
+
+void RTC_WKUP_IRQHandler ()
+{
+    if (Rtc::getInstance() != NULL)
+    {
+        Rtc::getInstance()->onSecondInterrupt();
+    }
 }
 
 // UART: uses both USART and DMA interrupts

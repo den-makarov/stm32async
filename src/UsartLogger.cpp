@@ -18,8 +18,6 @@
  ******************************************************************************/
 
 #include "UsartLogger.h"
-#include <cstring>
-#include <cstdlib>
 
 using namespace Stm32async;
 

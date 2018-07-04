@@ -59,6 +59,7 @@ public:
 
     inline void clearInstance ()
     {
+        usart.waitForRelease();
         usart.stop();
         instance = NULL;
     }

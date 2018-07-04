@@ -101,7 +101,7 @@ public:
     /**
      * @brief The method returns the current state.
      */
-    volatile State getCurrState () const
+    inline State getCurrState () const
     {
         return currState;
     }

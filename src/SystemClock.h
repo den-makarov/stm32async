@@ -17,8 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include <cstdlib>
-
 #include "HardwareLayout.h"
 
 #ifndef STM32ASYNC_SYSTEMCLOCK_H_
@@ -93,6 +91,12 @@ public:
     inline uint32_t getMcuFreq () const
     {
         return mcuFreq;
+    }
+
+    inline bool isRtcActivated () const
+    {
+        return periphClkParameters.RTCClockSelection == RCC_RTCCLKSOURCE_LSI ||
+               periphClkParameters.RTCClockSelection == RCC_RTCCLKSOURCE_LSE;
     }
 
 private:
