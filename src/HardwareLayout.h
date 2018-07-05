@@ -198,7 +198,7 @@ protected:
  */
 class Dma : public HalSharedDevice
 {
-    DECLARE_INSTANCE(DMA_TypeDef);
+    DECLARE_INSTANCE(DMA_TypeDef)
 
 public:
 
@@ -254,7 +254,7 @@ public:
  */
 class Port : public HalSharedDevice
 {
-    DECLARE_INSTANCE(GPIO_TypeDef);
+    DECLARE_INSTANCE(GPIO_TypeDef)
 
 public:
 
@@ -303,7 +303,7 @@ public:
  */
 class Usart : public HalDevice
 {
-    DECLARE_INSTANCE(USART_TypeDef);
+    DECLARE_INSTANCE(USART_TypeDef)
 
 public:
 
