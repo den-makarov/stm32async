@@ -27,6 +27,9 @@
      */
     #include "stm32f4xx.h"
 
+    #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) (cfg.Init.Channel = channel)
+    #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) (cfg.Init.FIFOMode = mode)
+
     namespace HardwareLayout
     {
         typedef struct
@@ -67,6 +70,7 @@
         } SystemPllFactors;
 
         typedef DMA_Stream_TypeDef DMA_Stream_Struct;
+
     }
 
 #elif defined(STM32F1)
@@ -76,6 +80,10 @@
      */
     #include "stm32f1xx.h"
 
+    #define GPIO_AF7_USART1 0U
+    #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) (cfg.ChannelIndex = channel)
+    #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) UNUSED(mode)
+
     namespace HardwareLayout
     {
         typedef struct
@@ -84,7 +92,6 @@
         } SystemPllFactors;
 
         typedef DMA_Channel_TypeDef DMA_Stream_Struct;
-        #define GPIO_AF7_USART1 0U
     }
 
 #else
