@@ -225,13 +225,6 @@ public:
     /**
      * @brief Specifies the stream
      */
-#if defined(STM32F4)
-    typedef DMA_Stream_TypeDef DMA_Stream_Struct
-#elif defined(STM32F1)
-    typedef DMA_Channel_TypeDef DMA_Stream_Struct;
-#else
-    #error "Please select first the target STM32Fxxx device used in your application (in stm32fxxx.h file)"
-#endif
     DMA_Stream_Struct * stream;
     /**
      * @brief Specifies the channel used for the specified stream

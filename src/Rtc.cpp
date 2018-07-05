@@ -31,7 +31,6 @@ Rtc * Rtc::instance = NULL;
 const char * Rtc::Start::strings[] = { "RTC started", "RTC system clock is not set. Call SystemClock::setRTC before",
                                        "Can not initialize RTC", "Can not initialize RTC WakeUpTimer interrupt" };
 
-ConvertClass<Rtc::Start::Status, Rtc::Start::size, Rtc::Start::strings> Rtc::Start::convert;
 AsStringClass<Rtc::Start::Status, Rtc::Start::size, Rtc::Start::strings> Rtc::Start::asString;
 
 Rtc::Rtc (HardwareLayout::Interrupt && _wkUpIrq) :

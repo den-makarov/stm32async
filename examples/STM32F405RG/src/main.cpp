@@ -98,7 +98,12 @@ public:
     void initClock (uint32_t pllp)
     {
         SystemClock::getInstance()->setRTC();
-        SystemClock::getInstance()->setPLL(16, 336, pllp, 7);
+        HardwareLayout::SystemPllFactors pllConfig;
+        pllConfig.PLLM = 16;
+        pllConfig.PLLN = 336;
+        pllConfig.PLLP = pllp;
+        pllConfig.PLLQ = 7;
+        SystemClock::getInstance()->setPLL(&pllConfig);
         SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
         SystemClock::getInstance()->setLatency(FLASH_LATENCY_3);
         SystemClock::getInstance()->start();

@@ -17,20 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#if defined(STM32F4)
-    #include "stm32f4xx.h"
-#elif defined(STM32F1)
-    #include "stm32f1xx.h"
-#else
-    #error "Please select first the target STM32Fxxx device used in your application (in stm32fxxx.h file)"
-#endif
-
-#include <cstring>
-#include <cstdlib>
-
-
 #ifndef STM32ASYNC_H_
 #define STM32ASYNC_H_
+
+#include "Platforms.h"
+#include <cstring>
+#include <cstdlib>
 
 /**
  * @brief Namespace containing classes that implement I/O devices
@@ -59,37 +51,6 @@ typedef uint64_t time_ms;
     public: \
         name * getInstance () const { return instance; }
 
-
-/**
- * @brief Template class providing operator () for converting a string argument
- *        to a value of type type T
- */
-template<typename T, size_t size, const char * strings[]> class ConvertClass
-{
-public:
-    /**
-     * @brief Converts a string to an enumeration literal.
-     *
-     * @return True if conversion was successful.
-     */
-    bool operator() (const char * image, T& value) const
-    {
-        for (size_t i = 0; i < size; ++i)
-        {
-            if (::strcmp(image, strings[i]) == 0)
-            {
-                // everything's OK:
-                value = static_cast<T>(i);
-                return true;
-            }
-        }
-
-        // not found:
-        value = static_cast<T>(0);
-        return false;
-    }
-};
-// end ConvertClass
 
 /**
  * @brief Template class providing operator () for converting type T argument

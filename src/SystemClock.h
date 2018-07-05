@@ -40,20 +40,10 @@ public:
     void setHSI ();
     void setLSE (const HardwareLayout::Port & _port, uint32_t pin);
     void setLSI ();
-
-    #ifdef STM32F1
-    void setPLL ();
-    #endif /* STM32F1 */
-
-    #ifdef STM32F4
-    void setPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR = 0);
-    #endif /* STM32F4 */
-
+    void setPLL (HardwareLayout::SystemPllFactors * factors = NULL);
     void setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
     void setRTC ();
-    #ifdef STM32F4
     void setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR);
-    #endif /* STM32F4 */
 
     void start ();
     void stop ();

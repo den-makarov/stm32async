@@ -72,11 +72,6 @@ public:
         static const char * strings[];
 
         /**
-         * @brief the Convert() method
-         */
-        static ConvertClass<Status, size, strings> convert;
-
-        /**
          * @brief the AsString() method
          */
         static AsStringClass<Status, size, strings> asString;

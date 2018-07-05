@@ -96,7 +96,7 @@ void SystemClock::setLSI ()
   * @brief PLL configuration: PLLCLK = PREDIV1CLK * PLLMUL = 8 * 9 = 72 MHz
   * @brief Enable HSE Oscillator and activate PLL with HSE as source
   */
-void SystemClock::setPLL ()
+void SystemClock::setPLL (HardwareLayout::SystemPllFactors * /*factors*/)
 {
     oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSE;
     oscParameters.HSEState = RCC_HSE_ON;
@@ -112,7 +112,7 @@ void SystemClock::setPLL ()
 #endif /* STM32F1 */
 
 #ifdef STM32F4
-void SystemClock::setPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t PLLQ, uint32_t PLLR)
+void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
 {
     oscParameters.PLL.PLLState = RCC_PLL_ON;
     if (oscParameters.HSEState == RCC_HSE_ON)
@@ -123,12 +123,12 @@ void SystemClock::setPLL (uint32_t PLLM, uint32_t PLLN, uint32_t PLLP, uint32_t 
     {
         oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI;
     }
-    oscParameters.PLL.PLLM = PLLM;
-    oscParameters.PLL.PLLN = PLLN;
-    oscParameters.PLL.PLLP = PLLP;
-    oscParameters.PLL.PLLQ = PLLQ;
+    oscParameters.PLL.PLLM = factors->PLLM;
+    oscParameters.PLL.PLLN = factors->PLLN;
+    oscParameters.PLL.PLLP = factors->PLLP;
+    oscParameters.PLL.PLLQ = factors->PLLQ;
 #ifdef STM32F410Rx
-    oscParameters.PLL.PLLR = PLLR;
+    oscParameters.PLL.PLLR = factors->PLLR;
 #endif
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 }
@@ -155,14 +155,17 @@ void SystemClock::setRTC ()
     }
 }
 
-#ifdef STM32F4
 void SystemClock::setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
 {
+#ifdef HAL_I2S_MODULE_ENABLED
     periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
     periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
     periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
+#else
+    UNUSED(PLLI2SN);
+    UNUSED(PLLI2SR);
+#endif
 }
-#endif /* STM32F4 */
 
 #ifdef STM32F1
 void SystemClock::start ()
