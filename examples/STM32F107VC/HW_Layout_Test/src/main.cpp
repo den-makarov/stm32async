@@ -20,11 +20,9 @@
 
 // Peripherie used in this projects
 #include "HardwareLayout/Dma1.h"
-#include "HardwareLayout/Dma2.h"
-#include "HardwareLayout/PortB.h"
 #include "HardwareLayout/PortD.h"
 //#include "HardwareLayout/PortH.h"
-#include "HardwareLayout/Usart1.h"
+#include "HardwareLayout/Usart2.h"
 
 // Used devices
 #include "SystemClock.h"
@@ -40,30 +38,28 @@ using namespace Stm32async;
 
 class MyApplication
 {
-public:
-
-    typedef typename std::pair<uint32_t, uint32_t> FreqSettings;
-
 private:
     
     // Used ports
-    HardwareLayout::PortB portB;
     HardwareLayout::PortD portD;
     //HardwareLayout::PortH portH;
 
     // DMA
     HardwareLayout::Dma1 dma1;
-    HardwareLayout::Dma2 dma2;
 
     // System and MCO
     SystemClock sysClock;
     //MCO mco;
 
     // LED
-    IOPort led;
+    IOPort ledOrange;
+    IOPort ledGreen;
+    IOPort ledRed;
+    IOPort ledBlue;
+    IOPort ** leds;
 
     // USART logger
-    HardwareLayout::Usart1 usart1;
+    HardwareLayout::Usart2 usart2;
     UsartLogger usartLogger;
 
 public:
@@ -72,20 +68,30 @@ public:
         // System and MCO
         sysClock{HardwareLayout::Interrupt{SysTick_IRQn, 0, 0}},
         //mco{portA, GPIO_PIN_8},
-        led{portD, GPIO_PIN_13, GPIO_MODE_OUTPUT_PP},
-        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7,
-                 HardwareLayout::Interrupt { USART1_IRQn, 1, 0 },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Channel5, 0 },
-                 HardwareLayout::Interrupt { DMA2_Channel5_IRQn, 2, 0 },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Channel2, 0 },
-                 HardwareLayout::Interrupt { DMA2_Channel2_IRQn, 2, 0 }},
-        usartLogger { usart1, 115200 }
+        ledOrange{portD, GPIO_PIN_13, GPIO_MODE_OUTPUT_PP},
+        ledGreen{portD, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP},
+        ledRed{portD, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP},
+        ledBlue{portD, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP},
+
+        usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true,
+                 HardwareLayout::Interrupt { USART2_IRQn, 1, 0 },
+                 HardwareLayout::DmaStream { &dma1, DMA1_Channel7, 0 },
+                 HardwareLayout::Interrupt { DMA1_Channel7_IRQn, 2, 0 },
+                 HardwareLayout::DmaStream { &dma1, DMA1_Channel6, 0 },
+                 HardwareLayout::Interrupt { DMA1_Channel6_IRQn, 2, 0 }},
+        usartLogger { usart2, 115200 }
     {
+        leds = new IOPort * [4];
+        leds[0] = &ledRed;
+        leds[1] = &ledOrange;
+        leds[2] = &ledGreen;
+        leds[3] = &ledBlue;
         // empty
     }
     
     virtual ~MyApplication ()
     {
+        delete [] leds;
         // empty
     }
     
@@ -109,27 +115,36 @@ public:
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL);
 
         //mco.start(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
-        led.start();
-        led.setHigh();
+        for(auto i = 0; i < 4; i++)
+        {
+            leds[i]->start();
+        }
+        leds[0]->setHigh();
         HAL_Delay(500);
-        led.setLow();
+        leds[0]->setLow();
 
-        //for (int i = 0; i < 15; ++i)
+        for (int i = 0; i < 15; ++i)
         {
             // main loop empty for 15 sec
-            HAL_Delay(15000);
+            HAL_Delay(333);
+            leds[1]->toggle();
+            HAL_Delay(333);
+            leds[2]->toggle();
+            HAL_Delay(333);
+            leds[3]->toggle();
         }
 
-        led.stop();
+        for(auto i = 0; i < 4; i++)
+        {
+            leds[i]->stop();
+        }
         //mco.stop();
 
         // Log resource occupations after all devices (expect USART1 for logging, HSE, LSE) are stopped
                 // Desired: two at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
         USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
-                    << UsartLogger::TAB << "portB=" << portB.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "dma2=" << dma2.getObjectsCount() << UsartLogger::ENDL);
+                    << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL);
         usartLogger.clearInstance();
 
         SystemClock::getInstance()->stop();
@@ -178,12 +193,17 @@ void SysTick_Handler (void)
 }*/
 
 // UART: uses both USART and DMA interrupts
-void DMA2_Channel5_IRQHandler (void)
+void DMA1_Channel7_IRQHandler (void)
 {
     appPtr->getLoggerUsart().processDmaTxInterrupt();
 }
 
-void USART1_IRQHandler (void)
+void DMA1_Channel6_IRQHandler (void)
+{
+    appPtr->getLoggerUsart().processDmaRxInterrupt();
+}
+
+void USART2_IRQHandler (void)
 {
     appPtr->getLoggerUsart().processInterrupt();
 }
