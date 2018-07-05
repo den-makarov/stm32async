@@ -30,16 +30,23 @@ namespace HardwareLayout
 class Usart1 : public HardwareLayout::Usart
 {
 public:
-    explicit Usart1 (HardwareLayout::Port & txPort, uint32_t txPin, HardwareLayout::Port & rxPort, uint32_t rxPin,
+    explicit Usart1 (HardwareLayout::Port & txPort, uint32_t txPin,
+                     HardwareLayout::Port & rxPort, uint32_t rxPin,
+                     bool remapped,
                      HardwareLayout::Interrupt && txRxIrq,
-                     HardwareLayout::DmaStream && txDma, HardwareLayout::Interrupt && txDmaIrq,
-                     HardwareLayout::DmaStream && rxDma, HardwareLayout::Interrupt && rxDmaIrq) :
+                     HardwareLayout::DmaStream && txDma,
+                     HardwareLayout::Interrupt && txDmaIrq,
+                     HardwareLayout::DmaStream && rxDma,
+                     HardwareLayout::Interrupt && rxDmaIrq) :
         Usart { 1, USART1, txPort, txPin, rxPort, rxPin, GPIO_AF7_USART1,
                 std::move(txRxIrq),
                 std::move(txDma), std::move(txDmaIrq),
                 std::move(rxDma), std::move(rxDmaIrq) }
     {
-        // empty
+        if (remapped)
+        {
+            remapPins();
+        }
     }
     virtual void enableClock () const
     {
@@ -48,6 +55,12 @@ public:
     virtual void disableClock () const
     {
         __HAL_RCC_USART1_CLK_DISABLE();
+    }
+
+    void remapPins () const
+    {
+        __HAL_RCC_AFIO_CLK_ENABLE();
+        __HAL_AFIO_REMAP_USART1_ENABLE();
     }
 };
 
