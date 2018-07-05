@@ -43,7 +43,9 @@ AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     #endif
 
     txDma.Instance = device.txDma.stream;
+#ifndef STM32F1
     txDma.Init.Channel = device.txDma.channel;
+#endif
     txDma.Init.Direction = DMA_MEMORY_TO_PERIPH;
     txDma.Init.PeriphInc = DMA_PINC_DISABLE;
     txDma.Init.MemInc = DMA_MINC_ENABLE;
@@ -51,10 +53,14 @@ AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     txDma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
     txDma.Init.Mode = DMA_NORMAL;
     txDma.Init.Priority = DMA_PRIORITY_LOW;
+#ifndef STM32F1
     txDma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+#endif
 
     rxDma.Instance = device.rxDma.stream;
+#ifndef STM32F1
     rxDma.Init.Channel = device.rxDma.channel;
+#endif
     rxDma.Init.Direction = DMA_MEMORY_TO_PERIPH;
     rxDma.Init.PeriphInc = DMA_PINC_DISABLE;
     rxDma.Init.MemInc = DMA_MINC_ENABLE;
@@ -62,7 +68,9 @@ AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     rxDma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
     rxDma.Init.Mode = DMA_NORMAL;
     rxDma.Init.Priority = DMA_PRIORITY_LOW;
+#ifndef STM32F1
     rxDma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+#endif
 }
 
 HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,

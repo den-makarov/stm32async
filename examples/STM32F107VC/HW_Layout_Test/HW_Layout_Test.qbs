@@ -92,7 +92,7 @@ Project {
                 HAL_SRC_PATH+"/stm32f1xx_hal_spi.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_i2c.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_dma.c",
-                //HAL_SRC_PATH+"/stm32f1xx_hal_uart.c",
+                HAL_SRC_PATH+"/stm32f1xx_hal_uart.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_msp_user.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_cortex.c"
             ]
@@ -118,7 +118,11 @@ Project {
             condition: stm32async == true
             files: [
                 STM32ASYNC_PATH+"/IOPort.cpp",
-                STM32ASYNC_PATH+"/SystemClock.cpp"
+                STM32ASYNC_PATH+"/SystemClock.cpp",
+                STM32ASYNC_PATH+"/AsyncUsart.cpp",
+                STM32ASYNC_PATH+"/SharedDevice.cpp",
+                STM32ASYNC_PATH+"/UsartLogger.cpp",
+                //STM32ASYNC_PATH+"/Rtc.cpp",
             ]
         }
 

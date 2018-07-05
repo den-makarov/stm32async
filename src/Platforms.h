@@ -84,6 +84,7 @@
         } SystemPllFactors;
 
         typedef DMA_Channel_TypeDef DMA_Stream_Struct;
+        #define GPIO_AF7_USART1 0U
     }
 
 #else

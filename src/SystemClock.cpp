@@ -176,7 +176,7 @@ void SystemClock::start ()
         while(1);
     }
     //TODO: second parameter must be configurable
-    if (HAL_RCC_ClockConfig(&clkParameters, FLASH_LATENCY_2)!= HAL_OK)
+    if (HAL_RCC_ClockConfig(&clkParameters, fLatency)!= HAL_OK)
     {
         /* Initialization Error */
         while(1);
