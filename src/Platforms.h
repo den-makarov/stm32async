@@ -81,7 +81,8 @@
     #include "stm32f1xx.h"
 
     #define GPIO_AF7_USART1 0U
-    #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) (cfg.ChannelIndex = channel)
+    #define DMA_FIFOMODE_DISABLE 0U
+    #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) UNUSED(channel)
     #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) UNUSED(mode)
 
     namespace HardwareLayout
