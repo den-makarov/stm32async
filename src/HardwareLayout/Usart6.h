@@ -17,43 +17,42 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef HARDWARE_LAYOUT_USART1_H_
-#define HARDWARE_LAYOUT_USART1_H_
+#ifndef HARDWARE_LAYOUT_USART6_H_
+#define HARDWARE_LAYOUT_USART6_H_
 
 #include "../HardwareLayout.h"
 
-#ifdef USART1
+#ifdef USART6
 
 namespace HardwareLayout
 {
 
-class Usart1 : public HardwareLayout::Usart
+class Usart6 : public HardwareLayout::Usart
 {
 public:
-    explicit Usart1 (HardwareLayout::Port & txPort, uint32_t txPin,
+    explicit Usart6 (HardwareLayout::Port & txPort, uint32_t txPin,
                      HardwareLayout::Port & rxPort, uint32_t rxPin,
-                     bool remapped,
+                     bool _remapped,
                      HardwareLayout::Interrupt && txRxIrq,
                      HardwareLayout::DmaStream && txDma,
                      HardwareLayout::Interrupt && txDmaIrq,
                      HardwareLayout::DmaStream && rxDma,
                      HardwareLayout::Interrupt && rxDmaIrq) :
-        Usart { 1, USART1, txPort, txPin, rxPort, rxPin, remapped,
+        Usart { 6, USART6, txPort, txPin, rxPort, rxPin, _remapped,
                 std::move(txRxIrq),
                 std::move(txDma), std::move(txDmaIrq),
                 std::move(rxDma), std::move(rxDmaIrq) }
     {
         // empty
     }
-
     virtual void enableClock () const
     {
-        __HAL_RCC_USART1_CLK_ENABLE();
+        __HAL_RCC_USART6_CLK_ENABLE();
     }
 
     virtual void disableClock () const
     {
-        __HAL_RCC_USART1_CLK_DISABLE();
+        __HAL_RCC_USART6_CLK_DISABLE();
     }
 
     virtual void remapPins (GPIO_InitTypeDef & gpioParameters) const
@@ -61,11 +60,11 @@ public:
         if (remapped)
         {
             #if defined(STM32F4)
-                gpioParameters.Alternate = GPIO_AF7_USART1;
+                gpioParameters.Alternate = GPIO_AF8_USART6;
             #elif defined(STM32F1)
                 UNUSED(gpioParameters);
                 __HAL_RCC_AFIO_CLK_ENABLE();
-                __HAL_AFIO_REMAP_USART1_ENABLE();
+                __HAL_AFIO_REMAP_USART6_ENABLE();
             #endif
         }
     }
