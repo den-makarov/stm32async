@@ -48,6 +48,11 @@ public:
     virtual void enableClock () const
     {
         __HAL_RCC_USART2_CLK_ENABLE();
+        if (txPin.remapped || rxPin.remapped)
+        {
+            __HAL_RCC_AFIO_CLK_ENABLE();
+            __HAL_AFIO_REMAP_USART2_ENABLE();
+        }
     }
 
     virtual void disableClock () const
@@ -61,8 +66,6 @@ public:
         gpioParameters.Alternate = GPIO_AF7_USART2;
         #elif defined(STM32F1)
         UNUSED(gpioParameters);
-        __HAL_RCC_AFIO_CLK_ENABLE();
-        __HAL_AFIO_REMAP_USART2_ENABLE();
         #endif
     }
 };

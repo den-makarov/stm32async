@@ -346,14 +346,14 @@ public:
     Interrupt rxDmaIrq;
 
     explicit Usart (size_t _id,  USART_TypeDef *_instance, Port & _txPort, uint32_t _txPin, Port & _rxPort,
-                    uint32_t _rxPin, uint32_t _alternate,
+                    uint32_t _rxPin, bool _remapped,
                     Interrupt && _txRxIrq,
                     DmaStream && _txDma, Interrupt && _txDmaIrq,
                     DmaStream && _rxDma, Interrupt && _rxDmaIrq) :
         HalDevice { _id },
         instance { _instance },
-        txPin { _txPort, _txPin, _alternate },
-        rxPin { _rxPort, _rxPin, _alternate },
+        txPin { _txPort, _txPin, _remapped },
+        rxPin { _rxPort, _rxPin, _remapped },
         txRxIrq { std::move(_txRxIrq) },
         txDma { std::move(_txDma) },
         txDmaIrq { std::move(_txDmaIrq) },
