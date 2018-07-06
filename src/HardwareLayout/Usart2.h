@@ -17,12 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef HARDWARE_LAYOUT_USART1_H_
-#define HARDWARE_LAYOUT_USART1_H_
+#ifndef HARDWARE_LAYOUT_USART2_H_
+#define HARDWARE_LAYOUT_USART2_H_
 
 #include "../HardwareLayout.h"
 
-#ifdef USART1
+#ifdef USART2
 
 namespace HardwareLayout
 {
