@@ -48,6 +48,7 @@ public:
     virtual void enableClock () const
     {
         __HAL_RCC_USART2_CLK_ENABLE();
+
         if (remapped)
         {
             remapPins();

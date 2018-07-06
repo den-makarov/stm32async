@@ -69,8 +69,18 @@ HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
                                      uint32_t parity/* = UART_PARITY_NONE*/)
 {
     device.enableClock();
+    if (device.txPin.remapped)
+    {
+        device.remapPins(txPin.getParameters());
+    }
     txPin.start();
+
+    if (device.rxPin.remapped)
+    {
+        device.remapPins(rxPin.getParameters());
+    }
     rxPin.start();
+
     parameters.Init.Mode = mode;
     parameters.Init.BaudRate = baudRate;
     parameters.Init.WordLength = wordLength;

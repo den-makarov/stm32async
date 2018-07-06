@@ -246,7 +246,9 @@ MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin, uint32_t _source, ui
     parameters.Mode = GPIO_MODE_AF_PP;
     parameters.Pull = GPIO_NOPULL;
     parameters.Speed = GPIO_SPEED_FREQ_HIGH;
-    //parameters.Alternate = GPIO_AF0_MCO;
+    #ifdef STM32F4
+    parameters.Alternate = GPIO_AF0_MCO;
+    #endif
 }
 
 void MCO::start ()
