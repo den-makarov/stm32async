@@ -129,6 +129,10 @@ public:
 
     virtual void enableClock () const =0;
     virtual void disableClock () const =0;
+    virtual void remapPins (GPIO_InitTypeDef &) const
+    {
+        // default implementation is empty
+    }
 
 protected:
 
@@ -239,10 +243,10 @@ public:
         // empty
     }
 
-    DmaStream (DmaStream && dma) :
-        dma { dma.dma },
-        stream { dma.stream },
-        channel { dma.channel }
+    DmaStream (DmaStream && dmaStream) :
+        dma { dmaStream.dma },
+        stream { dmaStream.stream },
+        channel { dmaStream.channel }
     {
         // empty
     }
@@ -283,14 +287,14 @@ public:
     uint32_t pins;
 
     /**
-     * @brief Peripheral to be connected to the selected pins
+     * @brief Peripheral to be re-mapped to the selected pins
      */
-    uint32_t alternate;
+    bool remapped;
 
-    explicit Pins (Port & _port, uint32_t _pins, uint32_t _alternate) :
+    explicit Pins (Port & _port, uint32_t _pins, bool _remapped) :
         port { _port },
         pins { _pins },
-        alternate { _alternate }
+        remapped { _remapped }
 
     {
         // empty

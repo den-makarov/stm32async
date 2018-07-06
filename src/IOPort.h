@@ -47,19 +47,6 @@ public:
     }
 
     /**
-     * @brief Peripheral to be connected to the selected pins.
-     */
-    inline void setAlternate (uint32_t alternate)
-    {
-        #if defined(STM32F4)
-        //There isn't field Alternate in GPIO_InitTypeDef on some MCUs
-        parameters.Alternate = alternate;
-        #elif defined(STM32F1)
-            UNUSED(alternate);
-        #endif
-    }
-
-    /**
      * @brief  Set the selected data port bit.
      *
      * @note   This function uses GPIOx_BSRR and GPIOx_BRR registers to allow atomic read/modify

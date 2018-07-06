@@ -38,29 +38,32 @@ public:
                      HardwareLayout::Interrupt && txDmaIrq,
                      HardwareLayout::DmaStream && rxDma,
                      HardwareLayout::Interrupt && rxDmaIrq) :
-        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, GPIO_AF7_USART1,
+        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, remapped,
                 std::move(txRxIrq),
                 std::move(txDma), std::move(txDmaIrq),
                 std::move(rxDma), std::move(rxDmaIrq) }
     {
-        if (remapped)
-        {
-            remapPins();
-        }
+        // empty
     }
     virtual void enableClock () const
     {
         __HAL_RCC_USART2_CLK_ENABLE();
     }
+
     virtual void disableClock () const
     {
         __HAL_RCC_USART2_CLK_DISABLE();
     }
 
-    void remapPins () const
+    virtual void remapPins (GPIO_InitTypeDef & gpioParameters) const
     {
+        #if defined(STM32F4)
+        gpioParameters.Alternate = GPIO_AF7_USART2;
+        #elif defined(STM32F1)
+        UNUSED(gpioParameters);
         __HAL_RCC_AFIO_CLK_ENABLE();
         __HAL_AFIO_REMAP_USART2_ENABLE();
+        #endif
     }
 };
 

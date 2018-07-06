@@ -72,12 +72,12 @@ public:
         // System, RTC and MCO
         sysClock { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
         rtc { HardwareLayout::Interrupt { RTC_WKUP_IRQn, 10, 0 } },
-        mco { portA, GPIO_PIN_8 },
+        mco { portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5 },
         // LEDs
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
         // USART logger
-        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7,
+        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, /*remapped=*/ true,
                  HardwareLayout::Interrupt { USART1_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4 },
                  HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 },
@@ -131,7 +131,7 @@ public:
         }
         while (rtc.getHalStatus() != HAL_OK);
 
-        mco.start(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
+        mco.start();
         ledBlue.start();
         ledRed.start();
 
