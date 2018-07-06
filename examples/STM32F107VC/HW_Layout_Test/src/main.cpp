@@ -63,11 +63,11 @@ private:
     UsartLogger usartLogger;
 
 public:
-    
+
     MyApplication () :
         // System and MCO
         sysClock{HardwareLayout::Interrupt{SysTick_IRQn, 0, 0}},
-        //mco{portA, GPIO_PIN_8},
+        //mco{portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5},
         ledOrange{portD, GPIO_PIN_13, GPIO_MODE_OUTPUT_PP},
         ledGreen{portD, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP},
         ledRed{portD, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP},
@@ -114,7 +114,8 @@ public:
                     << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL);
 
-        //mco.start(RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5);
+        //mco.setDivider();
+        //mco.start();
         for(auto i = 0; i < 4; i++)
         {
             leds[i]->start();

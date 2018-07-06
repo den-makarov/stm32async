@@ -108,14 +108,36 @@ class MCO final
 {
 public:
 
-    MCO (const HardwareLayout::Port & _port, uint32_t pin);
-    void start (uint32_t source, uint32_t div);
+    MCO (const HardwareLayout::Port & _port, uint32_t pin, uint32_t _source, uint32_t _div);
+    void start ();
     void stop ();
+
+    inline void setSource(uint32_t _source)
+    {
+        source = _source;
+    }
+
+    inline uint32_t getSource()
+    {
+        return source;
+    }
+
+    inline void setDivider(uint32_t _div)
+    {
+        divider = _div;
+    }
+
+    inline uint32_t getDivider()
+    {
+        return divider;
+    }
 
 private:
 
     const HardwareLayout::Port & port;
     GPIO_InitTypeDef parameters;
+    uint32_t source;
+    uint32_t divider;
 };
 
 } // end namespace

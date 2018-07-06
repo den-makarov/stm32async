@@ -237,8 +237,10 @@ void SystemClock::stop ()
  * Class MCO
  ************************************************************************/
 
-MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin) :
-    port { _port }
+MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin, uint32_t _source, uint32_t _div) :
+    port { _port },
+    source { _source },
+    divider { _div }
 {
     parameters.Pin = pin;
     parameters.Mode = GPIO_MODE_AF_PP;
@@ -247,11 +249,11 @@ MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin) :
     //parameters.Alternate = GPIO_AF0_MCO;
 }
 
-void MCO::start (uint32_t source, uint32_t div)
+void MCO::start ()
 {
     port.enableClock();
     HAL_GPIO_Init(port.getInstance(), &parameters);
-    HAL_RCC_MCOConfig(RCC_MCO1, source, div);
+    HAL_RCC_MCOConfig(RCC_MCO1, source, divider);
 }
 
 void MCO::stop ()
