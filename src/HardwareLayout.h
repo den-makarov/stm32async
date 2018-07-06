@@ -116,8 +116,9 @@ class HalDevice
 {
 public:
 
-    HalDevice (size_t _id) :
-        id { _id }
+    HalDevice (size_t _id, bool _remapped = false) :
+        id { _id },
+        remapped { _remapped }
     {
         // empty
     }
@@ -129,7 +130,7 @@ public:
 
     virtual void enableClock () const =0;
     virtual void disableClock () const =0;
-    virtual void remapPins (GPIO_InitTypeDef &) const
+    virtual void remapPins () const
     {
         // default implementation is empty
     }
@@ -137,6 +138,11 @@ public:
 protected:
 
     size_t id;
+
+    /**
+     * @brief Peripheral to be re-mapped to the selected pins
+     */
+    bool remapped;
 };
 
 /**
@@ -286,16 +292,9 @@ public:
      */
     uint32_t pins;
 
-    /**
-     * @brief Peripheral to be re-mapped to the selected pins
-     */
-    bool remapped;
-
-    explicit Pins (Port & _port, uint32_t _pins, bool _remapped) :
+    explicit Pins (Port & _port, uint32_t _pins) :
         port { _port },
-        pins { _pins },
-        remapped { _remapped }
-
+        pins { _pins }
     {
         // empty
     }
@@ -350,10 +349,10 @@ public:
                     Interrupt && _txRxIrq,
                     DmaStream && _txDma, Interrupt && _txDmaIrq,
                     DmaStream && _rxDma, Interrupt && _rxDmaIrq) :
-        HalDevice { _id },
+        HalDevice { _id, _remapped },
         instance { _instance },
-        txPin { _txPort, _txPin, _remapped },
-        rxPin { _rxPort, _rxPin, _remapped },
+        txPin { _txPort, _txPin },
+        rxPin { _rxPort, _rxPin },
         txRxIrq { std::move(_txRxIrq) },
         txDma { std::move(_txDma) },
         txDmaIrq { std::move(_txDmaIrq) },

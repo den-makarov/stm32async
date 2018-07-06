@@ -32,13 +32,13 @@ class Usart2 : public HardwareLayout::Usart
 public:
     explicit Usart2 (HardwareLayout::Port & txPort, uint32_t txPin,
                      HardwareLayout::Port & rxPort, uint32_t rxPin,
-                     bool remapped,
+                     bool _remapped,
                      HardwareLayout::Interrupt && txRxIrq,
                      HardwareLayout::DmaStream && txDma,
                      HardwareLayout::Interrupt && txDmaIrq,
                      HardwareLayout::DmaStream && rxDma,
                      HardwareLayout::Interrupt && rxDmaIrq) :
-        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, remapped,
+        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, _remapped,
                 std::move(txRxIrq),
                 std::move(txDma), std::move(txDmaIrq),
                 std::move(rxDma), std::move(rxDmaIrq) }
@@ -48,10 +48,9 @@ public:
     virtual void enableClock () const
     {
         __HAL_RCC_USART2_CLK_ENABLE();
-        if (txPin.remapped || rxPin.remapped)
+        if (remapped)
         {
-            __HAL_RCC_AFIO_CLK_ENABLE();
-            __HAL_AFIO_REMAP_USART2_ENABLE();
+            remapPins();
         }
     }
 
@@ -60,13 +59,16 @@ public:
         __HAL_RCC_USART2_CLK_DISABLE();
     }
 
-    virtual void remapPins (GPIO_InitTypeDef & gpioParameters) const
+    virtual void remapPins () const
     {
-        #if defined(STM32F4)
-        gpioParameters.Alternate = GPIO_AF7_USART2;
-        #elif defined(STM32F1)
-        UNUSED(gpioParameters);
-        #endif
+#if defined(STM32F4)
+        // WARNING!!! IT DOESN'T WORK!!!
+        //txPin.getParameters().Alternate = GPIO_AF7_USART2;
+        //rxPin.getParameters().Alternate = GPIO_AF7_USART2;
+#elif defined(STM32F1)
+        __HAL_RCC_AFIO_CLK_ENABLE();
+        __HAL_AFIO_REMAP_USART2_ENABLE();
+#endif
     }
 };
 

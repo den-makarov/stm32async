@@ -30,14 +30,6 @@ AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     txPin { _device.txPin.port, _device.txPin.pins, GPIO_MODE_AF_PP },
     rxPin { _device.rxPin.port, _device.rxPin.pins, GPIO_MODE_AF_PP }
 {
-    /*if (device.txPin.remapped)
-    {
-        device.remapPins(txPin.getParameters());
-    }
-    if (device.rxPin.remapped)
-    {
-        device.remapPins(rxPin.getParameters());
-    }*/
     parameters.Instance = device.getInstance();
     parameters.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     parameters.Init.OverSampling = UART_OVERSAMPLING_16;
