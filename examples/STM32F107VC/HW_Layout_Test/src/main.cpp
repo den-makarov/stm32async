@@ -72,6 +72,7 @@ public:
         ledGreen{portD, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP},
         ledRed{portD, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP},
         ledBlue{portD, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP},
+        leds{new IOPort * [4]},
 
         usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true,
                  HardwareLayout::Interrupt { USART2_IRQn, 1, 0 },
@@ -81,7 +82,6 @@ public:
                  HardwareLayout::Interrupt { DMA1_Channel6_IRQn, 2, 0 }},
         usartLogger { usart2, 115200 }
     {
-        leds = new IOPort * [4];
         leds[0] = &ledRed;
         leds[1] = &ledOrange;
         leds[2] = &ledGreen;
@@ -120,6 +120,7 @@ public:
         {
             leds[i]->start();
         }
+
         leds[0]->setHigh();
         HAL_Delay(500);
         leds[0]->setLow();
@@ -209,13 +210,15 @@ void USART2_IRQHandler (void)
     appPtr->getLoggerUsart().processInterrupt();
 }
 
-void HAL_UART_TxCpltCallback (UART_HandleTypeDef * /*channel*/)
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 {
+    UNUSED(huart);
     appPtr->getLoggerUsart().processCallback(SharedDevice::State::TX_CMPL);
 }
 
-void HAL_UART_ErrorCallback (UART_HandleTypeDef * /*channel*/)
+void HAL_UART_ErrorCallback (UART_HandleTypeDef * huart)
 {
+    UNUSED(huart);
     appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
 }
 
