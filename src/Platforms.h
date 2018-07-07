@@ -92,7 +92,25 @@
     {
         typedef struct
         {
-            uint32_t dummy;
+            /**
+             * @brief HSEPredivValue: The Prediv1 factor value (named PREDIV1 or PLLXTPRE in RM)
+             *        This parameter can be a value of @ref RCCEx_Prediv1_Factor
+             *        Select value from RCC_HSE_PREDIV_DIV2 to RCC_HSE_PREDIV_DIV16
+             */
+            uint32_t HSEPredivValue;
+
+            /**
+             * @brief Prediv1Source: The Prediv1 source available only for 105 and 107 group.
+             *        This parameter can be a value of @ref RCCEx_Prediv1_Source
+             *        Select value either RCC_PREDIV1_SOURCE_HSE or RCC_PREDIV1_SOURCE_PLL2
+             */
+            #if defined(STM32F105xC) || defined(STM32F107xC)
+            uint32_t Prediv1Source;
+            #endif /* STM32F105xC || STM32F107xC */
+
+            uint32_t PLLMUL;
+            uint32_t PLL2MUL;
+            uint32_t HSEPrediv2Value;
         } SystemPllFactors;
 
         typedef DMA_Channel_TypeDef DMA_Stream_Struct;

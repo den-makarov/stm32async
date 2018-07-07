@@ -36,6 +36,7 @@ public:
 
     SystemClock (HardwareLayout::Interrupt && sysTickIrq);
 
+    void setSysClockSource (uint32_t sysClockSource);
     void setHSE (const HardwareLayout::Port & _port, uint32_t pin);
     void setHSI ();
     void setLSE (const HardwareLayout::Port & _port, uint32_t pin);

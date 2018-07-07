@@ -45,6 +45,7 @@ SystemClock::SystemClock (HardwareLayout::Interrupt && _sysTickIrq) :
     oscParameters.LSEState = RCC_LSE_OFF;
     oscParameters.LSIState = RCC_LSI_OFF;
 
+    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
     clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | 
                               RCC_CLOCKTYPE_SYSCLK | 
                               RCC_CLOCKTYPE_PCLK1 | 
@@ -52,14 +53,28 @@ SystemClock::SystemClock (HardwareLayout::Interrupt && _sysTickIrq) :
     instance = this;
 }
 
+void SystemClock::setSysClockSource (uint32_t sysClockSource)
+{
+    switch (sysClockSource)
+    {
+        case RCC_SYSCLKSOURCE_HSE: clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSE; break;
+        case RCC_SYSCLKSOURCE_HSI: clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI; break;
+        case RCC_SYSCLKSOURCE_PLLCLK: clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK; break;
+        default: clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+    }
+}
+
 void SystemClock::setHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
+#ifdef STM32F1
+    UNUSED(_port);
+#else
     hsePort = &_port;
+#endif
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
     oscParameters.HSEState = RCC_HSE_ON;
     oscParameters.HSIState = RCC_HSI_OFF;
-    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
 }
 
 void SystemClock::setHSI ()
@@ -68,12 +83,15 @@ void SystemClock::setHSI ()
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_OFF;
     oscParameters.HSIState = RCC_HSI_ON;
-    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
 }
 
 void SystemClock::setLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
 {
+#ifdef STM32F1
+    UNUSED(_port);
+#else
     lsePort = &_port;
+#endif
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSE;
     oscParameters.LSEState = RCC_LSE_ON;
@@ -96,20 +114,32 @@ void SystemClock::setLSI ()
   * @brief PLL configuration: PLLCLK = PREDIV1CLK * PLLMUL = 8 * 9 = 72 MHz
   * @brief Enable HSE Oscillator and activate PLL with HSE as source
   */
-void SystemClock::setPLL (HardwareLayout::SystemPllFactors * /*factors*/)
+void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
 {
-    oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    oscParameters.HSEState = RCC_HSE_ON;
-    oscParameters.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
-    oscParameters.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
-    oscParameters.PLL.PLLState = RCC_PLL_ON;
-    oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    oscParameters.PLL.PLLMUL = RCC_PLL_MUL9;
-    oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
-    oscParameters.PLL2.PLL2MUL = RCC_PLL2_MUL8;
-    oscParameters.PLL2.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
-    clkParameters.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
-    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    if (clkParameters.SYSCLKSource == RCC_SYSCLKSOURCE_PLLCLK)
+    {
+        oscParameters.PLL.PLLState = RCC_PLL_ON;
+        oscParameters.PLL.PLLMUL = factors->PLLMUL;
+
+        if (oscParameters.HSEState == RCC_HSE_ON)
+        {
+            oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+        }
+        else
+        {
+            oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
+        }
+
+        oscParameters.HSEPredivValue = factors->HSEPredivValue;
+        oscParameters.Prediv1Source = factors->Prediv1Source;
+
+        if (oscParameters.Prediv1Source == RCC_PREDIV1_SOURCE_PLL2)
+        {
+            oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
+            oscParameters.PLL2.PLL2MUL = factors->PLL2MUL;
+            oscParameters.PLL2.HSEPrediv2Value = factors->HSEPrediv2Value;
+        }
+    }
 }
 #endif /* STM32F1 */
 
