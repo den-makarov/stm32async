@@ -27,8 +27,8 @@ using namespace Stm32async;
 
 AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     device { _device },
-    txPin { _device.txPin.port, _device.txPin.pins, GPIO_MODE_AF_PP },
-    rxPin { _device.rxPin.port, _device.rxPin.pins, GPIO_MODE_AF_PP }
+    txPin { _device.txPin.port, _device.txPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP },
+    rxPin { _device.rxPin.port, _device.rxPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP }
 {
     parameters.Instance = device.getInstance();
     parameters.Init.HwFlowCtl = UART_HWCONTROL_NONE;
@@ -69,18 +69,10 @@ HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
                                      uint32_t parity/* = UART_PARITY_NONE*/)
 {
     device.enableClock();
-    if (device.txPin.remapped)
-    {
-        device.remapPins(txPin.getParameters());
-    }
+    device.remapPins(txPin.getParameters());
     txPin.start();
-
-    if (device.rxPin.remapped)
-    {
-        device.remapPins(rxPin.getParameters());
-    }
+    device.remapPins(rxPin.getParameters());
     rxPin.start();
-
     parameters.Init.Mode = mode;
     parameters.Init.BaudRate = baudRate;
     parameters.Init.WordLength = wordLength;

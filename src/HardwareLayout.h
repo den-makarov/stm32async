@@ -130,7 +130,7 @@ public:
 
     virtual void enableClock () const =0;
     virtual void disableClock () const =0;
-    virtual void remapPins () const
+    virtual void remapPins (GPIO_InitTypeDef &) const
     {
         // default implementation is empty
     }

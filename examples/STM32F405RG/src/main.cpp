@@ -25,7 +25,7 @@
 #include "stm32async/HardwareLayout/PortB.h"
 #include "stm32async/HardwareLayout/PortC.h"
 #include "stm32async/HardwareLayout/PortH.h"
-#include "stm32async/HardwareLayout/Usart1.h"
+#include "stm32async/HardwareLayout/Usart6.h"
 
 // Used devices
 #include "stm32async/SystemClock.h"
@@ -63,7 +63,7 @@ private:
     IOPort ledBlue, ledRed;
 
     // USART logger
-    HardwareLayout::Usart1 usart1;
+    HardwareLayout::Usart6 usart6;
     UsartLogger usartLogger;
 
 public:
@@ -77,13 +77,13 @@ public:
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
         // USART logger
-        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, /*remapped=*/ true,
-                 HardwareLayout::Interrupt { USART1_IRQn, 1, 0 },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4 },
+        usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true,
+                 HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5 },
                  HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_4 },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5 },
                  HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 }},
-        usartLogger { usart1, 115200 }
+        usartLogger { usart6, 115200 }
     {
         // External oscillators use system pins
         sysClock.setHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
@@ -222,7 +222,7 @@ void DMA2_Stream7_IRQHandler (void)
     appPtr->getLoggerUsart().processDmaTxInterrupt();
 }
 
-void USART1_IRQHandler (void)
+void USART6_IRQHandler (void)
 {
     appPtr->getLoggerUsart().processInterrupt();
 }
