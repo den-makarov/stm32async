@@ -17,26 +17,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "BaseUsart.h"
-#include "SharedDevice.h"
+#include "HardwareLayout.h"
+#include "IOPort.h"
 
-#ifndef STM32ASYNC_ASYNCUSART_H_
-#define STM32ASYNC_ASYNCUSART_H_
+#ifndef STM32ASYNC_BASEUSART_H_
+#define STM32ASYNC_BASEUSART_H_
 
 namespace Stm32async
 {
 
 /**
- * @brief Class that implements UART interface.
+ * @brief Base USART class that holds the USART parameters and implements the communication in
+ *        a blocking mode.
  */
-class AsyncUsart : public BaseUsart, public SharedDevice
+class BaseUsart
 {
 public:
 
     /**
      * @brief Default constructor.
      */
-    AsyncUsart (const HardwareLayout::Usart & _device);
+    BaseUsart (const HardwareLayout::Usart & _device);
 
     /**
      * @brief Open transmission session with given parameters.
@@ -52,50 +53,37 @@ public:
     void stop ();
 
     /**
-     * @brief Send an amount of data in DMA mode.
+     * @brief Send an amount of data in blocking mode.
      */
-    inline HAL_StatusTypeDef transmit (DeviceClient * _client, const char * buffer, size_t n)
+    inline HAL_StatusTypeDef transmitBlocking (const char * buffer, size_t n,
+                                               uint32_t timeout = __UINT32_MAX__)
     {
-        startCommunication(_client, State::TX, State::TX_CMPL);
-        return HAL_UART_Transmit_DMA(&parameters, (unsigned char *) buffer, n);
+        return HAL_UART_Transmit(&parameters, (unsigned char *) buffer, n, timeout);
     }
 
     /**
-     * @brief Send an amount of data in interrupt mode.
+     * @brief Receive an amount of data in blocking mode.
      */
-    inline HAL_StatusTypeDef transmitIt (DeviceClient * _client, const char * buffer, size_t n)
+    inline HAL_StatusTypeDef receiveBlocking (const char * buffer, size_t n,
+                                              uint32_t timeout = __UINT32_MAX__)
     {
-        startCommunication(_client, State::TX, State::TX_CMPL);
-        return HAL_UART_Transmit_IT(&parameters, (unsigned char *) buffer, n);
+        return HAL_UART_Receive(&parameters, (unsigned char *) buffer, n, timeout);
     }
 
     /**
-     * @brief Receive an amount of data in DMA mode.
+     * @brief Procedure waits in a blocking mode until USART is ready.
      */
-    inline HAL_StatusTypeDef receive (DeviceClient * _client, const char * buffer, size_t n)
+    inline void ensureReady ()
     {
-        startCommunication(_client, State::RX, State::RX_CMPL);
-        return HAL_UART_Receive_DMA(&parameters, (unsigned char *) buffer, n);
+        while (HAL_UART_GetState(&parameters) != HAL_UART_STATE_READY);
     }
 
-    /**
-     * @brief Receive an amount of data in interrupt mode.
-     */
-    inline HAL_StatusTypeDef receiveIt (DeviceClient * _client, const char * buffer, size_t n)
-    {
-        startCommunication(_client, State::RX, State::RX_CMPL);
-        return HAL_UART_Receive_IT(&parameters, (unsigned char *) buffer, n);
-    }
+protected:
 
-    /**
-     * @brief Interrupt handling.
-     */
-    inline void processInterrupt ()
-    {
-        HAL_UART_IRQHandler(&parameters);
-    }
+    const HardwareLayout::Usart & device;
+    IOPort txPin, rxPin;
+    UART_HandleTypeDef parameters;
 };
 
 } // end namespace
 #endif
-

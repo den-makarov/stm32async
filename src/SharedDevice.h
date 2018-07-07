@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "Stm32async.h"
+#include "HardwareLayout.h"
 
 #ifndef STM32ASYNC_SHARED_DEVICE_H_
 #define STM32ASYNC_SHARED_DEVICE_H_
@@ -70,7 +70,8 @@ public:
      *
      * Sets the initial state of this device.
      */
-    SharedDevice ();
+    SharedDevice (const HardwareLayout::DmaStream & txStream, const HardwareLayout::DmaStream & rxStream,
+                  uint32_t periphDataAlignment, uint32_t memDataAlignment);
 
     /**
      * @brief Communication start handler.

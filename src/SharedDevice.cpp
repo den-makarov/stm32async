@@ -25,14 +25,35 @@ using namespace Stm32async;
  * Class SharedDevice
  ************************************************************************/
 
-SharedDevice::SharedDevice () :
+SharedDevice::SharedDevice (const HardwareLayout::DmaStream & txStream, const HardwareLayout::DmaStream & rxStream,
+                            uint32_t periphDataAlignment, uint32_t memDataAlignment) :
     client { NULL },
     currState { State::NONE },
     targetState { State::NONE },
     startTime { __UINT32_MAX__ },
     timeout { __UINT32_MAX__ }
 {
-    // empty
+    txDma.Instance = txStream.stream;
+    HAL_EXT_DMA_SET_CHANNEL(txDma, txStream.channel);
+    txDma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+    txDma.Init.PeriphInc = DMA_PINC_DISABLE;
+    txDma.Init.MemInc = DMA_MINC_ENABLE;
+    txDma.Init.PeriphDataAlignment = periphDataAlignment;
+    txDma.Init.MemDataAlignment = memDataAlignment;
+    txDma.Init.Mode = DMA_NORMAL;
+    txDma.Init.Priority = DMA_PRIORITY_LOW;
+    HAL_EXT_DMA_SET_FIFOMODE(txDma, DMA_FIFOMODE_DISABLE);
+
+    rxDma.Instance = rxStream.stream;
+    HAL_EXT_DMA_SET_CHANNEL(rxDma, rxStream.channel);
+    rxDma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    rxDma.Init.PeriphInc = DMA_PINC_DISABLE;
+    rxDma.Init.MemInc = DMA_MINC_ENABLE;
+    rxDma.Init.PeriphDataAlignment = periphDataAlignment;
+    rxDma.Init.MemDataAlignment = memDataAlignment;
+    rxDma.Init.Mode = DMA_NORMAL;
+    rxDma.Init.Priority = DMA_PRIORITY_LOW;
+    HAL_EXT_DMA_SET_FIFOMODE(rxDma, DMA_FIFOMODE_DISABLE);
 }
 
 void SharedDevice::startCommunication (DeviceClient * client, State currState, State targetState)
