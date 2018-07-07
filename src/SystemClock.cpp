@@ -108,6 +108,8 @@ void SystemClock::setPLL (HardwareLayout::SystemPllFactors * /*factors*/)
     oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
     oscParameters.PLL2.PLL2MUL = RCC_PLL2_MUL8;
     oscParameters.PLL2.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
+    clkParameters.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 }
 #endif /* STM32F1 */
 
