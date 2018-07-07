@@ -61,10 +61,6 @@ public:
         {
             #if defined(STM32F4)
                 gpioParameters.Alternate = GPIO_AF8_USART6;
-            #elif defined(STM32F1)
-                UNUSED(gpioParameters);
-                __HAL_RCC_AFIO_CLK_ENABLE();
-                __HAL_AFIO_REMAP_USART6_ENABLE();
             #endif
         }
     }
