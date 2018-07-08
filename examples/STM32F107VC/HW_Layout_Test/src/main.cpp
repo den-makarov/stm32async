@@ -23,6 +23,7 @@
 #include "HardwareLayout/PortA.h"
 #include "HardwareLayout/PortD.h"
 #include "HardwareLayout/Usart2.h"
+#include "HardwareLayout/AfioModule.h"
 
 // Used devices
 #include "SystemClock.h"
@@ -46,6 +47,9 @@ private:
 
     // DMA
     HardwareLayout::Dma1 dma1;
+
+    // Alternate Function IO module for USART2 remapping
+    HardwareLayout::AfioModule afio;
 
     // System and MCO
     SystemClock sysClock;
@@ -75,7 +79,7 @@ public:
         ledBlue{portD, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP},
         leds{new IOPort * [4]},
         // Serial Port
-        usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true,
+        usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true, afio,
                  HardwareLayout::Interrupt { USART2_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma1, DMA1_Channel7, 0 },
                  HardwareLayout::Interrupt { DMA1_Channel7_IRQn, 2, 0 },
@@ -101,6 +105,7 @@ public:
         HardwareLayout::SystemPllFactors pllConfig;
 
         // Next parameters configure SystemClock to 72 MHz
+        pllConfig.PLLSource = RCC_PLLSOURCE_HSE;
         pllConfig.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
         pllConfig.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
         pllConfig.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
@@ -152,11 +157,12 @@ public:
         mco.stop();
 
         // Log resource occupations after all devices (expect USART2 for logging) are stopped
-        // Desired: two at portD, two DMA2 (USART2), null for portA
+        // Desired: two at portD, two DMA2 (USART2), null for portA,
         USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
                     << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL);
+                    << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "afio=" << afio.getObjectsCount() << UsartLogger::ENDL);
         usartLogger.clearInstance();
 
         SystemClock::getInstance()->stop();
