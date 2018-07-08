@@ -98,6 +98,7 @@ public:
     void initClock (uint32_t pllp)
     {
         SystemClock::getInstance()->setRTC();
+        SystemClock::getInstance()->setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);        
         HardwareLayout::SystemPllFactors pllConfig;
         pllConfig.PLLM = 16;
         pllConfig.PLLN = 336;
