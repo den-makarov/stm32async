@@ -112,12 +112,14 @@ void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
     oscParameters.PLL.PLLState = RCC_PLL_ON;
     oscParameters.PLL.PLLMUL = factors->PLLMUL;
 
-    if (oscParameters.HSEState == RCC_HSE_ON)
+    if (factors->PLLSource == RCC_PLLSOURCE_HSE)
     {
+        setHSE(*hsePort, 0);
         oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     }
     else
     {
+        setHSI();
         oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
     }
 

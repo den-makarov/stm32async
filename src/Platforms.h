@@ -93,6 +93,13 @@
         typedef struct
         {
             /**
+            * @brief PLLSource: PLL entry clock source.
+            *        This parameter must be a value of @ref RCC_PLL_Clock_Source
+            *        Select value either RCC_PLLSOURCE_HSI_DIV2 or RCC_PLLSOURCE_HSE
+            */
+            uint32_t PLLSource;
+
+             /**
              * @brief HSEPredivValue: The Prediv1 factor value (named PREDIV1 or PLLXTPRE in RM)
              *        This parameter can be a value of @ref RCCEx_Prediv1_Factor
              *        Select value from RCC_HSE_PREDIV_DIV2 to RCC_HSE_PREDIV_DIV16
