@@ -22,7 +22,6 @@
 #include "HardwareLayout/Dma1.h"
 #include "HardwareLayout/PortA.h"
 #include "HardwareLayout/PortD.h"
-//#include "HardwareLayout/PortH.h"
 #include "HardwareLayout/Usart2.h"
 
 // Used devices
@@ -44,7 +43,6 @@ private:
     // Used ports
     HardwareLayout::PortD portA;
     HardwareLayout::PortD portD;
-    //HardwareLayout::PortH portH;
 
     // DMA
     HardwareLayout::Dma1 dma1;
@@ -70,31 +68,31 @@ public:
         // System and MCO
         sysClock{HardwareLayout::Interrupt{SysTick_IRQn, 0, 0}},
         mco{portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, 0},
+        // Leds
         ledOrange{portD, GPIO_PIN_13, GPIO_MODE_OUTPUT_PP},
         ledGreen{portD, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP},
         ledRed{portD, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP},
         ledBlue{portD, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP},
         leds{new IOPort * [4]},
-
+        // Serial Port
         usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true,
                  HardwareLayout::Interrupt { USART2_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma1, DMA1_Channel7, 0 },
                  HardwareLayout::Interrupt { DMA1_Channel7_IRQn, 2, 0 },
                  HardwareLayout::DmaStream { &dma1, DMA1_Channel6, 0 },
                  HardwareLayout::Interrupt { DMA1_Channel6_IRQn, 2, 0 }},
+        // Output stream
         usartLogger { usart2, 115200 }
     {
         leds[0] = &ledRed;
         leds[1] = &ledOrange;
         leds[2] = &ledGreen;
         leds[3] = &ledBlue;
-        // empty
     }
     
     virtual ~MyApplication ()
     {
         delete [] leds;
-        // empty
     }
     
     void initClock ()
@@ -153,8 +151,8 @@ public:
         }
         mco.stop();
 
-        // Log resource occupations after all devices (expect USART1 for logging, HSE, LSE) are stopped
-                // Desired: two at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
+        // Log resource occupations after all devices (expect USART2 for logging) are stopped
+        // Desired: two at portD, two DMA2 (USART2), null for portA
         USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
                     << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
