@@ -259,12 +259,13 @@ void SystemClock::stop ()
  * Class MCO
  ************************************************************************/
 
-MCO::MCO (const HardwareLayout::Port & _port, uint32_t pin, uint32_t _source, uint32_t _div) :
+
+MCO::MCO (const HardwareLayout::Port & _port, uint32_t _pin, uint32_t _source, uint32_t _div) :
     port { _port },
     source { _source },
     divider { _div }
 {
-    parameters.Pin = pin;
+    parameters.Pin = _pin;
     parameters.Mode = GPIO_MODE_AF_PP;
     parameters.Pull = GPIO_NOPULL;
     parameters.Speed = GPIO_SPEED_FREQ_HIGH;

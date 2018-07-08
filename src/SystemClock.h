@@ -109,7 +109,8 @@ class MCO final
 {
 public:
 
-    MCO (const HardwareLayout::Port & _port, uint32_t pin, uint32_t _source, uint32_t _div);
+    MCO (const HardwareLayout::Port & _port, uint32_t _pin, uint32_t _source, uint32_t _div);
+
     void start ();
     void stop ();
 

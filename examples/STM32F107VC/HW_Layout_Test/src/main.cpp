@@ -20,6 +20,7 @@
 
 // Peripherie used in this projects
 #include "HardwareLayout/Dma1.h"
+#include "HardwareLayout/PortA.h"
 #include "HardwareLayout/PortD.h"
 //#include "HardwareLayout/PortH.h"
 #include "HardwareLayout/Usart2.h"
@@ -41,6 +42,7 @@ class MyApplication
 private:
     
     // Used ports
+    HardwareLayout::PortD portA;
     HardwareLayout::PortD portD;
     //HardwareLayout::PortH portH;
 
@@ -49,7 +51,7 @@ private:
 
     // System and MCO
     SystemClock sysClock;
-    //MCO mco;
+    MCO mco;
 
     // LED
     IOPort ledOrange;
@@ -67,7 +69,7 @@ public:
     MyApplication () :
         // System and MCO
         sysClock{HardwareLayout::Interrupt{SysTick_IRQn, 0, 0}},
-        //mco{portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5},
+        mco{portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, 0},
         ledOrange{portD, GPIO_PIN_13, GPIO_MODE_OUTPUT_PP},
         ledGreen{portD, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP},
         ledRed{portD, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP},
@@ -124,8 +126,7 @@ public:
                     << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL);
 
-        //mco.setDivider();
-        //mco.start();
+        mco.start();
         for(auto i = 0; i < 4; i++)
         {
             leds[i]->start();
@@ -150,11 +151,12 @@ public:
         {
             leds[i]->stop();
         }
-        //mco.stop();
+        mco.stop();
 
         // Log resource occupations after all devices (expect USART1 for logging, HSE, LSE) are stopped
                 // Desired: two at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
         USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL);
         usartLogger.clearInstance();
