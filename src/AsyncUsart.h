@@ -17,11 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "BaseUsart.h"
-#include "SharedDevice.h"
-
 #ifndef STM32ASYNC_ASYNCUSART_H_
 #define STM32ASYNC_ASYNCUSART_H_
+
+#include "BaseUsart.h"
+#include "SharedDevice.h"
 
 namespace Stm32async
 {

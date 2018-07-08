@@ -17,11 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "HardwareLayout.h"
-#include "IOPort.h"
-
 #ifndef STM32ASYNC_BASEUSART_H_
 #define STM32ASYNC_BASEUSART_H_
+
+#include "IODevice.h"
 
 namespace Stm32async
 {
@@ -30,7 +29,7 @@ namespace Stm32async
  * @brief Base USART class that holds the USART parameters and implements the communication in
  *        a blocking mode.
  */
-class BaseUsart
+class BaseUsart : public IODevice<HardwareLayout::Usart, 2>
 {
 public:
 
@@ -80,8 +79,6 @@ public:
 
 protected:
 
-    const HardwareLayout::Usart & device;
-    IOPort txPin, rxPin;
     UART_HandleTypeDef parameters;
 };
 

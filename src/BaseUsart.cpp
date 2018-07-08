@@ -26,9 +26,10 @@ using namespace Stm32async;
  ************************************************************************/
 
 BaseUsart::BaseUsart (const HardwareLayout::Usart & _device) :
-    device { _device },
-    txPin { _device.txPin.port, _device.txPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP },
-    rxPin { _device.rxPin.port, _device.rxPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP }
+    IODevice { _device, {
+        IOPort { _device.txPin.port, _device.txPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP },
+        IOPort { _device.rxPin.port, _device.rxPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP }
+    } }
 {
     parameters.Instance = device.getInstance();
     parameters.Init.HwFlowCtl = UART_HWCONTROL_NONE;
@@ -47,16 +48,7 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
                                     uint32_t parity/* = UART_PARITY_NONE*/)
 {
     device.enableClock();
-
-    if (device.afio != NULL)
-    {
-        device.afio->enableClock();
-    }
-
-    device.remapPins(txPin.getParameters());
-    device.remapPins(rxPin.getParameters());
-    txPin.start();
-    rxPin.start();
+    IODevice::enablePort();
 
     parameters.Init.Mode = mode;
     parameters.Init.BaudRate = baudRate;
@@ -75,16 +67,6 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
 void BaseUsart::stop ()
 {
     HAL_UART_DeInit(&parameters);
-
-    txPin.stop();
-    rxPin.stop();
-    device.unremapPins(txPin.getParameters());
-    device.unremapPins(rxPin.getParameters());
-
-    if (device.afio != NULL)
-    {
-        device.afio->disableClock();
-    }
-
+    IODevice::disablePort();
     device.disableClock();
 }
