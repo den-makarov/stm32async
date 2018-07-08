@@ -107,38 +107,28 @@ void SystemClock::setLSI ()
 }
 
 #ifdef STM32F1
-/** 
-  * @brief Configure PLLs
-  * @brief PLL2 configuration: PLL2CLK = (HSE / HSEPrediv2Value) * PLL2MUL = (25 / 5) * 8 = 40 MHz
-  * @brief PREDIV1 configuration: PREDIV1CLK = PLL2CLK / HSEPredivValue = 40 / 5 = 8 MHz
-  * @brief PLL configuration: PLLCLK = PREDIV1CLK * PLLMUL = 8 * 9 = 72 MHz
-  * @brief Enable HSE Oscillator and activate PLL with HSE as source
-  */
 void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
 {
-    if (clkParameters.SYSCLKSource == RCC_SYSCLKSOURCE_PLLCLK)
+    oscParameters.PLL.PLLState = RCC_PLL_ON;
+    oscParameters.PLL.PLLMUL = factors->PLLMUL;
+
+    if (oscParameters.HSEState == RCC_HSE_ON)
     {
-        oscParameters.PLL.PLLState = RCC_PLL_ON;
-        oscParameters.PLL.PLLMUL = factors->PLLMUL;
+        oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    }
+    else
+    {
+        oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
+    }
 
-        if (oscParameters.HSEState == RCC_HSE_ON)
-        {
-            oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-        }
-        else
-        {
-            oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
-        }
+    oscParameters.HSEPredivValue = factors->HSEPredivValue;
+    oscParameters.Prediv1Source = factors->Prediv1Source;
 
-        oscParameters.HSEPredivValue = factors->HSEPredivValue;
-        oscParameters.Prediv1Source = factors->Prediv1Source;
-
-        if (oscParameters.Prediv1Source == RCC_PREDIV1_SOURCE_PLL2)
-        {
-            oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
-            oscParameters.PLL2.PLL2MUL = factors->PLL2MUL;
-            oscParameters.PLL2.HSEPrediv2Value = factors->HSEPrediv2Value;
-        }
+    if (oscParameters.Prediv1Source == RCC_PREDIV1_SOURCE_PLL2)
+    {
+        oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
+        oscParameters.PLL2.PLL2MUL = factors->PLL2MUL;
+        oscParameters.PLL2.HSEPrediv2Value = factors->HSEPrediv2Value;
     }
 }
 #endif /* STM32F1 */
@@ -162,7 +152,7 @@ void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
 #ifdef STM32F410Rx
     oscParameters.PLL.PLLR = factors->PLLR;
 #endif
-    clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    //clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 }
 #endif /* STM32F4 */
 

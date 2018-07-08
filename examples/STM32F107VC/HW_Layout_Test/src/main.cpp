@@ -97,7 +97,17 @@ public:
     
     void initClock ()
     {
-        SystemClock::getInstance()->setPLL(nullptr);
+        SystemClock::getInstance()->setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);
+        HardwareLayout::SystemPllFactors pllConfig;
+
+        // Next parameters configure SystemClock to 72 MHz
+        pllConfig.Prediv1Source = RCC_PREDIV1_SOURCE_PLL2;
+        pllConfig.HSEPredivValue = RCC_HSE_PREDIV_DIV5;
+        pllConfig.HSEPrediv2Value = RCC_HSE_PREDIV2_DIV5;
+        pllConfig.PLLMUL = RCC_PLL_MUL9;
+        pllConfig.PLL2MUL = RCC_PLL2_MUL8;
+
+        SystemClock::getInstance()->setPLL(&pllConfig);
         SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV2, RCC_HCLK_DIV1);
         SystemClock::getInstance()->setLatency(FLASH_LATENCY_2);
         SystemClock::getInstance()->start();

@@ -108,8 +108,27 @@
             uint32_t Prediv1Source;
             #endif /* STM32F105xC || STM32F107xC */
 
+            /**
+             * @brief PLLMUL: Multiplication factor for PLL VCO input clock
+             *        This parameter must be a value of @ref RCCEx_PLL_Multiplication_Factor
+             *        Select value from RCC_PLL_MUL2 to RCC_PLL_MUL16
+             * @note  For STM32F105xC or STM32F107xC available options are only:
+             *        RCC_PLL_MUL4 to RCC_PLL_MUL9 and RCC_PLL_MUL6_5
+             */
             uint32_t PLLMUL;
+
+            /**
+             * @brief PLL2MUL: Multiplication factor for PLL2 VCO input clock
+             *        This parameter must be a value of @ref RCCEx_PLL2_Multiplication_Factor
+             *        Available values: RCC_PLL2_MULx where x is one of the options: 8-14, 16, 20
+             */
             uint32_t PLL2MUL;
+
+            /**
+             * @brief HSEPrediv2Value: The Prediv2 factor value
+             *        This parameter can be a value of @ref RCCEx_Prediv2_Factor
+             *        Select value from RCC_HSE_PREDIV2_DIV1 to RCC_HSE_PREDIV2_DIV16
+             */
             uint32_t HSEPrediv2Value;
         } SystemPllFactors;
 
