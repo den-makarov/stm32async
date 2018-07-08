@@ -79,7 +79,7 @@ public:
         ledBlue{portD, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP},
         leds{new IOPort * [4]},
         // Serial Port
-        usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true, afio,
+        usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true, &afio,
                  HardwareLayout::Interrupt { USART2_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma1, DMA1_Channel7, 0 },
                  HardwareLayout::Interrupt { DMA1_Channel7_IRQn, 2, 0 },

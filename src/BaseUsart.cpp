@@ -48,9 +48,9 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
 {
     device.enableClock();
 
-    if (device.afio.getInstance() != NULL)
+    if (device.afio != NULL)
     {
-        device.afio.enableClock();
+        device.afio->enableClock();
     }
 
     device.remapPins(txPin.getParameters());
@@ -81,9 +81,9 @@ void BaseUsart::stop ()
     device.unremapPins(txPin.getParameters());
     device.unremapPins(rxPin.getParameters());
 
-    if (device.afio.getInstance() != NULL)
+    if (device.afio != NULL)
     {
-        device.afio.disableClock();
+        device.afio->disableClock();
     }
 
     device.disableClock();

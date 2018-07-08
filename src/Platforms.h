@@ -34,6 +34,11 @@
     {
         typedef struct
         {
+            bool remap;
+        } AFIO_TypeDef;
+
+        typedef struct
+        {
             /**
              * @brief PLLM: Division factor for PLL VCO input clock.
              *        This parameter must be a number between Min_Data = 0 and Max_Data = 63

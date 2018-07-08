@@ -77,7 +77,7 @@ public:
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
         // USART logger
-        usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true,
+        usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5 },
                  HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 },

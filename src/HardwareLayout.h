@@ -343,7 +343,7 @@ public:
     /**
      * @brief AFIO module
      */
-    Afio & afio;
+    Afio * afio;
 
     /**
      * @brief Interrupt Number Definition
@@ -371,7 +371,7 @@ public:
     Interrupt rxDmaIrq;
 
     explicit Usart (size_t _id,  USART_TypeDef *_instance, Port & _txPort, uint32_t _txPin, Port & _rxPort,
-                    uint32_t _rxPin, bool _remapped, Afio & _afio,
+                    uint32_t _rxPin, bool _remapped, Afio * _afio,
                     Interrupt && _txRxIrq,
                     DmaStream && _txDma, Interrupt && _txDmaIrq,
                     DmaStream && _rxDma, Interrupt && _rxDmaIrq) :

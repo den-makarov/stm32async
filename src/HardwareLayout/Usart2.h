@@ -32,8 +32,7 @@ class Usart2 : public HardwareLayout::Usart
 public:
     explicit Usart2 (HardwareLayout::Port & txPort, uint32_t txPin,
                      HardwareLayout::Port & rxPort, uint32_t rxPin,
-                     bool _remapped,
-                     HardwareLayout::Afio & _afio,
+                     bool _remapped, HardwareLayout::Afio * _afio,
                      HardwareLayout::Interrupt && txRxIrq,
                      HardwareLayout::DmaStream && txDma,
                      HardwareLayout::Interrupt && txDmaIrq,
@@ -74,8 +73,8 @@ public:
         if (remapped)
         {
             #if defined(STM32F4)
-                // TODO: Ensure alternate parameters to default value
-                gpioParameters.Alternate = GPIO_AF7_USART2;
+                // no unremap on STM32F4
+                UNUSED(gpioParameters);
             #elif defined(STM32F1)
                 UNUSED(gpioParameters);
                 __HAL_AFIO_REMAP_USART2_DISABLE();
