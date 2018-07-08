@@ -33,12 +33,13 @@ public:
     explicit Usart2 (HardwareLayout::Port & txPort, uint32_t txPin,
                      HardwareLayout::Port & rxPort, uint32_t rxPin,
                      bool _remapped,
+                     HardwareLayout::Afio & _afio,
                      HardwareLayout::Interrupt && txRxIrq,
                      HardwareLayout::DmaStream && txDma,
                      HardwareLayout::Interrupt && txDmaIrq,
                      HardwareLayout::DmaStream && rxDma,
                      HardwareLayout::Interrupt && rxDmaIrq) :
-        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, _remapped,
+        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, _remapped, _afio,
                 std::move(txRxIrq),
                 std::move(txDma), std::move(txDmaIrq),
                 std::move(rxDma), std::move(rxDmaIrq) }
@@ -63,8 +64,21 @@ public:
                 gpioParameters.Alternate = GPIO_AF7_USART2;
             #elif defined(STM32F1)
                 UNUSED(gpioParameters);
-                __HAL_RCC_AFIO_CLK_ENABLE();
                 __HAL_AFIO_REMAP_USART2_ENABLE();
+            #endif
+        }
+    }
+
+    virtual void unremapPins (GPIO_InitTypeDef & gpioParameters) const
+    {
+        if (remapped)
+        {
+            #if defined(STM32F4)
+                // TODO: Ensure alternate parameters to default value
+                gpioParameters.Alternate = GPIO_AF7_USART2;
+            #elif defined(STM32F1)
+                UNUSED(gpioParameters);
+                __HAL_AFIO_REMAP_USART2_DISABLE();
             #endif
         }
     }

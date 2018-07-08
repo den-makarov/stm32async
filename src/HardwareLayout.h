@@ -134,6 +134,10 @@ public:
     {
         // default implementation is empty
     }
+    virtual void unremapPins (GPIO_InitTypeDef &) const
+    {
+        // default implementation is empty
+    }
 
 protected:
 
@@ -275,6 +279,23 @@ public:
     }
 };
 
+/**
+ * @brief Alternate function input/output module.
+ *        Helper class used to control counting
+ *        peripheral modules that need remapping pins
+ */
+class Afio : public HalSharedDevice
+{
+    DECLARE_INSTANCE(AFIO_TypeDef)
+
+public:
+    explicit Afio (size_t _id, AFIO_TypeDef * _instance) :
+        HalSharedDevice { _id },
+        instance { _instance }
+    {
+        // empty
+    }
+};
 
 /**
  * @brief Helper class that defines a set of pins of the same port.
@@ -320,6 +341,11 @@ public:
     Pins rxPin;
 
     /**
+     * @brief AFIO module
+     */
+    Afio & afio;
+
+    /**
      * @brief Interrupt Number Definition
      */
     Interrupt txRxIrq;
@@ -345,7 +371,7 @@ public:
     Interrupt rxDmaIrq;
 
     explicit Usart (size_t _id,  USART_TypeDef *_instance, Port & _txPort, uint32_t _txPin, Port & _rxPort,
-                    uint32_t _rxPin, bool _remapped,
+                    uint32_t _rxPin, bool _remapped, Afio & _afio,
                     Interrupt && _txRxIrq,
                     DmaStream && _txDma, Interrupt && _txDmaIrq,
                     DmaStream && _rxDma, Interrupt && _rxDmaIrq) :
@@ -353,6 +379,7 @@ public:
         instance { _instance },
         txPin { _txPort, _txPin },
         rxPin { _rxPort, _rxPin },
+        afio { _afio },
         txRxIrq { std::move(_txRxIrq) },
         txDma { std::move(_txDma) },
         txDmaIrq { std::move(_txDmaIrq) },

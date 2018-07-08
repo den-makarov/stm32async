@@ -65,6 +65,7 @@ HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
 
 void AsyncUsart::stop ()
 {
+    device.afio.disableClock();
     device.disableIrq();
     HAL_DMA_DeInit(&rxDma);
     device.rxDma.dma->disableClock();

@@ -47,10 +47,17 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
                                     uint32_t parity/* = UART_PARITY_NONE*/)
 {
     device.enableClock();
+
+    if (device.afio.getInstance() != NULL)
+    {
+        device.afio.enableClock();
+    }
+
     device.remapPins(txPin.getParameters());
-    txPin.start();
     device.remapPins(rxPin.getParameters());
+    txPin.start();
     rxPin.start();
+
     parameters.Init.Mode = mode;
     parameters.Init.BaudRate = baudRate;
     parameters.Init.WordLength = wordLength;
@@ -68,7 +75,16 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
 void BaseUsart::stop ()
 {
     HAL_UART_DeInit(&parameters);
+
     txPin.stop();
     rxPin.stop();
+    device.unremapPins(txPin.getParameters());
+    device.unremapPins(rxPin.getParameters());
+
+    if (device.afio.getInstance() != NULL)
+    {
+        device.afio.disableClock();
+    }
+
     device.disableClock();
 }
