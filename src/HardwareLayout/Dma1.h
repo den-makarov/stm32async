@@ -27,6 +27,11 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for DMA1 peripheral module.
+ *
+ * Implementation shall provide wrappers for DMA1 clock enable/disable macros.
+ */
 class Dma1 : public HardwareLayout::Dma
 {
 public:
