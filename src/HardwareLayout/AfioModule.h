@@ -27,6 +27,12 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for AFIO peripheral module.
+ *
+ * Implementation shall provide wrappers for AFIO clock enable/disable macros.
+ * This class is only suitable for STM32F1 series.
+ */
 class AfioModule : public HardwareLayout::Afio
 {
 public:

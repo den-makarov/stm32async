@@ -27,6 +27,11 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for GPIOD module.
+ *
+ * Implementation shall provide wrappers for GPIOD clock enable/disable macros.
+ */
 class PortD : public HardwareLayout::Port
 {
 public:

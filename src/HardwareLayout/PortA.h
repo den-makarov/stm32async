@@ -27,6 +27,11 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for GPIOA module.
+ *
+ * Implementation shall provide wrappers for GPIOA clock enable/disable macros.
+ */
 class PortA : public HardwareLayout::Port
 {
 public:

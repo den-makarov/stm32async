@@ -35,6 +35,12 @@ template <typename DEVICE, std::size_t PORTS> class IODevice
 {
 public:
 
+    /**
+     * @brief Standard initialization constructor.
+     *
+     * @param _device some device from namespace HardwareLayout.
+     * @param _ports array containing the associated ports.
+     */
     explicit IODevice (const DEVICE & _device, std::array<IOPort, PORTS> && _ports) :
         device { _device },
         ports { std::move(_ports) }
@@ -42,12 +48,18 @@ public:
         // empty
     }
 
+    /**
+     * @brief Getter for the ports registered for this device.
+     */
     const std::array<IOPort, PORTS> & getPorts () const
     {
         return ports;
     }
 
-    void enablePort ()
+    /**
+     * @brief Helper method that activates all ports used by this device.
+     */
+    void enablePorts ()
     {
         if (device.afio != NULL)
         {
@@ -60,7 +72,10 @@ public:
         }
     }
 
-    void disablePort ()
+    /**
+     * @brief Helper method that de-activates all ports used by this device.
+     */
+    void disablePorts ()
     {
         for (auto & p : ports)
         {

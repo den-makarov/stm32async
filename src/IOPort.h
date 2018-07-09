@@ -17,30 +17,57 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "HardwareLayout.h"
-
 #ifndef STM32ASYNC_IOPORT_H_
 #define STM32ASYNC_IOPORT_H_
+
+#include "HardwareLayout.h"
 
 namespace Stm32async
 {
 
 /**
  * @brief Base IO port class.
+ *
+ * This class provides access to the base functionality of the GPIO port.
+ * Usage example:
+ *
+ *     IOPort ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP };
+ *     ledBlue.start();
+ *     while (true)
+ *     {
+ *         ledBlue.toggle();;
+ *     }
+ *     ledBlue.stop();
  */
 class IOPort
 {
 public:
 
     /**
-     * @brief Default constructor.
+     * @brief Standard initialization constructor.
+     *
+     * @param _port the port this device mapped to.
+     * @param _pins affected pin or pins.
+     * @param _mode GPIO configuration mode.
+     * @param _pull GPIO Pull-Up or Pull-Down Activation.
+     * @param _speed GPIO Output Maximum frequency.
      */
-    IOPort (const HardwareLayout::Port & _port, uint32_t pins = GPIO_PIN_All, uint32_t mode = GPIO_MODE_INPUT,
-            uint32_t pull = GPIO_NOPULL, uint32_t speed = GPIO_SPEED_FREQ_LOW, bool callStart = false);
+    IOPort (const HardwareLayout::Port & _port, uint32_t _pins = GPIO_PIN_All, uint32_t _mode = GPIO_MODE_INPUT,
+            uint32_t _pull = GPIO_NOPULL, uint32_t _speed = GPIO_SPEED_FREQ_LOW);
 
+    /**
+     * @brief This method activates the port: it starts the clock and calls HAL_GPIO_Init
+     */
     void start ();
+
+    /**
+     * @brief This method de-activates the port: it stops the clock and calls HAL_GPIO_DeInit
+     */
     void stop ();
 
+    /**
+     * @brief Getter for the port parameters
+     */
     inline GPIO_InitTypeDef & getParameters ()
     {
         return parameters;
@@ -97,7 +124,7 @@ public:
 protected:
 
     /**
-     * @brief Link to the port registers.
+     * @brief Link to the port configuration.
      */
     const HardwareLayout::Port & port;
 

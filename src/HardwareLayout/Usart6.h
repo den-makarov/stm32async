@@ -27,6 +27,12 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for USART6 module.
+ *
+ * Implementation shall provide wrappers for USART6 clock enable/disable macros,
+ * and platform-dependent functions remapPins() and unremapPins();
+ */
 class Usart6 : public HardwareLayout::Usart
 {
 public:
@@ -59,9 +65,7 @@ public:
     {
         if (remapped)
         {
-            #if defined(STM32F4)
-                gpioParameters.Alternate = GPIO_AF8_USART6;
-            #endif
+            gpioParameters.Alternate = GPIO_AF8_USART6;
         }
     }
 };

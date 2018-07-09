@@ -27,6 +27,11 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for GPIOH module.
+ *
+ * Implementation shall provide wrappers for GPIOH clock enable/disable macros.
+ */
 class PortH : public HardwareLayout::Port
 {
 public:

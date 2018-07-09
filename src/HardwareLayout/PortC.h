@@ -27,6 +27,11 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for GPIOC module.
+ *
+ * Implementation shall provide wrappers for GPIOC clock enable/disable macros.
+ */
 class PortC : public HardwareLayout::Port
 {
 public:

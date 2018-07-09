@@ -27,6 +27,11 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for GPIOB module.
+ *
+ * Implementation shall provide wrappers for GPIOB clock enable/disable macros.
+ */
 class PortB : public HardwareLayout::Port
 {
 public:

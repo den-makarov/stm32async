@@ -48,7 +48,7 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
                                     uint32_t parity/* = UART_PARITY_NONE*/)
 {
     device.enableClock();
-    IODevice::enablePort();
+    IODevice::enablePorts();
 
     parameters.Init.Mode = mode;
     parameters.Init.BaudRate = baudRate;
@@ -67,6 +67,6 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
 void BaseUsart::stop ()
 {
     HAL_UART_DeInit(&parameters);
-    IODevice::disablePort();
+    IODevice::disablePorts();
     device.disableClock();
 }

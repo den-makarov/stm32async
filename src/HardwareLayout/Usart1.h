@@ -27,6 +27,12 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for USART1 module.
+ *
+ * Implementation shall provide wrappers for USART1 clock enable/disable macros,
+ * and platform-dependent functions remapPins() and unremapPins();
+ */
 class Usart1 : public HardwareLayout::Usart
 {
 public:
@@ -64,7 +70,6 @@ public:
                 gpioParameters.Alternate = GPIO_AF7_USART1;
             #elif defined(STM32F1)
                 UNUSED(gpioParameters);
-                __HAL_RCC_AFIO_CLK_ENABLE();
                 __HAL_AFIO_REMAP_USART1_ENABLE();
             #endif
         }
@@ -74,11 +79,8 @@ public:
     {
         if (remapped)
         {
-            #if defined(STM32F4)
-                // no unremap on STM32F4
-                UNUSED(gpioParameters);
-            #elif defined(STM32F1)
-                UNUSED(gpioParameters);
+            UNUSED(gpioParameters);
+            #if defined(STM32F1)
                 __HAL_AFIO_REMAP_USART1_DISABLE();
             #endif
         }

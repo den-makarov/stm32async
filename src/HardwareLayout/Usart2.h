@@ -27,6 +27,12 @@
 namespace HardwareLayout
 {
 
+/**
+ * @brief Wrapper class for USART2 module.
+ *
+ * Implementation shall provide wrappers for USART2 clock enable/disable macros,
+ * and platform-dependent functions remapPins() and unremapPins();
+ */
 class Usart2 : public HardwareLayout::Usart
 {
 public:
@@ -72,10 +78,8 @@ public:
     {
         if (remapped)
         {
-            #if defined(STM32F4)
-                // no unremap on STM32F4
-                UNUSED(gpioParameters);
-            #elif defined(STM32F1)
+            UNUSED(gpioParameters);
+            #if defined(STM32F1)
                 UNUSED(gpioParameters);
                 __HAL_AFIO_REMAP_USART2_DISABLE();
             #endif

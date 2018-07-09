@@ -25,18 +25,14 @@ using namespace Stm32async;
  * Class IOPort
  ************************************************************************/
 
-IOPort::IOPort (const HardwareLayout::Port & _port, uint32_t pins, uint32_t mode, uint32_t pull,
-                uint32_t speed, bool callStart) :
+IOPort::IOPort (const HardwareLayout::Port & _port, uint32_t _pins, uint32_t _mode,
+                uint32_t _pull, uint32_t _speed) :
     port { _port }
 {
-    parameters.Pin = pins;
-    parameters.Mode = mode;
-    parameters.Pull = pull;
-    parameters.Speed = speed;
-    if (callStart)
-    {
-        start();
-    }
+    parameters.Pin = _pins;
+    parameters.Mode = _mode;
+    parameters.Pull = _pull;
+    parameters.Speed = _speed;
 }
 
 void IOPort::start ()
