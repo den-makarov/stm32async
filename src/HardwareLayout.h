@@ -372,16 +372,23 @@ public:
     uint32_t channel;
 
     /**
+     * @brief Interrupt vector definition for DMA channel
+     */
+    Interrupt dmaIrq;
+
+    /**
      * @brief Standard initialization constructor.
      *
      * @param _dma a pointer to a DMA module instance.
      * @param _stream a pointer to the platform-dependent HAL DMA stream definition structure.
      * @param _channel numerical channel number within the considered DMA stream.
+     * @param _dmaIrq an interrupt request on DMA transfer complete event.
      */
-    DmaStream (const Dma * _dma, DMA_Stream_Struct * _stream, uint32_t _channel) :
+    DmaStream (const Dma * _dma, DMA_Stream_Struct * _stream, uint32_t _channel, Interrupt && _dmaIrq) :
         dma { _dma },
         stream { _stream },
-        channel { _channel }
+        channel { _channel },
+        dmaIrq { std::move(_dmaIrq) }
     {
         // empty
     }
@@ -394,17 +401,18 @@ public:
      *
      *    usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7,
      *           HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
-     *           HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5 },
-     *           HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 },
-     *           HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5 },
-     *           HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 }},
+     *           HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5,
+     *                                       HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 } },
+     *           HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5,
+     *                                       HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } } }
      *
      * @param _dmaStream source object to be moved into this object.
      */
     DmaStream (DmaStream && _dmaStream) :
         dma { _dmaStream.dma },
         stream { _dmaStream.stream },
-        channel { _dmaStream.channel }
+        channel { _dmaStream.channel },
+        dmaIrq { std::move(_dmaStream.dmaIrq) }
     {
         // empty
     }
@@ -518,7 +526,7 @@ public:
     Pins rxPin;
 
     /**
-     * @brief AFIO module. NULL is not used (for example, on STM32F4 MCU)
+     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
      */
     Afio * afio;
 
@@ -533,19 +541,9 @@ public:
     DmaStream txDma;
 
     /**
-     * @brief Interrupt Number Definition for TX DMA channel
-     */
-    Interrupt txDmaIrq;
-
-    /**
      * @brief RX DMA channel
      */
     DmaStream rxDma;
-
-    /**
-     * @brief Interrupt Number Definition for RX DMA channel
-     */
-    Interrupt rxDmaIrq;
 
     /**
      * @brief Standard initialization constructor.
@@ -560,15 +558,13 @@ public:
      * @param _afio pointer to the AFIO module if it necessary for remapping.
      * @param _txRxIrq link to the USART global interrupt.
      * @param _txDma link to the transmitter DMA stream.
-     * @param _txDmaIrq transmitter DMA interrupt.
      * @param _rxDma to the receiver DMA stream.
-     * @param _rxDmaIrq receiver DMA interrupt.
      */
-    explicit Usart (size_t _id,  USART_TypeDef *_instance, Port & _txPort, uint32_t _txPin, Port & _rxPort,
-                    uint32_t _rxPin, bool _remapped, Afio * _afio,
+    explicit Usart (size_t _id,  USART_TypeDef *_instance,
+                    Port & _txPort, uint32_t _txPin, Port & _rxPort, uint32_t _rxPin,
+                    bool _remapped, Afio * _afio,
                     Interrupt && _txRxIrq,
-                    DmaStream && _txDma, Interrupt && _txDmaIrq,
-                    DmaStream && _rxDma, Interrupt && _rxDmaIrq) :
+                    DmaStream && _txDma, DmaStream && _rxDma) :
         HalDevice { _id, _remapped },
         instance { _instance },
         txPin { _txPort, _txPin },
@@ -576,9 +572,7 @@ public:
         afio { _afio },
         txRxIrq { std::move(_txRxIrq) },
         txDma { std::move(_txDma) },
-        txDmaIrq { std::move(_txDmaIrq) },
-        rxDma { std::move(_rxDma) },
-        rxDmaIrq { std::move(_rxDmaIrq) }
+        rxDma { std::move(_rxDma) }
     {
         // empty
     }
@@ -589,8 +583,8 @@ public:
     void enableIrq () const
     {
         txRxIrq.enable();
-        txDmaIrq.enable();
-        rxDmaIrq.enable();
+        txDma.dmaIrq.enable();
+        txDma.dmaIrq.enable();
     }
 
     /**
@@ -599,8 +593,8 @@ public:
     void disableIrq () const
     {
         txRxIrq.disable();
-        txDmaIrq.disable();
-        rxDmaIrq.disable();
+        txDma.dmaIrq.disable();
+        txDma.dmaIrq.disable();
     }
 };
 

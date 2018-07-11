@@ -40,14 +40,13 @@ public:
                      HardwareLayout::Port & rxPort, uint32_t rxPin,
                      bool _remapped, HardwareLayout::Afio * _afio,
                      HardwareLayout::Interrupt && txRxIrq,
-                     HardwareLayout::DmaStream && txDma,
-                     HardwareLayout::Interrupt && txDmaIrq,
-                     HardwareLayout::DmaStream && rxDma,
-                     HardwareLayout::Interrupt && rxDmaIrq) :
-        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, _remapped, _afio,
+                     HardwareLayout::DmaStream && txDma, HardwareLayout::DmaStream && rxDma):
+        Usart { 2, USART2,
+                txPort, txPin,
+                rxPort, rxPin,
+                _remapped, _afio,
                 std::move(txRxIrq),
-                std::move(txDma), std::move(txDmaIrq),
-                std::move(rxDma), std::move(rxDmaIrq) }
+                std::move(txDma), std::move(rxDma) }
     {
         // empty
     }
