@@ -79,10 +79,10 @@ public:
         // USART logger
         usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5 },
-                 HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5 },
-                 HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 }},
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5,
+                                             HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 } },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5,
+                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } } },
         usartLogger { usart6, 115200 }
     {
         // External oscillators use system pins
