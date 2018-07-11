@@ -80,9 +80,10 @@ public:
      *         accesses. In this way, there is no risk of an IRQ occurring between
      *         the read and the modify access.
      */
-    inline void setHigh ()
+    inline void setHigh (uint32_t pins = GPIO_PIN_All)
     {
-        HAL_GPIO_WritePin(port.getInstance(), parameters.Pin, GPIO_PIN_SET);
+        pins &= parameters.Pin;
+        HAL_GPIO_WritePin(port.getInstance(), pins, GPIO_PIN_SET);
     }
 
     /**
@@ -92,17 +93,19 @@ public:
      *         accesses. In this way, there is no risk of an IRQ occurring between
      *         the read and the modify access.
      */
-    inline void setLow ()
+    inline void setLow (uint32_t pins = GPIO_PIN_All)
     {
-        HAL_GPIO_WritePin(port.getInstance(), parameters.Pin, GPIO_PIN_RESET);
+        pins &= parameters.Pin;
+        HAL_GPIO_WritePin(port.getInstance(), pins, GPIO_PIN_RESET);
     }
 
     /**
      * @brief Toggle the specified GPIO pin.
      */
-    inline void toggle ()
+    inline void toggle (uint32_t pins = GPIO_PIN_All)
     {
-        HAL_GPIO_TogglePin(port.getInstance(), parameters.Pin);
+        pins &= parameters.Pin;
+        HAL_GPIO_TogglePin(port.getInstance(), pins);
     }
 
     /**
