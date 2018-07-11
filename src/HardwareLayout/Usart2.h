@@ -36,20 +36,16 @@ namespace HardwareLayout
 class Usart2 : public HardwareLayout::Usart
 {
 public:
-    explicit Usart2 (HardwareLayout::Port & txPort, uint32_t txPin,
-                     HardwareLayout::Port & rxPort, uint32_t rxPin,
-                     bool _remapped, HardwareLayout::Afio * _afio,
-                     HardwareLayout::Interrupt && txRxIrq,
-                     HardwareLayout::DmaStream && txDma, HardwareLayout::DmaStream && rxDma):
-        Usart { 2, USART2,
-                txPort, txPin,
-                rxPort, rxPin,
-                _remapped, _afio,
-                std::move(txRxIrq),
+    explicit Usart2 (HardwareLayout::Port & txPort, uint32_t txPin, HardwareLayout::Port & rxPort,
+                     uint32_t rxPin, bool _remapped, HardwareLayout::Afio * _afio,
+                     HardwareLayout::Interrupt && txRxIrq, HardwareLayout::DmaStream && txDma,
+                     HardwareLayout::DmaStream && rxDma) :
+        Usart { 2, USART2, txPort, txPin, rxPort, rxPin, _remapped, _afio, std::move(txRxIrq),
                 std::move(txDma), std::move(rxDma) }
     {
         // empty
     }
+
     virtual void enableClock () const
     {
         __HAL_RCC_USART2_CLK_ENABLE();

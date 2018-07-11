@@ -584,7 +584,7 @@ public:
     {
         txRxIrq.enable();
         txDma.dmaIrq.enable();
-        txDma.dmaIrq.enable();
+        rxDma.dmaIrq.enable();
     }
 
     /**
@@ -594,7 +594,7 @@ public:
     {
         txRxIrq.disable();
         txDma.dmaIrq.disable();
-        txDma.dmaIrq.disable();
+        rxDma.dmaIrq.disable();
     }
 };
 
