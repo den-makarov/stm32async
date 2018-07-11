@@ -81,10 +81,10 @@ public:
         // Serial Port
         usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true, &afio,
                  HardwareLayout::Interrupt { USART2_IRQn, 1, 0 },
-                 HardwareLayout::DmaStream { &dma1, DMA1_Channel7, 0 },
-                 HardwareLayout::Interrupt { DMA1_Channel7_IRQn, 2, 0 },
-                 HardwareLayout::DmaStream { &dma1, DMA1_Channel6, 0 },
-                 HardwareLayout::Interrupt { DMA1_Channel6_IRQn, 2, 0 }},
+                 HardwareLayout::DmaStream { &dma1, DMA1_Channel7, 0,
+                                             HardwareLayout::Interrupt { DMA1_Channel7_IRQn, 2, 0 } },
+                 HardwareLayout::DmaStream { &dma1, DMA1_Channel6, 0,
+                                             HardwareLayout::Interrupt { DMA1_Channel6_IRQn, 2, 0 } } },
         // Output stream
         usartLogger { usart2, 115200 }
     {
