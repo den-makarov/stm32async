@@ -88,6 +88,10 @@ Project {
             files: [
                 HAL_SRC_PATH+"/stm32f1xx_hal.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_rcc.c",
+                HAL_SRC_PATH+"/stm32f1xx_hal_rcc_ex.c",
+                HAL_SRC_PATH+"/stm32f1xx_hal_rtc.c",
+                HAL_SRC_PATH+"/stm32f1xx_hal_rtc_ex.c",
+                HAL_SRC_PATH+"/stm32f1xx_hal_pwr.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_gpio.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_spi.c",
                 HAL_SRC_PATH+"/stm32f1xx_hal_i2c.c",
