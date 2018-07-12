@@ -17,58 +17,57 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "AsyncUsart.h"
+#include "AsyncSpi.h"
 
 using namespace Stm32async;
 
 /************************************************************************
- * Class AsyncUsart
+ * Class AsyncSpi
  ************************************************************************/
 
-AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
-    BaseUsart { _device },
+AsyncSpi::AsyncSpi (const HardwareLayout::Spi & _device) :
+    BaseSpi { _device },
     SharedDevice { device.txDma, device.rxDma, DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
 {
     // empty
 }
 
-HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
-                                     uint32_t wordLength/* = UART_WORDLENGTH_8B*/,
-                                     uint32_t stopBits/* = UART_STOPBITS_1*/,
-                                     uint32_t parity/* = UART_PARITY_NONE*/)
+DeviceStart::Status AsyncSpi::start (uint32_t direction, uint32_t prescaler,
+                                     uint32_t dataSize/* = SPI_DATASIZE_8BIT*/,
+                                     uint32_t CLKPhase/* = SPI_PHASE_1EDGE*/)
 {
-    HAL_StatusTypeDef status = BaseUsart::start(mode, baudRate, wordLength, stopBits, parity);
-    if (status != HAL_OK)
+    DeviceStart::Status status = BaseSpi::start(direction, prescaler, dataSize, CLKPhase);
+    if (status != DeviceStart::OK)
     {
-        return HAL_ERROR;
+        return status;
     }
 
     device.txDma.dma->enableClock();
     __HAL_LINKDMA(&parameters, hdmatx, txDma);
-    status = HAL_DMA_Init(&txDma);
-    if (status != HAL_OK)
+    halStatus = HAL_DMA_Init(&txDma);
+    if (halStatus != HAL_OK)
     {
-        return HAL_ERROR;
+        return DeviceStart::TX_DMA_INIT_ERROR;
     }
 
     device.rxDma.dma->enableClock();
     __HAL_LINKDMA(&parameters, hdmarx, rxDma);
-    status = HAL_DMA_Init(&rxDma);
-    if (status != HAL_OK)
+    halStatus = HAL_DMA_Init(&rxDma);
+    if (halStatus != HAL_OK)
     {
-        return HAL_ERROR;
+        return DeviceStart::RX_DMA_INIT_ERROR;
     }
 
     device.enableIrq();
-    return HAL_OK;
+    return DeviceStart::OK;
 }
 
-void AsyncUsart::stop ()
+void AsyncSpi::stop ()
 {
     device.disableIrq();
     HAL_DMA_DeInit(&rxDma);
     device.rxDma.dma->disableClock();
     HAL_DMA_DeInit(&txDma);
     device.txDma.dma->disableClock();
-    BaseUsart::stop();
+    BaseSpi::stop();
 }

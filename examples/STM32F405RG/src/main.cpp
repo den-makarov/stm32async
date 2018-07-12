@@ -26,15 +26,18 @@
 #include "stm32async/HardwareLayout/PortC.h"
 #include "stm32async/HardwareLayout/PortH.h"
 #include "stm32async/HardwareLayout/Usart6.h"
+#include "stm32async/HardwareLayout/Spi1.h"
 
 // Used devices
 #include "stm32async/SystemClock.h"
 #include "stm32async/Rtc.h"
 #include "stm32async/IOPort.h"
 #include "stm32async/UsartLogger.h"
+#include "stm32async/Drivers/Ssd.h"
 
 // Common includes
 #include <functional>
+#include <ctime>
 
 using namespace Stm32async;
 
@@ -62,6 +65,13 @@ private:
     // LEDs
     IOPort ledBlue, ledRed;
 
+    // SPI
+    HardwareLayout::Spi1 spi1;
+    AsyncSpi spi;
+    IOPort pinSsdCs;
+    Drivers::Ssd_74HC595_SPI ssd;
+    char localTime[24];
+
     // USART logger
     HardwareLayout::Usart6 usart6;
     UsartLogger usartLogger;
@@ -76,18 +86,41 @@ public:
         // LEDs
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
+        // SPI
+        spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, GPIO_PIN_6, /*remapped=*/ true, NULL,
+                 HardwareLayout::Interrupt { SPI1_IRQn, 1, 0 },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream5, DMA_CHANNEL_3,
+                                             HardwareLayout::Interrupt { DMA2_Stream5_IRQn, 2, 0 } },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_3,
+                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } }
+        },
+        spi(spi1),
+        pinSsdCs(portC, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_HIGH),
+        ssd(spi, pinSsdCs, true),
         // USART logger
         usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5,
-                                             HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 } },
+                                             HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 3, 0 } },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5,
-                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } } },
+                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 3, 0 } }
+        },
         usartLogger { usart6, 115200 }
     {
         // External oscillators use system pins
         sysClock.setHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
         sysClock.setLSE(portC, GPIO_PIN_14 | GPIO_PIN_15);
+        // Prepare SSD mask
+        Drivers::Ssd::SegmentsMask sm;
+        sm.top = 3;
+        sm.rightTop = 5;
+        sm.rightBottom = 7;
+        sm.bottom = 4;
+        sm.leftBottom = 1;
+        sm.leftTop = 2;
+        sm.center = 6;
+        sm.dot = 0;
+        ssd.setSegmentsMask(sm);
     }
 
     virtual ~MyApplication ()
@@ -136,6 +169,10 @@ public:
         ledBlue.start();
         ledRed.start();
 
+        DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_64, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
+        USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")");
+        pinSsdCs.start();
+
         ledRed.setHigh();
         HAL_Delay(500);
         ledRed.setLow();
@@ -146,6 +183,8 @@ public:
             HAL_Delay(1000);
         }
 
+        pinSsdCs.stop();
+        spi.stop();
         ledBlue.stop();
         ledRed.stop();
         mco.stop();
@@ -167,13 +206,25 @@ public:
 
     void onRtcWakeUp ()
     {
-        USART_DEBUG("time=" << Rtc::getInstance()->getTimeSec());
+        time_t total_secs = Rtc::getInstance()->getTimeSec();
+        USART_DEBUG("time=" << total_secs);
         ledBlue.toggle();
+
+        struct tm * now = ::gmtime(&total_secs);
+        sprintf(localTime, "%02d%02d", now->tm_min, now->tm_sec);
+
+        spi.waitForRelease();
+        ssd.putString(localTime, NULL, 4);
     }
 
     inline AsyncUsart & getLoggerUsart ()
     {
         return usartLogger.getUsart();
+    }
+
+    inline AsyncSpi & getSpi ()
+    {
+        return spi;
     }
 };
 
@@ -236,6 +287,17 @@ void HAL_UART_TxCpltCallback (UART_HandleTypeDef * /*channel*/)
 void HAL_UART_ErrorCallback (UART_HandleTypeDef * /*channel*/)
 {
     appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
+}
+
+// SPI
+void DMA2_Stream5_IRQHandler (void)
+{
+    appPtr->getSpi().processDmaTxInterrupt();
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * /*channel*/)
+{
+    appPtr->getSpi().processCallback(SharedDevice::State::TX_CMPL);
 }
 
 }

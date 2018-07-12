@@ -29,6 +29,42 @@ namespace Stm32async
 {
 
 /**
+ * @brief A class providing the device start-up success/error code
+ */
+class DeviceStart
+{
+public:
+    /**
+     * @brief Set of valid enumeration values
+     */
+    enum Status
+    {
+        OK = 0,
+        DEVICE_INIT_ERROR = 1,
+        TX_DMA_INIT_ERROR = 2,
+        RX_DMA_INIT_ERROR = 3
+    };
+
+    /**
+     * @brief Number of enumeration values
+     */
+    enum
+    {
+        size = 4
+    };
+
+    /**
+     * @brief String representations of all enumeration values
+     */
+    static const char * strings[];
+
+    /**
+     * @brief the AsString() method
+     */
+    static AsStringClass<Status, size, strings> asString;
+};
+
+/**
  * @brief A base class that represents IO device working on some IOPort.
  */
 template <typename DEVICE, std::size_t PORTS> class IODevice
@@ -43,7 +79,8 @@ public:
      */
     explicit IODevice (const DEVICE & _device, std::array<IOPort, PORTS> && _ports) :
         device { _device },
-        ports { std::move(_ports) }
+        ports { std::move(_ports) },
+        halStatus { HAL_ERROR }
     {
         // empty
     }
@@ -54,6 +91,14 @@ public:
     const std::array<IOPort, PORTS> & getPorts () const
     {
         return ports;
+    }
+
+    /**
+     * @brief Getter for HAL status of the last operation
+     */
+    inline HAL_StatusTypeDef getHalStatus () const
+    {
+        return halStatus;
     }
 
     /**
@@ -92,6 +137,7 @@ protected:
 
     const DEVICE & device;
     std::array<IOPort, PORTS> ports;
+    HAL_StatusTypeDef halStatus;
 };
 
 } // end namespace

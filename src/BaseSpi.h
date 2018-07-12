@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef STM32ASYNC_BASEUSART_H_
-#define STM32ASYNC_BASEUSART_H_
+#ifndef STM32ASYNC_BASESPI_H_
+#define STM32ASYNC_BASESPI_H_
 
 #include "IODevice.h"
 
@@ -26,33 +26,24 @@ namespace Stm32async
 {
 
 /**
- * @brief Base USART class that holds the USART parameters and implements the communication in
+ * @brief Base SPI class that holds the SPI parameters and implements the communication in
  *        a blocking mode.
  */
-class BaseUsart : public IODevice<HardwareLayout::Usart, 2>
+class BaseSpi : public IODevice<HardwareLayout::Spi, 3>
 {
 public:
 
     /**
      * @brief Default constructor.
      */
-    BaseUsart (const HardwareLayout::Usart & _device);
-
-    /**
-     * @brief Getter for the device parameters
-     */
-    inline UART_HandleTypeDef & getParameters ()
-    {
-        return parameters;
-    }
+    BaseSpi (const HardwareLayout::Spi & _device);
 
     /**
      * @brief Open transmission session with given parameters.
      */
-    HAL_StatusTypeDef start (uint32_t mode, uint32_t baudRate,
-                             uint32_t wordLength = UART_WORDLENGTH_8B,
-                             uint32_t stopBits = UART_STOPBITS_1,
-                             uint32_t parity = UART_PARITY_NONE);
+    DeviceStart::Status start (uint32_t direction, uint32_t prescaler,
+                               uint32_t dataSize = SPI_DATASIZE_8BIT,
+                               uint32_t CLKPhase = SPI_PHASE_1EDGE);
 
     /**
      * @brief Close the transmission session.
@@ -60,34 +51,42 @@ public:
     void stop ();
 
     /**
+     * @brief Getter for the device parameters
+     */
+    inline SPI_HandleTypeDef & getParameters ()
+    {
+        return parameters;
+    }
+
+    /**
      * @brief Send an amount of data in blocking mode.
      */
-    inline HAL_StatusTypeDef transmitBlocking (const char * buffer, size_t n,
-                                               uint32_t timeout = __UINT32_MAX__)
+    inline HAL_StatusTypeDef transmitBlocking (uint8_t * buffer, uint16_t n, uint32_t timeout = __UINT32_MAX__)
     {
-        return HAL_UART_Transmit(&parameters, (unsigned char *) buffer, n, timeout);
+        halStatus = HAL_SPI_Transmit(&parameters, buffer, n, timeout);
+        return halStatus;
     }
 
     /**
      * @brief Receive an amount of data in blocking mode.
      */
-    inline HAL_StatusTypeDef receiveBlocking (const char * buffer, size_t n,
-                                              uint32_t timeout = __UINT32_MAX__)
+    inline HAL_StatusTypeDef receiveBlocking (uint8_t * buffer, uint16_t n, uint32_t timeout = __UINT32_MAX__)
     {
-        return HAL_UART_Receive(&parameters, (unsigned char *) buffer, n, timeout);
+        halStatus = HAL_SPI_Receive(&parameters, buffer, n, timeout);
+        return halStatus;
     }
 
     /**
-     * @brief Procedure waits in a blocking mode until USART is ready.
+     * @brief Check whether the SPI communication is completed.
      */
-    inline void ensureReady ()
+    inline bool isBusy () const
     {
-        while (HAL_UART_GetState(&parameters) != HAL_UART_STATE_READY);
+        return (((parameters.Instance->SR) & (SPI_FLAG_BSY)) == (SPI_FLAG_BSY));
     }
 
 protected:
 
-    UART_HandleTypeDef parameters;
+    SPI_HandleTypeDef parameters;
 };
 
 } // end namespace
