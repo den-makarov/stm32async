@@ -64,7 +64,7 @@ void SystemClock::setSysClockSource (uint32_t sysClockSource)
     }
 }
 
-void SystemClock::setHSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
+void SystemClock::setHSE (const HardwareLayout::Port * _port, uint32_t /*pin*/)
 {
 #ifdef STM32F1
     UNUSED(_port);
@@ -85,7 +85,7 @@ void SystemClock::setHSI ()
     oscParameters.HSIState = RCC_HSI_ON;
 }
 
-void SystemClock::setLSE (const HardwareLayout::Port & _port, uint32_t /*pin*/)
+void SystemClock::setLSE (const HardwareLayout::Port * _port, uint32_t /*pin*/)
 {
 #ifdef STM32F1
     UNUSED(_port);
@@ -114,7 +114,7 @@ void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
 
     if (factors->PLLSource == RCC_PLLSOURCE_HSE)
     {
-        setHSE(*hsePort, 0);
+        setHSE(NULL, 0);
         oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     }
     else
@@ -167,14 +167,14 @@ void SystemClock::setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint3
 
 void SystemClock::setRTC ()
 {
+    periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_RTC;
+
     if (oscParameters.LSIState == RCC_LSI_ON)
     {
-        periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_RTC;
         periphClkParameters.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
     }
     if (oscParameters.LSEState == RCC_LSE_ON)
     {
-        periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_RTC;
         periphClkParameters.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
     }
 }
@@ -199,12 +199,16 @@ void SystemClock::start ()
         /* Initialization Error */
         while(1);
     }
-    //TODO: second parameter must be configurable
+
     if (HAL_RCC_ClockConfig(&clkParameters, fLatency)!= HAL_OK)
     {
         /* Initialization Error */
         while(1);
     }
+
+    HAL_RCCEx_PeriphCLKConfig(&periphClkParameters);
+
+    mcuFreq = HAL_RCC_GetHCLKFreq();
 }
 #endif /* STM32F1 */
 

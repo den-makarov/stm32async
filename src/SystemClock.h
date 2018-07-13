@@ -37,9 +37,9 @@ public:
     SystemClock (HardwareLayout::Interrupt && sysTickIrq);
 
     void setSysClockSource (uint32_t sysClockSource);
-    void setHSE (const HardwareLayout::Port & _port, uint32_t pin);
+    void setHSE (const HardwareLayout::Port * _port, uint32_t pin);
     void setHSI ();
-    void setLSE (const HardwareLayout::Port & _port, uint32_t pin);
+    void setLSE (const HardwareLayout::Port * _port, uint32_t pin);
     void setLSI ();
     void setPLL (HardwareLayout::SystemPllFactors * factors = NULL);
     void setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
