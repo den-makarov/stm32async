@@ -206,7 +206,7 @@ public:
 
     void onRtcWakeUp ()
     {
-        time_t total_secs = Rtc::getInstance()->getTimeSec();
+        time_t total_secs = Rtc::getInstance()->getTime();
         USART_DEBUG("time=" << total_secs);
         ledBlue.toggle();
 
@@ -215,6 +215,11 @@ public:
 
         spi.waitForRelease();
         ssd.putString(localTime, NULL, 4);
+    }
+
+    void onRtcSecond ()
+    {
+
     }
 
     inline AsyncUsart & getLoggerUsart ()

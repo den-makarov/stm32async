@@ -42,9 +42,9 @@ Rtc::Rtc (HardwareLayout::Interrupt && _wkUpIrq) :
     rtcParameters.Instance = RTC;
 #ifndef STM32F1
     rtcParameters.Init.HourFormat = RTC_HOURFORMAT_24;
-    rtcParameters.Init.AsynchPrediv = 127;//RTC_AUTO_1_SECOND
+    rtcParameters.Init.AsynchPrediv = 127;
     rtcParameters.Init.SynchPrediv = 255;
-    rtcParameters.Init.OutPut = RTC_OUTPUT_DISABLE;//RTC_OUTPUTSOURCE_NONE
+    rtcParameters.Init.OutPut = RTC_OUTPUT_DISABLE;
     rtcParameters.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
     rtcParameters.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
 #else
@@ -130,7 +130,11 @@ void Rtc::onSecondInterrupt ()
 void Rtc::stop ()
 {
     wkUpIrq.disable();
+    #ifndef STM32F1
+    HAL_RTCEx_DeactivateWakeUpTimer(&rtcParameters);
+    #else
     HAL_RTCEx_DeactivateSecond(&rtcParameters);
+    #endif
     HAL_RTC_DeInit(&rtcParameters);
     __HAL_RCC_RTC_DISABLE();
 }
