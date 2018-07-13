@@ -127,7 +127,7 @@ Project {
                 STM32ASYNC_PATH+"/AsyncUsart.cpp",
                 STM32ASYNC_PATH+"/SharedDevice.cpp",
                 STM32ASYNC_PATH+"/UsartLogger.cpp",
-                //STM32ASYNC_PATH+"/Rtc.cpp",
+                STM32ASYNC_PATH+"/Rtc.cpp",
             ]
         }
 

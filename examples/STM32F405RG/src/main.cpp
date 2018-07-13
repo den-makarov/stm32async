@@ -108,8 +108,8 @@ public:
         usartLogger { usart6, 115200 }
     {
         // External oscillators use system pins
-        sysClock.setHSE(portH, GPIO_PIN_0 | GPIO_PIN_1);
-        sysClock.setLSE(portC, GPIO_PIN_14 | GPIO_PIN_15);
+        sysClock.setHSE(&portH, GPIO_PIN_0 | GPIO_PIN_1);
+        sysClock.setLSE(&portC, GPIO_PIN_14 | GPIO_PIN_15);
         // Prepare SSD mask
         Drivers::Ssd::SegmentsMask sm;
         sm.top = 3;

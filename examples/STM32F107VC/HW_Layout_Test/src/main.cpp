@@ -22,11 +22,13 @@
 #include "HardwareLayout/Dma1.h"
 #include "HardwareLayout/PortA.h"
 #include "HardwareLayout/PortD.h"
+//#include "HardwareLayout/PortC.h"
 #include "HardwareLayout/Usart2.h"
 #include "HardwareLayout/AfioModule.h"
 
 // Used devices
 #include "SystemClock.h"
+#include "Rtc.h"
 #include "IOPort.h"
 #include "UsartLogger.h"
 
@@ -37,12 +39,13 @@ using namespace Stm32async;
 
 #define USART_DEBUG_MODULE "Main: "
 
-class MyApplication
+class MyApplication : public Rtc::EventHandler
 {
 private:
     
     // Used ports
     HardwareLayout::PortD portA;
+    //HardwareLayout::PortC portC;
     HardwareLayout::PortD portD;
 
     // DMA
@@ -53,6 +56,7 @@ private:
 
     // System and MCO
     SystemClock sysClock;
+    Rtc rtc;
     MCO mco;
 
     // LED
@@ -70,14 +74,15 @@ public:
 
     MyApplication () :
         // System and MCO
-        sysClock{HardwareLayout::Interrupt{SysTick_IRQn, 0, 0}},
+        sysClock { HardwareLayout::Interrupt{ SysTick_IRQn, 0, 0 } },
+        rtc { HardwareLayout::Interrupt { RTC_IRQn, 10, 0 } },
         mco{portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, 0},
         // Leds
-        ledOrange{portD, GPIO_PIN_13, GPIO_MODE_OUTPUT_PP},
-        ledGreen{portD, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP},
-        ledRed{portD, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP},
-        ledBlue{portD, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP},
-        leds{new IOPort * [4]},
+        ledOrange { portD, GPIO_PIN_13, GPIO_MODE_OUTPUT_PP },
+        ledGreen { portD, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP },
+        ledRed { portD, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
+        ledBlue { portD, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP },
+        leds { new IOPort * [4] },
         // Serial Port
         usart2 { portD, GPIO_PIN_5, portD, GPIO_PIN_6, true, &afio,
                  HardwareLayout::Interrupt { USART2_IRQn, 1, 0 },
@@ -101,6 +106,10 @@ public:
     
     void initClock ()
     {
+        // Switch RTC clock source to use LSE crystal
+        SystemClock::getInstance()->setLSE(NULL, 0/*&portC, GPIO_PIN_14 | GPIO_PIN_15*/);
+        SystemClock::getInstance()->setRTC();
+
         SystemClock::getInstance()->setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);
         HardwareLayout::SystemPllFactors pllConfig;
 
@@ -122,6 +131,11 @@ public:
     {
         initClock();
 
+        for(auto i = 0; i < 4; i++)
+        {
+            leds[i]->start();
+        }
+
         usartLogger.initInstance();
 
         USART_DEBUG("--------------------------------------------------------");
@@ -129,11 +143,16 @@ public:
                     << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL);
 
-        mco.start();
-        for(auto i = 0; i < 4; i++)
+        //rtc.stop();
+        rtc.setHandler(this);
+        do
         {
-            leds[i]->start();
+            Rtc::Start::Status status = rtc.start(0, 0);
+            USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")");
         }
+        while (rtc.getHalStatus() != HAL_OK);
+
+        mco.start();
 
         leds[0]->setHigh();
         HAL_Delay(500);
@@ -156,6 +175,9 @@ public:
         }
         mco.stop();
 
+        USART_DEBUG("RTC status: " << " (" << rtc.getHalStatus() << ")");
+        rtc.stop();
+
         // Log resource occupations after all devices (expect USART2 for logging) are stopped
         // Desired: two at portD, two DMA2 (USART2), null for portA,
         USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
@@ -166,6 +188,24 @@ public:
         usartLogger.clearInstance();
 
         SystemClock::getInstance()->stop();
+    }
+
+    void onRtcSecond ()
+    {
+        time_t total_secs = Rtc::getInstance()->getTime();
+        USART_DEBUG("time=" << total_secs);
+        ledBlue.toggle();
+
+        //struct tm * now = ::gmtime(&total_secs);
+        //sprintf(localTime, "%02d%02d", now->tm_min, now->tm_sec);
+
+        //spi.waitForRelease();
+        //ssd.putString(localTime, NULL, 4);
+    }
+
+    void onRtcWakeUp ()
+    {
+
     }
 
     inline AsyncUsart & getLoggerUsart ()
@@ -202,13 +242,13 @@ void SysTick_Handler (void)
     HAL_IncTick();
 }
 
-/*void RTC_WKUP_IRQHandler ()
+void RTC_IRQHandler ()
 {
     if (Rtc::getInstance() != NULL)
     {
         Rtc::getInstance()->onSecondInterrupt();
     }
-}*/
+}
 
 // UART: uses both USART and DMA interrupts
 void DMA1_Channel7_IRQHandler (void)
@@ -236,6 +276,15 @@ void HAL_UART_ErrorCallback (UART_HandleTypeDef * huart)
 {
     UNUSED(huart);
     appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
+}
+
+void HAL_RTCEx_RTCEventCallback (RTC_HandleTypeDef *hrtc)
+{
+    UNUSED(hrtc);
+    if (Rtc::getInstance()->getHandler() != NULL)
+    {
+        Rtc::getInstance()->getHandler()->onRtcWakeUp();
+    }
 }
 
 } /* extern "C" */
