@@ -40,23 +40,30 @@ Rtc::Rtc (HardwareLayout::Interrupt && _wkUpIrq) :
     timeSec { 0 }
 {
     rtcParameters.Instance = RTC;
+#ifndef STM32F1
     rtcParameters.Init.HourFormat = RTC_HOURFORMAT_24;
-    rtcParameters.Init.AsynchPrediv = 127;
+    rtcParameters.Init.AsynchPrediv = 127;//RTC_AUTO_1_SECOND
     rtcParameters.Init.SynchPrediv = 255;
-    rtcParameters.Init.OutPut = RTC_OUTPUT_DISABLE;
+    rtcParameters.Init.OutPut = RTC_OUTPUT_DISABLE;//RTC_OUTPUTSOURCE_NONE
     rtcParameters.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
     rtcParameters.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
+#else
+    rtcParameters.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
+    rtcParameters.Init.OutPut = RTC_OUTPUTSOURCE_NONE;
+#endif
 
     timeParameters.Hours = 0x0;
     timeParameters.Minutes = 0x0;
     timeParameters.Seconds = 0x0;
+#ifndef STM32F1
     timeParameters.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
     timeParameters.StoreOperation = RTC_STOREOPERATION_RESET;
+#endif
 
     dateParameters.WeekDay = RTC_WEEKDAY_MONDAY;
     dateParameters.Month = RTC_MONTH_JANUARY;
-    dateParameters.Date = 0x1;
-    dateParameters.Year = 0x0;
+    dateParameters.Date = 01;
+    dateParameters.Year = 00;
 
     instance = this;
 }
@@ -79,11 +86,18 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
     HAL_RTC_SetTime(&rtcParameters, &timeParameters, RTC_FORMAT_BCD);
     HAL_RTC_SetDate(&rtcParameters, &dateParameters, RTC_FORMAT_BCD);
 
+#ifndef STM32F1
     halStatus = HAL_RTCEx_SetWakeUpTimer_IT(&rtcParameters, counter, prescaler);
     if (halStatus != HAL_OK)
     {
         return Start::IT_INIT_ERROR;
     }
+#else
+    UNUSED(counter);
+    UNUSED(prescaler);
+
+    HAL_RTCEx_SetSecond_IT(&rtcParameters);
+#endif
 
     wkUpIrq.enable();
     return Start::OK;
@@ -91,6 +105,7 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
 
 void Rtc::onSecondInterrupt ()
 {
+#ifdef STM32F4
     /* Get the pending status of the WAKEUPTIMER Interrupt */
     if (__HAL_RTC_WAKEUPTIMER_GET_FLAG(&rtcParameters, RTC_FLAG_WUTF) != RESET)
     {
@@ -105,12 +120,17 @@ void Rtc::onSecondInterrupt ()
 
     /* Clear the EXTI's line Flag for RTC WakeUpTimer */
     __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
+#elif defined(STM32F1)
+    HAL_RTCEx_RTCIRQHandler(&rtcParameters);
+#else
+
+#endif
 }
 
 void Rtc::stop ()
 {
     wkUpIrq.disable();
-    HAL_RTCEx_DeactivateWakeUpTimer(&rtcParameters);
+    HAL_RTCEx_DeactivateSecond(&rtcParameters);
     HAL_RTC_DeInit(&rtcParameters);
     __HAL_RCC_RTC_DISABLE();
 }
