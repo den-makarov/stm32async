@@ -283,7 +283,7 @@ void HAL_RTCEx_RTCEventCallback (RTC_HandleTypeDef *hrtc)
     UNUSED(hrtc);
     if (Rtc::getInstance()->getHandler() != NULL)
     {
-        Rtc::getInstance()->getHandler()->onRtcWakeUp();
+        Rtc::getInstance()->getHandler()->onRtcSecond();
     }
 }
 
