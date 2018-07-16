@@ -59,6 +59,7 @@ Project {
         ]
 
         cpp.includePaths: [
+            "src",
             CORE_LIB_PATH+cmsisCoreVersion,
             SYS_LIB_PATH+targetDefinitionVersion,
             BSP_SRC_PATH,
