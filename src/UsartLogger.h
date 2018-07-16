@@ -30,7 +30,7 @@ namespace Stm32async
 #define USART_DEBUG(text) {\
     if (IS_USART_DEBUG_ACTIVE())\
     {\
-        UsartLogger::getStream() << USART_DEBUG_MODULE << text << UsartLogger::ENDL;\
+        UsartLogger::getStream() << USART_DEBUG_MODULE << text;\
     }}
 
 /**

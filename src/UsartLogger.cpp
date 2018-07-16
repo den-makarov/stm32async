@@ -21,6 +21,9 @@
 
 using namespace Stm32async;
 
+#define BLOCKING_TRANSMITION
+#undef BLOCKING_TRANSMITION
+
 /************************************************************************
  * Class UsartLogger
  ************************************************************************/
@@ -47,35 +50,53 @@ UsartLogger & UsartLogger::operator << (const char * buffer)
     size_t bSize = ::strlen(buffer);
     if (bSize > 0)
     {
+        #ifndef BLOCKING_TRANSMITION
         usart.waitForRelease();
         usart.transmit(NULL, buffer, bSize);
+        #else
+        usart.transmitBlocking(buffer, bSize);
+        #endif
     }
     return *this;
 }
 
 UsartLogger & UsartLogger::operator << (int n)
 {
-    usart.waitForRelease();
     char buffer[256];
     ::__itoa(n, buffer, 10);
     size_t bSize = ::strlen(buffer);
     if (bSize > 0)
     {
+        #ifndef BLOCKING_TRANSMITION
+        usart.waitForRelease();
         usart.transmit(NULL, buffer, bSize);
+        #else
+        usart.transmitBlocking(buffer, bSize);
+        #endif
     }
     return *this;
 }
 
 UsartLogger & UsartLogger::operator << (Manupulator m)
 {
+    #ifndef BLOCKING_TRANSMITION
     usart.waitForRelease();
+    #endif
     switch (m)
     {
     case Manupulator::ENDL:
+        #ifndef BLOCKING_TRANSMITION
         usart.transmit(NULL, "\n\r", 2);
+        #else
+        usart.transmitBlocking("\n\r", 2);
+        #endif
         break;
     case Manupulator::TAB:
+        #ifndef BLOCKING_TRANSMITION
         usart.transmit(NULL, "    ", 4);
+        #else
+        usart.transmitBlocking("    ", 4);
+        #endif
         break;
     }
     return *this;
