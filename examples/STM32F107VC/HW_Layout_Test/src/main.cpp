@@ -22,7 +22,6 @@
 #include "HardwareLayout/Dma1.h"
 #include "HardwareLayout/PortA.h"
 #include "HardwareLayout/PortD.h"
-//#include "HardwareLayout/PortC.h"
 #include "HardwareLayout/Usart2.h"
 #include "HardwareLayout/AfioModule.h"
 
@@ -45,7 +44,6 @@ private:
     
     // Used ports
     HardwareLayout::PortD portA;
-    //HardwareLayout::PortC portC;
     HardwareLayout::PortD portD;
 
     // DMA
@@ -131,32 +129,27 @@ public:
     {
         initClock();
 
-        for(auto i = 0; i < 4; i++)
+        for (auto i = 0; i < 4; i++)
         {
             leds[i]->start();
         }
 
         usartLogger.initInstance();
 
-        USART_DEBUG("--------------------------------------------------------");
+        USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL);
         USART_DEBUG("Oscillator frequency: " << SystemClock::getInstance()->getHSEFreq()
                     << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL);
 
-        //rtc.stop();
-        rtc.setHandler(this);
-        do
-        {
-            Rtc::Start::Status status = rtc.start(0, 0);
-            USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")");
-        }
-        while (rtc.getHalStatus() != HAL_OK);
-
         mco.start();
 
-        leds[0]->setHigh();
+        leds[3]->setHigh();
         HAL_Delay(500);
-        leds[0]->setLow();
+        leds[3]->setLow();
+
+        rtc.setHandler(this);
+        Rtc::Start::Status status = rtc.start(0, 0);
+        USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")" << UsartLogger::ENDL);
 
         for (int i = 0; i < 15; ++i)
         {
@@ -166,17 +159,16 @@ public:
             HAL_Delay(333);
             leds[2]->toggle();
             HAL_Delay(333);
-            leds[3]->toggle();
+            leds[0]->toggle();
         }
 
-        for(auto i = 0; i < 4; i++)
+        for (auto i = 0; i < 4; i++)
         {
             leds[i]->stop();
         }
         mco.stop();
-
-        USART_DEBUG("RTC status: " << " (" << rtc.getHalStatus() << ")");
         rtc.stop();
+        USART_DEBUG("RTC status: " << " (" << rtc.getHalStatus() << ")" << UsartLogger::ENDL);
 
         // Log resource occupations after all devices (expect USART2 for logging) are stopped
         // Desired: two at portD, two DMA2 (USART2), null for portA,
@@ -185,15 +177,15 @@ public:
                     << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "afio=" << afio.getObjectsCount() << UsartLogger::ENDL);
-        usartLogger.clearInstance();
 
+        usartLogger.clearInstance();
         SystemClock::getInstance()->stop();
     }
 
     void onRtcSecond ()
     {
         time_t total_secs = Rtc::getInstance()->getTime();
-        USART_DEBUG("time=" << total_secs);
+        USART_DEBUG("time=" << total_secs << UsartLogger::ENDL);
         ledBlue.toggle();
 
         //struct tm * now = ::gmtime(&total_secs);
@@ -244,9 +236,10 @@ void SysTick_Handler (void)
 
 void RTC_IRQHandler ()
 {
-    if (Rtc::getInstance() != NULL)
+    Rtc * instance = Rtc::getInstance();
+    if (instance)
     {
-        Rtc::getInstance()->onSecondInterrupt();
+        instance->onSecondInterrupt();
     }
 }
 
@@ -281,9 +274,10 @@ void HAL_UART_ErrorCallback (UART_HandleTypeDef * huart)
 void HAL_RTCEx_RTCEventCallback (RTC_HandleTypeDef *hrtc)
 {
     UNUSED(hrtc);
-    if (Rtc::getInstance()->getHandler() != NULL)
+    Rtc::EventHandler * handler = Rtc::getInstance()->getHandler();
+    if (handler)
     {
-        Rtc::getInstance()->getHandler()->onRtcSecond();
+        handler->onRtcSecond();
     }
 }
 
