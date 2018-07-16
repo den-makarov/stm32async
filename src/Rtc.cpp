@@ -29,7 +29,8 @@ using namespace Stm32async;
 Rtc * Rtc::instance = NULL;
 
 const char * Rtc::Start::strings[] = { "RTC started", "RTC system clock is not set. Call SystemClock::setRTC before",
-                                       "Can not initialize RTC", "Can not initialize RTC WakeUpTimer interrupt" };
+                                       "Can not initialize RTC", "Can not initialize RTC WakeUpTimer interrupt",
+                                       "Can not set initial time", "Can not set initial date"};
 
 AsStringClass<Rtc::Start::Status, Rtc::Start::size, Rtc::Start::strings> Rtc::Start::asString;
 
@@ -83,8 +84,17 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
         return Start::RTC_INIT_ERROR;
     }
 
-    HAL_RTC_SetTime(&rtcParameters, &timeParameters, RTC_FORMAT_BCD);
-    HAL_RTC_SetDate(&rtcParameters, &dateParameters, RTC_FORMAT_BCD);
+    halStatus = HAL_RTC_SetTime(&rtcParameters, &timeParameters, RTC_FORMAT_BCD);
+    if (halStatus != HAL_OK)
+    {
+        return Start::TIME_SET_ERROR;
+    }
+
+    halStatus = HAL_RTC_SetDate(&rtcParameters, &dateParameters, RTC_FORMAT_BCD);
+    if (halStatus != HAL_OK)
+    {
+        return Start::DATE_SET_ERROR;
+    }
 
 #ifndef STM32F1
     halStatus = HAL_RTCEx_SetWakeUpTimer_IT(&rtcParameters, counter, prescaler);
@@ -96,7 +106,11 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
     UNUSED(counter);
     UNUSED(prescaler);
 
-    HAL_RTCEx_SetSecond_IT(&rtcParameters);
+    halStatus = HAL_RTCEx_SetSecond_IT(&rtcParameters);
+    if (halStatus != HAL_OK)
+    {
+        return Start::IT_INIT_ERROR;
+    }
 #endif
 
     wkUpIrq.enable();

@@ -56,7 +56,9 @@ public:
             OK = 0,
             RTC_CLOCK_ERROR = 1,
             RTC_INIT_ERROR = 2,
-            IT_INIT_ERROR = 3
+            IT_INIT_ERROR = 3,
+            TIME_SET_ERROR = 4,
+            DATE_SET_ERROR = 5
         };
 
         /**

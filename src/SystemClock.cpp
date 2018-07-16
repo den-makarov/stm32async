@@ -50,6 +50,16 @@ SystemClock::SystemClock (HardwareLayout::Interrupt && _sysTickIrq) :
                               RCC_CLOCKTYPE_SYSCLK | 
                               RCC_CLOCKTYPE_PCLK1 | 
                               RCC_CLOCKTYPE_PCLK2;
+
+#if defined(STM32F1)
+    periphClkParameters.AdcClockSelection = RCC_ADCPCLK2_DIV8;
+    periphClkParameters.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+    periphClkParameters.RTCClockSelection = RCC_RTCCLKSOURCE_NO_CLK;
+#elif defined(STM32F4)
+
+#else
+#endif
+
     instance = this;
 }
 
@@ -92,18 +102,18 @@ void SystemClock::setLSE (const HardwareLayout::Port * _port, uint32_t /*pin*/)
 #else
     lsePort = &_port;
 #endif
-    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
+    //oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSE;
     oscParameters.LSEState = RCC_LSE_ON;
-    oscParameters.LSIState = RCC_LSI_OFF;
+    //oscParameters.LSIState = RCC_LSI_OFF;
 }
 
 void SystemClock::setLSI ()
 {
-    oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSE;
+    //oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSE;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSI;
     oscParameters.LSIState = RCC_LSI_ON;
-    oscParameters.LSEState = RCC_LSE_OFF;
+    //oscParameters.LSEState = RCC_LSE_OFF;
 }
 
 #ifdef STM32F1
@@ -200,13 +210,17 @@ void SystemClock::start ()
         while(1);
     }
 
-    if (HAL_RCC_ClockConfig(&clkParameters, fLatency)!= HAL_OK)
+    if (HAL_RCC_ClockConfig(&clkParameters, fLatency) != HAL_OK)
     {
         /* Initialization Error */
         while(1);
     }
 
-    HAL_RCCEx_PeriphCLKConfig(&periphClkParameters);
+    if (HAL_RCCEx_PeriphCLKConfig(&periphClkParameters) != HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
 
     mcuFreq = HAL_RCC_GetHCLKFreq();
 }
