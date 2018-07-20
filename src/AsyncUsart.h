@@ -72,19 +72,19 @@ public:
     /**
      * @brief Receive an amount of data in DMA mode.
      */
-    inline HAL_StatusTypeDef receive (DeviceClient * _client, const char * buffer, size_t n)
+    inline HAL_StatusTypeDef receive (DeviceClient * _client, uint8_t * buffer, size_t n)
     {
         startCommunication(_client, State::RX, State::RX_CMPL);
-        return HAL_UART_Receive_DMA(&parameters, (unsigned char *) buffer, n);
+        return HAL_UART_Receive_DMA(&parameters, buffer, n);
     }
 
     /**
      * @brief Receive an amount of data in interrupt mode.
      */
-    inline HAL_StatusTypeDef receiveIt (DeviceClient * _client, const char * buffer, size_t n)
+    inline HAL_StatusTypeDef receiveIt (DeviceClient * _client, uint8_t * buffer, size_t n)
     {
         startCommunication(_client, State::RX, State::RX_CMPL);
-        return HAL_UART_Receive_IT(&parameters, (unsigned char *) buffer, n);
+        return HAL_UART_Receive_IT(&parameters, buffer, n);
     }
 
     /**

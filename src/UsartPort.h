@@ -1,11 +1,82 @@
-#ifndef USARTPORT_H
-#define USARTPORT_H
+/*******************************************************************************
+ * stm32async: Asynchronous I/O C++ library for STM32
+ * *****************************************************************************
+ * Copyright (C) 2018 Mikhail Kulesh, Denis Makarov
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************/
 
+#include "AsyncUsart.h"
 
-class UsartPort
+#ifndef STM32ASYNC_USARTPORT_H
+#define STM32ASYNC_USARTPORT_H
+
+namespace Stm32async
 {
+
+/**
+ * @brief Class implementing USART listening port.
+ */
+class UsartPort : public SharedDevice::DeviceClient
+{
+    DECLARE_STATIC_INSTANCE(UsartPort)
+
 public:
-    UsartPort();
+
+    /**
+     * @brief Default constructor.
+     */
+    UsartPort (const HardwareLayout::Usart & _device, uint32_t _baudRate);
+
+    /**
+     * @brief Open listening session on USART with given parameters.
+     */
+    HAL_StatusTypeDef start (DeviceClient * _client, uint8_t * buffer, size_t n);
+
+    /**
+     * @brief Close the listening session.
+     */
+    inline void stop ()
+    {
+
+    }
+
+    void initInstance ();
+
+    inline void clearInstance ()
+    {
+        usart.waitForRelease();
+        usart.stop();
+        instance = NULL;
+    }
+
+    static UsartPort & getStream ()
+    {
+        return *instance;
+    }
+
+    AsyncUsart & getUsart ()
+    {
+        return usart;
+    }
+
+private:
+
+    AsyncUsart usart;
+    uint32_t baudRate;
+    const uint32_t TIMEOUT = 1;
 };
 
-#endif // USARTPORT_H
+} // end namespace
+#endif // STM32ASYNC_USARTPORT_H
