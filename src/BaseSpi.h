@@ -20,6 +20,7 @@
 #ifndef STM32ASYNC_BASESPI_H_
 #define STM32ASYNC_BASESPI_H_
 
+#include "HardwareLayout/Spi.h"
 #include "IODevice.h"
 
 namespace Stm32async

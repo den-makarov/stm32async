@@ -20,6 +20,7 @@
 #ifndef STM32ASYNC_BASEUSART_H_
 #define STM32ASYNC_BASEUSART_H_
 
+#include "HardwareLayout/Usart.h"
 #include "IODevice.h"
 
 namespace Stm32async

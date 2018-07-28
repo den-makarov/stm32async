@@ -20,8 +20,9 @@
 #ifndef HARDWARE_LAYOUT_SPI1_H_
 #define HARDWARE_LAYOUT_SPI1_H_
 
-#include "HardwareLayout.h"
+#include "Spi.h"
 
+#ifdef HAL_SPI_MODULE_ENABLED
 #ifdef SPI1
 
 namespace Stm32async
@@ -87,5 +88,6 @@ public:
 } // end of namespace HardwareLayout
 } // end of namespace Stm32async
 
+#endif
 #endif
 #endif

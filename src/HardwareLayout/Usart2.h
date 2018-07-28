@@ -20,8 +20,9 @@
 #ifndef HARDWARE_LAYOUT_USART2_H_
 #define HARDWARE_LAYOUT_USART2_H_
 
-#include "HardwareLayout.h"
+#include "Usart.h"
 
+#ifdef HAL_UART_MODULE_ENABLED
 #ifdef USART2
 
 namespace Stm32async
@@ -87,5 +88,6 @@ public:
 } // end of namespace HardwareLayout
 } // end of namespace Stm32async
 
+#endif
 #endif
 #endif
