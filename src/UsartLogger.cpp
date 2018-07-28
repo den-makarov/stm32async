@@ -28,21 +28,26 @@ using namespace Stm32async;
  * Class UsartLogger
  ************************************************************************/
 
-UsartLogger * UsartLogger::instance = NULL;
+UsartLogger * UsartLogger::instance = nullptr;
 
-UsartLogger::UsartLogger (const HardwareLayout::Usart & _device, uint32_t _baudRate) :
+UsartLogger::UsartLogger (AsyncUsart & _device, uint32_t _baudRate) :
     usart { _device },
     baudRate { _baudRate }
 {
     // empty
 }
 
-void UsartLogger::initInstance ()
+void UsartLogger::start ()
 {
-    instance = this;
+    initInstance();
     usart.setTimeout(TIMEOUT);
     usart.start(UART_MODE_TX, baudRate, UART_WORDLENGTH_8B, UART_STOPBITS_1, UART_PARITY_NONE);
     usart.ensureReady();
+}
+
+void UsartLogger::initInstance ()
+{
+    instance = this;
 }
 
 UsartLogger & UsartLogger::operator << (const char * buffer)
@@ -52,7 +57,7 @@ UsartLogger & UsartLogger::operator << (const char * buffer)
     {
         #ifndef BLOCKING_TRANSMITION
         usart.waitForRelease();
-        usart.transmit(NULL, buffer, bSize);
+        usart.transmit(nullptr, buffer, bSize);
         #else
         usart.transmitBlocking(buffer, bSize);
         #endif
@@ -69,7 +74,7 @@ UsartLogger & UsartLogger::operator << (int n)
     {
         #ifndef BLOCKING_TRANSMITION
         usart.waitForRelease();
-        usart.transmit(NULL, buffer, bSize);
+        usart.transmit(nullptr, buffer, bSize);
         #else
         usart.transmitBlocking(buffer, bSize);
         #endif
@@ -86,14 +91,14 @@ UsartLogger & UsartLogger::operator << (Manupulator m)
     {
     case Manupulator::ENDL:
         #ifndef BLOCKING_TRANSMITION
-        usart.transmit(NULL, "\n\r", 2);
+        usart.transmit(nullptr, "\n\r", 2);
         #else
         usart.transmitBlocking("\n\r", 2);
         #endif
         break;
     case Manupulator::TAB:
         #ifndef BLOCKING_TRANSMITION
-        usart.transmit(NULL, "    ", 4);
+        usart.transmit(nullptr, "    ", 4);
         #else
         usart.transmitBlocking("    ", 4);
         #endif

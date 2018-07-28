@@ -71,10 +71,10 @@ public:
     /**
      * @brief Receive an amount of data in blocking mode.
      */
-    inline HAL_StatusTypeDef receiveBlocking (const char * buffer, size_t n,
+    inline HAL_StatusTypeDef receiveBlocking (uint8_t * buffer, size_t n,
                                               uint32_t timeout = __UINT32_MAX__)
     {
-        return HAL_UART_Receive(&parameters, (unsigned char *) buffer, n, timeout);
+        return HAL_UART_Receive(&parameters, buffer, n, timeout);
     }
 
     /**

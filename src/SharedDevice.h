@@ -62,7 +62,7 @@ public:
             // empty
         }
 
-        virtual bool onTransmissionFinished (State state) =0;
+        virtual bool onTransactionFinished (State state) =0;
     };
 
     /**
@@ -168,13 +168,13 @@ public:
      *         }
      *     }
      *
-     * Depending on the return value of onTransmissionFinished call for the current client that occupies
+     * Depending on the return value of onTransactionFinished call for the current client that occupies
      * this device, the device can still be occupied and will be free again and can be used by an other device.
      */
     inline void processCallback (State state)
     {
         currState = state;
-        if (client != NULL && client->onTransmissionFinished(state))
+        if (client != NULL && client->onTransactionFinished(state))
         {
             client = NULL;
         }

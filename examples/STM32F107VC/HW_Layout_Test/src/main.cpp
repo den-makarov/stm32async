@@ -30,6 +30,7 @@
 #include "Rtc.h"
 #include "IOPort.h"
 #include "UsartLogger.h"
+#include "UsartPort.h"
 
 // Common includes
 #include <functional>
@@ -38,7 +39,7 @@ using namespace Stm32async;
 
 #define USART_DEBUG_MODULE "Main: "
 
-class MyApplication : public Rtc::EventHandler
+class MyApplication : public Rtc::EventHandler, public SharedDevice::DeviceClient
 {
 private:
     
@@ -66,7 +67,12 @@ private:
 
     // USART logger
     HardwareLayout::Usart2 usart2;
+    AsyncUsart asyncUsart;
     UsartLogger usartLogger;
+    UsartPort usartPort;
+    char receivedBuffer[10] = { 0 };
+    bool isReceived = false;
+    SharedDevice::State usartPortState = SharedDevice::State::NONE;
 
 public:
 
@@ -89,7 +95,10 @@ public:
                  HardwareLayout::DmaStream { &dma1, DMA1_Channel6, 0,
                                              HardwareLayout::Interrupt { DMA1_Channel6_IRQn, 2, 0 } } },
         // Output stream
-        usartLogger { usart2, 115200 }
+
+        asyncUsart { usart2 },
+        usartLogger { asyncUsart, 115200 },
+        usartPort { asyncUsart, 115200 }
     {
         leds[0] = &ledRed;
         leds[1] = &ledOrange;
@@ -105,8 +114,8 @@ public:
     void initClock ()
     {
         // Switch RTC clock source to use LSE crystal
-        SystemClock::getInstance()->setLSE(NULL, 0/*&portC, GPIO_PIN_14 | GPIO_PIN_15*/);
-        SystemClock::getInstance()->setRTC();
+//        SystemClock::getInstance()->setLSE(nullptr, 0/*&portC, GPIO_PIN_14 | GPIO_PIN_15*/);
+//        SystemClock::getInstance()->setRTC();
 
         SystemClock::getInstance()->setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);
         HardwareLayout::SystemPllFactors pllConfig;
@@ -134,22 +143,26 @@ public:
             leds[i]->start();
         }
 
-        usartLogger.initInstance();
+/*        usartLogger.start();
 
         USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL);
         USART_DEBUG("Oscillator frequency: " << SystemClock::getInstance()->getHSEFreq()
                     << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL);
-
+*/
         mco.start();
 
-        leds[3]->setHigh();
+        leds[0]->setHigh();
         HAL_Delay(500);
-        leds[3]->setLow();
+        leds[0]->setLow();
 
-        rtc.setHandler(this);
-        Rtc::Start::Status status = rtc.start(0, 0);
-        USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")" << UsartLogger::ENDL);
+//        rtc.setHandler(this);
+//        Rtc::Start::Status status = rtc.start(0, 0);
+//        USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")" << UsartLogger::ENDL);
+
+//        usartLogger.stop();
+
+        usartPort.start(this, reinterpret_cast<uint8_t *>(receivedBuffer), sizeof(receivedBuffer));
 
         for (int i = 0; i < 15; ++i)
         {
@@ -166,26 +179,49 @@ public:
         {
             leds[i]->stop();
         }
+
+        usartPort.stop();
         mco.stop();
-        rtc.stop();
-        USART_DEBUG("RTC status: " << " (" << rtc.getHalStatus() << ")" << UsartLogger::ENDL);
+//        rtc.stop();
+
+//        usartLogger.start();
+//        USART_DEBUG("RTC status: " << " (" << rtc.getHalStatus() << ")" << UsartLogger::ENDL);
 
         // Log resource occupations after all devices (expect USART2 for logging) are stopped
         // Desired: two at portD, two DMA2 (USART2), null for portA,
-        USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
+/*        USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
                     << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "afio=" << afio.getObjectsCount() << UsartLogger::ENDL);
+*/
+        if (isReceived)
+        {
+            sendResponce();
+        }
 
-        usartLogger.clearInstance();
+        usartLogger.stop();
         SystemClock::getInstance()->stop();
     }
 
+    void sendResponce ()
+    {
+        isReceived = false;
+/*        if (SharedDevice::State::RX_CMPL == usartPortState)
+        {
+            USART_DEBUG(UsartLogger::TAB << "Received data: " << UsartLogger::ENDL
+                        << UsartLogger::TAB << const_cast<const char *>(receivedBuffer) << UsartLogger::ENDL);
+        }
+        else
+        {
+            USART_DEBUG(UsartLogger::TAB << "Error while receiving: " << static_cast<int>(usartPortState) << UsartLogger::ENDL);
+        }
+*/    }
+
     void onRtcSecond ()
     {
-        time_t total_secs = Rtc::getInstance()->getTime();
-        USART_DEBUG("time=" << total_secs << UsartLogger::ENDL);
+        //time_t total_secs = Rtc::getInstance()->getTime();
+        //USART_DEBUG("time=" << total_secs << UsartLogger::ENDL);
         ledBlue.toggle();
 
         //struct tm * now = ::gmtime(&total_secs);
@@ -200,14 +236,22 @@ public:
 
     }
 
-    inline AsyncUsart & getLoggerUsart ()
+    bool onTransactionFinished(SharedDevice::State state)
     {
-        return usartLogger.getUsart();
+        ledBlue.toggle();
+        usartPortState = state;
+        isReceived = true;
+        return true;
+    }
+
+    inline AsyncUsart & getAsyncUsart ()
+    {
+        return asyncUsart;
     }
 };
 
 
-MyApplication * appPtr = NULL;
+static MyApplication * appPtr = nullptr;
 
 int main (void)
 {
@@ -246,29 +290,35 @@ void RTC_IRQHandler ()
 // UART: uses both USART and DMA interrupts
 void DMA1_Channel7_IRQHandler (void)
 {
-    appPtr->getLoggerUsart().processDmaTxInterrupt();
+    appPtr->getAsyncUsart().processDmaTxInterrupt();
 }
 
 void DMA1_Channel6_IRQHandler (void)
 {
-    appPtr->getLoggerUsart().processDmaRxInterrupt();
+    appPtr->getAsyncUsart().processDmaRxInterrupt();
 }
 
 void USART2_IRQHandler (void)
 {
-    appPtr->getLoggerUsart().processInterrupt();
+    appPtr->getAsyncUsart().processInterrupt();
 }
 
 void HAL_UART_TxCpltCallback (UART_HandleTypeDef * huart)
 {
     UNUSED(huart);
-    appPtr->getLoggerUsart().processCallback(SharedDevice::State::TX_CMPL);
+    appPtr->getAsyncUsart().processCallback(SharedDevice::State::TX_CMPL);
+}
+
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef * huart)
+{
+    UNUSED(huart);
+    appPtr->getAsyncUsart().processCallback(SharedDevice::State::RX_CMPL);
 }
 
 void HAL_UART_ErrorCallback (UART_HandleTypeDef * huart)
 {
     UNUSED(huart);
-    appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
+    appPtr->getAsyncUsart().processCallback(SharedDevice::State::ERROR);
 }
 
 void HAL_RTCEx_RTCEventCallback (RTC_HandleTypeDef *hrtc)

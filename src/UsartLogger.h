@@ -53,15 +53,20 @@ public:
     /**
      * @brief Default constructor.
      */
-    UsartLogger (const HardwareLayout::Usart & _device, uint32_t _baudRate);
+    UsartLogger (AsyncUsart & _device, uint32_t _baudRate);
 
+    void start ();
+    void stop ()
+    {
+        usart.waitForRelease();
+        usart.stop();
+        clearInstance();
+    }
     void initInstance ();
 
     inline void clearInstance ()
     {
-        usart.waitForRelease();
-        usart.stop();
-        instance = NULL;
+        instance = nullptr;
     }
 
     static UsartLogger & getStream ()
@@ -80,7 +85,7 @@ public:
 
 private:
 
-    AsyncUsart usart;
+    AsyncUsart & usart;
     uint32_t baudRate;
 };
 

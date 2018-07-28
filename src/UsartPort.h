@@ -28,7 +28,7 @@ namespace Stm32async
 /**
  * @brief Class implementing USART listening port.
  */
-class UsartPort : public SharedDevice::DeviceClient
+class UsartPort
 {
     DECLARE_STATIC_INSTANCE(UsartPort)
 
@@ -37,27 +37,26 @@ public:
     /**
      * @brief Default constructor.
      */
-    UsartPort (const HardwareLayout::Usart & _device, uint32_t _baudRate);
+    UsartPort (AsyncUsart & _device, uint32_t _baudRate);
 
     /**
      * @brief Open listening session on USART with given parameters.
      */
-    HAL_StatusTypeDef start (DeviceClient * _client, uint8_t * buffer, size_t n);
+    HAL_StatusTypeDef start (SharedDevice::DeviceClient * _client, uint8_t * buffer, size_t n);
 
     /**
      * @brief Close the listening session.
      */
-    inline void stop ()
+    void stop ()
     {
-
+        HAL_UART_Abort_IT(&usart.getParameters());
+        usart.stop();
     }
 
     void initInstance ();
 
     inline void clearInstance ()
     {
-        usart.waitForRelease();
-        usart.stop();
         instance = NULL;
     }
 
@@ -73,9 +72,9 @@ public:
 
 private:
 
-    AsyncUsart usart;
+    AsyncUsart & usart;
     uint32_t baudRate;
-    const uint32_t TIMEOUT = 1;
+    const uint32_t TIMEOUT = 20000;
 };
 
 } // end namespace

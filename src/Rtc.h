@@ -38,6 +38,11 @@ public:
     {
     public:
 
+        virtual ~EventHandler ()
+        {
+            // empty
+        }
+
         virtual void onRtcWakeUp () =0;
         virtual void onRtcSecond () =0;
     };

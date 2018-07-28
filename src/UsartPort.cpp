@@ -25,22 +25,28 @@ using namespace Stm32async;
  * Class UsartLogger
  ************************************************************************/
 
-UsartPort * UsartPort::instance = NULL;
+UsartPort * UsartPort::instance = nullptr;
 
-UsartPort::UsartPort (const HardwareLayout::Usart & _device, uint32_t _baudRate) :
+UsartPort::UsartPort (AsyncUsart & _device, uint32_t _baudRate) :
     usart { _device },
     baudRate { _baudRate }
 {
-    // empty
+    //empty
 }
 
-HAL_StatusTypeDef UsartPort::start (DeviceClient * _client, uint8_t * buffer, size_t n)
+HAL_StatusTypeDef UsartPort::start (SharedDevice::DeviceClient * _client, uint8_t * buffer, size_t n)
 {
+    initInstance();
+    usart.setTimeout(TIMEOUT);
+    usart.start(UART_MODE_RX, baudRate, UART_WORDLENGTH_8B, UART_STOPBITS_1, UART_PARITY_NONE);
+    usart.ensureReady();
+
     HAL_StatusTypeDef status = HAL_ERROR;
-    if (buffer != NULL && n > 0)
+    if (buffer != nullptr && n > 0)
     {
         usart.waitForRelease();
-        status = usart.receiveIt(_client, buffer, n);
+        //status = usart.receiveIt(_client, buffer, n);
+        usart.receiveBlocking(buffer, n, TIMEOUT);
     }
     return status;
 }
@@ -48,7 +54,4 @@ HAL_StatusTypeDef UsartPort::start (DeviceClient * _client, uint8_t * buffer, si
 void UsartPort::initInstance ()
 {
     instance = this;
-    usart.setTimeout(TIMEOUT);
-    usart.start(UART_MODE_RX, baudRate, UART_WORDLENGTH_8B, UART_STOPBITS_1, UART_PARITY_NONE);
-    usart.ensureReady();
 }
