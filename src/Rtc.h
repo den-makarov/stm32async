@@ -17,10 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "HardwareLayout.h"
-
 #ifndef STM32ASYNC_RTC_H_
 #define STM32ASYNC_RTC_H_
+
+#include "Stm32async.h"
 
 namespace Stm32async
 {

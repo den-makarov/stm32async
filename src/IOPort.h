@@ -20,7 +20,7 @@
 #ifndef STM32ASYNC_IOPORT_H_
 #define STM32ASYNC_IOPORT_H_
 
-#include "HardwareLayout.h"
+#include "Stm32async.h"
 
 namespace Stm32async
 {

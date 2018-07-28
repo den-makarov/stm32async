@@ -20,8 +20,7 @@
 #ifndef HARDWARE_LAYOUT_H_
 #define HARDWARE_LAYOUT_H_
 
-#include "Stm32async.h"
-
+#include "Platforms.h"
 #include <utility>
 
 /**
@@ -39,6 +38,15 @@
  */
 namespace HardwareLayout
 {
+
+/**
+ * @brief Helper define that allows us to declare a non-static "instance" attribute within a device
+ */
+#define DECLARE_INSTANCE(name) \
+    private: \
+        name * instance; \
+    public: \
+        name * getInstance () const { return instance; }
 
 /**
  * @brief Helper class used to configure interrupt parameters.

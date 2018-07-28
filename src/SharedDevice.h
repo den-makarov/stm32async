@@ -20,7 +20,7 @@
 #ifndef STM32ASYNC_SHARED_DEVICE_H_
 #define STM32ASYNC_SHARED_DEVICE_H_
 
-#include "HardwareLayout.h"
+#include "Stm32async.h"
 
 namespace Stm32async
 {

@@ -20,7 +20,7 @@
 #ifndef HARDWARE_LAYOUT_USART6_H_
 #define HARDWARE_LAYOUT_USART6_H_
 
-#include "../HardwareLayout.h"
+#include "HardwareLayout.h"
 
 #ifdef USART6
 

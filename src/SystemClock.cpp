@@ -79,7 +79,7 @@ void SystemClock::setHSE (const HardwareLayout::Port * _port, uint32_t /*pin*/)
 #ifdef STM32F1
     UNUSED(_port);
 #else
-    hsePort = &_port;
+    hsePort = _port;
 #endif
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
@@ -100,7 +100,7 @@ void SystemClock::setLSE (const HardwareLayout::Port * _port, uint32_t /*pin*/)
 #ifdef STM32F1
     UNUSED(_port);
 #else
-    lsePort = &_port;
+    lsePort = _port;
 #endif
     //oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSE;

@@ -20,9 +20,11 @@
 #ifndef STM32ASYNC_H_
 #define STM32ASYNC_H_
 
-#include "Platforms.h"
+#include "HardwareLayout/HardwareLayout.h"
+
 #include <cstring>
 #include <cstdlib>
+#include <array>
 
 /**
  * @brief Namespace containing classes that implement I/O devices
@@ -41,15 +43,6 @@ typedef uint64_t time_ms;
         static name * instance; \
     public: \
         static name * getInstance () { return instance; }
-
-/**
- * @brief Helper define that allows us to declare a non-static "instance" attribute within a device
- */
-#define DECLARE_INSTANCE(name) \
-    private: \
-        name * instance; \
-    public: \
-        name * getInstance () const { return instance; }
 
 
 /**
