@@ -24,6 +24,8 @@
 
 #ifdef AFIO
 
+namespace Stm32async
+{
 namespace HardwareLayout
 {
 
@@ -51,6 +53,8 @@ public:
     }
 };
 
-} // end namespace
+} // end of namespace HardwareLayout
+} // end of namespace Stm32async
+
 #endif /* AFIO */
 #endif /* HARDWARE_LAYOUT_AFIO_H_ */

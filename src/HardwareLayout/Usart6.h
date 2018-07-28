@@ -24,6 +24,8 @@
 
 #ifdef USART6
 
+namespace Stm32async
+{
 namespace HardwareLayout
 {
 
@@ -64,6 +66,8 @@ public:
     }
 };
 
-} // end namespace
+} // end of namespace HardwareLayout
+} // end of namespace Stm32async
+
 #endif
 #endif

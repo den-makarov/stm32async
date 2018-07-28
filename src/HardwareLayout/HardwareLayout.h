@@ -23,6 +23,9 @@
 #include "Platforms.h"
 #include <utility>
 
+namespace Stm32async
+{
+
 /**
  * @brief Namespace containing classes that describe hardware configuration.
  *
@@ -708,5 +711,7 @@ public:
     }
 };
 
-} // end namespace
+} // end of namespace HardwareLayout
+} // end of namespace Stm32async
+
 #endif

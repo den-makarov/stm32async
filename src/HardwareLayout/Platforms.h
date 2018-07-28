@@ -17,8 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef PLATFORMS_H_
-#define PLATFORMS_H_
+#ifndef HARDWARE_LAYOUT_PLATFORMS_H_
+#define HARDWARE_LAYOUT_PLATFORMS_H_
 
 #if defined(STM32F4)
 
@@ -30,6 +30,8 @@
     #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) (cfg.Init.Channel = channel)
     #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) (cfg.Init.FIFOMode = mode)
 
+    namespace Stm32async
+    {
     namespace HardwareLayout
     {
         typedef struct
@@ -76,7 +78,8 @@
 
         typedef DMA_Stream_TypeDef DMA_Stream_Struct;
 
-    }
+    } // end of namespace HardwareLayout
+    } // end of namespace Stm32async
 
 #elif defined(STM32F1)
 
@@ -91,6 +94,8 @@
     #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) UNUSED(channel)
     #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) UNUSED(mode)
 
+    namespace Stm32async
+    {
     namespace HardwareLayout
     {
         typedef struct
@@ -143,7 +148,9 @@
         } SystemPllFactors;
 
         typedef DMA_Channel_TypeDef DMA_Stream_Struct;
-    }
+
+    } // end of namespace HardwareLayout
+    } // end of namespace Stm32async
 
 #else
 
