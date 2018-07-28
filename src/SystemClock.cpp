@@ -76,11 +76,7 @@ void SystemClock::setSysClockSource (uint32_t sysClockSource)
 
 void SystemClock::setHSE (const HardwareLayout::Port * _port, uint32_t /*pin*/)
 {
-#ifdef STM32F1
-    UNUSED(_port);
-#else
     hsePort = _port;
-#endif
     oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_HSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_HSE;
     oscParameters.HSEState = RCC_HSE_ON;
@@ -97,23 +93,15 @@ void SystemClock::setHSI ()
 
 void SystemClock::setLSE (const HardwareLayout::Port * _port, uint32_t /*pin*/)
 {
-#ifdef STM32F1
-    UNUSED(_port);
-#else
     lsePort = _port;
-#endif
-    //oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSI;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSE;
     oscParameters.LSEState = RCC_LSE_ON;
-    //oscParameters.LSIState = RCC_LSI_OFF;
 }
 
 void SystemClock::setLSI ()
 {
-    //oscParameters.OscillatorType &= ~RCC_OSCILLATORTYPE_LSE;
     oscParameters.OscillatorType |= RCC_OSCILLATORTYPE_LSI;
     oscParameters.LSIState = RCC_LSI_ON;
-    //oscParameters.LSEState = RCC_LSE_OFF;
 }
 
 #ifdef STM32F1
