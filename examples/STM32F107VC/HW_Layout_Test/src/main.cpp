@@ -182,7 +182,7 @@ public:
         SystemClock::getInstance()->stop();
     }
 
-    void onRtcSecond ()
+    void onRtcSecondInterrupt ()
     {
         time_t total_secs = Rtc::getInstance()->getTime();
         USART_DEBUG("time=" << total_secs << UsartLogger::ENDL);
@@ -193,11 +193,6 @@ public:
 
         //spi.waitForRelease();
         //ssd.putString(localTime, NULL, 4);
-    }
-
-    void onRtcWakeUp ()
-    {
-
     }
 
     inline AsyncUsart & getLoggerUsart ()
@@ -239,7 +234,16 @@ void RTC_IRQHandler ()
     Rtc * instance = Rtc::getInstance();
     if (instance)
     {
-        instance->onSecondInterrupt();
+        instance->processInterrupt();
+    }
+}
+
+void HAL_RTCEx_RTCEventCallback (RTC_HandleTypeDef * /*hrtc*/)
+{
+    Rtc * instance = Rtc::getInstance();
+    if (instance)
+    {
+        instance->processEventCallback();
     }
 }
 
@@ -271,14 +275,5 @@ void HAL_UART_ErrorCallback (UART_HandleTypeDef * huart)
     appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
 }
 
-void HAL_RTCEx_RTCEventCallback (RTC_HandleTypeDef *hrtc)
-{
-    UNUSED(hrtc);
-    Rtc::EventHandler * handler = Rtc::getInstance()->getHandler();
-    if (handler)
-    {
-        handler->onRtcSecond();
-    }
-}
 
 } /* extern "C" */

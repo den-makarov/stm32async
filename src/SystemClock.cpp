@@ -217,7 +217,6 @@ void SystemClock::start ()
 #ifdef STM32F4
 void SystemClock::start ()
 {
-    __HAL_RCC_PWR_CLK_ENABLE();
     if (hsePort != NULL)
     {
         hsePort->enableClock();
@@ -228,8 +227,17 @@ void SystemClock::start ()
     }
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-    HAL_RCC_OscConfig(&oscParameters);
-    HAL_RCC_ClockConfig(&clkParameters, fLatency);
+    if (HAL_RCC_OscConfig(&oscParameters) != HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
+
+    if (HAL_RCC_ClockConfig(&clkParameters, fLatency) != HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
 
     /* STM32F405x/407x/415x/417x Revision Z devices: prefetch is supported  */
     if (HAL_GetREVID() == 0x1001)
@@ -238,11 +246,13 @@ void SystemClock::start ()
         __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
     }
 
-    HAL_RCCEx_PeriphCLKConfig(&periphClkParameters);
+    if (HAL_RCCEx_PeriphCLKConfig(&periphClkParameters) != HAL_OK)
+    {
+        /* Initialization Error */
+        while(1);
+    }
 
     mcuFreq = HAL_RCC_GetHCLKFreq();
-    HAL_SYSTICK_Config(mcuFreq / 1000);
-    HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
     /* SysTick_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(sysTickIrq.irqn, sysTickIrq.prio, sysTickIrq.subPrio);
@@ -260,7 +270,6 @@ void SystemClock::stop ()
     {
         lsePort->disableClock();
     }
-    __HAL_RCC_PWR_CLK_DISABLE();
 }
 
 /************************************************************************

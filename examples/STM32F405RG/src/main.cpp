@@ -148,11 +148,11 @@ public:
         initClock(pllp);
         usartLogger.initInstance();
 
-        USART_DEBUG("--------------------------------------------------------");
-        USART_DEBUG("Oscillator frequency: " << SystemClock::getInstance()->getHSEFreq()
+        USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL
+                    << "Oscillator frequency: " << SystemClock::getInstance()->getHSEFreq()
                     << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL
-                    << UsartLogger::TAB << "pllp=" << pllp);
+                    << UsartLogger::TAB << "pllp=" << pllp << UsartLogger::ENDL);
 
         // For RTC, it is necessary to reset the state since it will not be
         // automatically reset after MCU programming.
@@ -161,7 +161,7 @@ public:
         do
         {
             Rtc::Start::Status status = rtc.start(8 * 2047 + 7, RTC_WAKEUPCLOCK_RTCCLK_DIV2);
-            USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")");
+            USART_DEBUG("RTC status: " << Rtc::Start::asString(status) << " (" << rtc.getHalStatus() << ")" << UsartLogger::ENDL);
         }
         while (rtc.getHalStatus() != HAL_OK);
 
@@ -170,7 +170,7 @@ public:
         ledRed.start();
 
         DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_64, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
-        USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")");
+        USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
         pinSsdCs.start();
 
         ledRed.setHigh();
@@ -204,10 +204,10 @@ public:
         sysClock.stop();
     }
 
-    void onRtcWakeUp ()
+    void onRtcSecondInterrupt ()
     {
-        time_t total_secs = Rtc::getInstance()->getTime();
-        USART_DEBUG("time=" << total_secs);
+        time_t total_secs = Rtc::getInstance()->getTimeSec();
+        USART_DEBUG("time=" << total_secs << UsartLogger::ENDL);
         ledBlue.toggle();
 
         struct tm * now = ::gmtime(&total_secs);
@@ -215,11 +215,6 @@ public:
 
         spi.waitForRelease();
         ssd.putString(localTime, NULL, 4);
-    }
-
-    void onRtcSecond ()
-    {
-
     }
 
     inline AsyncUsart & getLoggerUsart ()
@@ -269,7 +264,15 @@ void RTC_WKUP_IRQHandler ()
 {
     if (Rtc::getInstance() != NULL)
     {
-        Rtc::getInstance()->onSecondInterrupt();
+        Rtc::getInstance()->processInterrupt();
+    }
+}
+
+void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef * /*hrtc*/)
+{
+    if (Rtc::getInstance() != NULL)
+    {
+        Rtc::getInstance()->processEventCallback();
     }
 }
 

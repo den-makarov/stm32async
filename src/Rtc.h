@@ -37,9 +37,7 @@ public:
     class EventHandler
     {
     public:
-
-        virtual void onRtcWakeUp () =0;
-        virtual void onRtcSecond () =0;
+        virtual void onRtcSecondInterrupt () =0;
     };
 
     /**
@@ -88,7 +86,23 @@ public:
     Start::Status start (uint32_t counterMode, uint32_t prescaler);
     void stop ();
 
-    void onSecondInterrupt ();
+    inline void processInterrupt ()
+    {
+        #ifndef STM32F1
+        HAL_RTCEx_WakeUpTimerIRQHandler(&rtcParameters);
+        #else
+        HAL_RTCEx_RTCIRQHandler(&rtcParameters);
+        #endif
+    }
+
+    inline void processEventCallback ()
+    {
+        ++timeSec;
+        if (handler != NULL)
+        {
+            handler->onRtcSecondInterrupt();
+        }
+    }
 
     inline void setHandler (EventHandler * handler)
     {
@@ -103,6 +117,11 @@ public:
     inline HAL_StatusTypeDef getHalStatus () const
     {
         return halStatus;
+    }
+
+    inline time_t getTimeSec () const
+    {
+        return timeSec;
     }
 
     inline time_t getTime () const

@@ -96,13 +96,13 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
         return Start::DATE_SET_ERROR;
     }
 
-#ifndef STM32F1
+    #ifndef STM32F1
     halStatus = HAL_RTCEx_SetWakeUpTimer_IT(&rtcParameters, counter, prescaler);
     if (halStatus != HAL_OK)
     {
         return Start::IT_INIT_ERROR;
     }
-#else
+    #else
     UNUSED(counter);
     UNUSED(prescaler);
 
@@ -111,34 +111,10 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
     {
         return Start::IT_INIT_ERROR;
     }
-#endif
+    #endif
 
     wkUpIrq.enable();
     return Start::OK;
-}
-
-void Rtc::onSecondInterrupt ()
-{
-#ifdef STM32F4
-    /* Get the pending status of the WAKEUPTIMER Interrupt */
-    if (__HAL_RTC_WAKEUPTIMER_GET_FLAG(&rtcParameters, RTC_FLAG_WUTF) != RESET)
-    {
-        ++timeSec;
-        if (handler != NULL)
-        {
-            handler->onRtcWakeUp();
-        }
-        /* Clear the WAKEUPTIMER interrupt pending bit */
-        __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(&rtcParameters, RTC_FLAG_WUTF);
-    }
-
-    /* Clear the EXTI's line Flag for RTC WakeUpTimer */
-    __HAL_RTC_WAKEUPTIMER_EXTI_CLEAR_FLAG();
-#elif defined(STM32F1)
-    HAL_RTCEx_RTCIRQHandler(&rtcParameters);
-#else
-
-#endif
 }
 
 void Rtc::stop ()
