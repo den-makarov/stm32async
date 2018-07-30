@@ -128,7 +128,6 @@ public:
 
     void initClock (uint32_t pllp)
     {
-        SystemClock::getInstance()->setRTC();
         SystemClock::getInstance()->setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);        
         HardwareLayout::SystemPllFactors pllConfig;
         pllConfig.PLLM = 16;
@@ -138,6 +137,7 @@ public:
         SystemClock::getInstance()->setPLL(&pllConfig);
         SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
         SystemClock::getInstance()->setLatency(FLASH_LATENCY_3);
+        SystemClock::getInstance()->setRTC();
         SystemClock::getInstance()->start();
     }
 
@@ -231,6 +231,14 @@ int main (void)
     // Note: check the Value of the External oscillator mounted in PCB
     // and set this value in the file stm32f4xx_hal_conf.h
     HAL_Init();
+
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+    /* STM32F405x/407x/415x/417x Revision Z devices: prefetch is supported  */
+    if (HAL_GetREVID() == 0x1001)
+    {
+        /* Enable the Flash prefetch */
+        __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+    }
 
     MyApplication app;
     appPtr = &app;

@@ -225,7 +225,6 @@ void SystemClock::start ()
     {
         lsePort->enableClock();
     }
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
     if (HAL_RCC_OscConfig(&oscParameters) != HAL_OK)
     {
@@ -237,13 +236,6 @@ void SystemClock::start ()
     {
         /* Initialization Error */
         while(1);
-    }
-
-    /* STM32F405x/407x/415x/417x Revision Z devices: prefetch is supported  */
-    if (HAL_GetREVID() == 0x1001)
-    {
-        /* Enable the Flash prefetch */
-        __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
     }
 
     if (HAL_RCCEx_PeriphCLKConfig(&periphClkParameters) != HAL_OK)
