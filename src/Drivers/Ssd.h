@@ -82,7 +82,17 @@ public:
 
     static const int SEG_NUMBER = 5;
 
-    Ssd_74HC595_SPI (AsyncSpi & _spi, IOPort & _csPin, bool _inverse);
+    Ssd_74HC595_SPI (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse);
+
+    inline void start ()
+    {
+        csPin.start();
+    }
+
+    inline void stop ()
+    {
+        csPin.stop();
+    }
 
     void putString (const char * str, const bool * dots, uint16_t segNumbers);
 
@@ -93,7 +103,7 @@ public:
 private:
 
     AsyncSpi & spi;
-    IOPort & csPin;
+    IOPort csPin;
     uint8_t segData[SEG_NUMBER];
     bool inverse;
 

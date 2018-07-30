@@ -110,9 +110,9 @@ char Ssd::getBits (char c, bool dot) const
 /************************************************************************
  * Class Ssd_74HC595_SPI
  ************************************************************************/
-Ssd_74HC595_SPI::Ssd_74HC595_SPI (AsyncSpi & _spi, IOPort & _csPin, bool _inverse) :
+Ssd_74HC595_SPI::Ssd_74HC595_SPI (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse) :
     spi { _spi },
-    csPin { _csPin },
+    csPin { _csPort, _csPin, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_HIGH },
     inverse { _inverse }
 {
     // empty

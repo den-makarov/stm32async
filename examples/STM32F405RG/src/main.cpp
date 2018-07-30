@@ -24,6 +24,7 @@
 #include "stm32async/HardwareLayout/PortA.h"
 #include "stm32async/HardwareLayout/PortB.h"
 #include "stm32async/HardwareLayout/PortC.h"
+#include "stm32async/HardwareLayout/PortD.h"
 #include "stm32async/HardwareLayout/PortH.h"
 #include "stm32async/HardwareLayout/Usart6.h"
 #include "stm32async/HardwareLayout/Spi1.h"
@@ -50,6 +51,7 @@ private:
     HardwareLayout::PortA portA;
     HardwareLayout::PortB portB;
     HardwareLayout::PortC portC;
+    HardwareLayout::PortD portD;
     HardwareLayout::PortH portH;
 
     // DMA
@@ -67,7 +69,6 @@ private:
     // SPI
     HardwareLayout::Spi1 spi1;
     AsyncSpi spi;
-    IOPort pinSsdCs;
     Drivers::Ssd_74HC595_SPI ssd;
 
     // USART logger
@@ -92,9 +93,8 @@ public:
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_3,
                                              HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } }
         },
-        spi(spi1),
-        pinSsdCs(portC, GPIO_PIN_4, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_HIGH),
-        ssd(spi, pinSsdCs, true),
+        spi { spi1 },
+        ssd { spi, portC, GPIO_PIN_4, true },
         // USART logger
         usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
@@ -169,7 +169,7 @@ public:
 
         DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_64, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
         USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
-        pinSsdCs.start();
+        ssd.start();
 
         ledRed.setHigh();
         HAL_Delay(500);
@@ -181,7 +181,7 @@ public:
             HAL_Delay(1000);
         }
 
-        pinSsdCs.stop();
+        ssd.stop();
         spi.stop();
         ledBlue.stop();
         ledRed.stop();
@@ -194,6 +194,7 @@ public:
                     << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portB=" << portB.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portC=" << portC.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "portH=" << portH.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma2=" << dma2.getObjectsCount() << UsartLogger::ENDL);
