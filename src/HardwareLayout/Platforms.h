@@ -29,6 +29,9 @@
 
     #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) (cfg.Init.Channel = channel)
     #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) (cfg.Init.FIFOMode = mode)
+    #define HAL_EXT_SetRtcTimer_IT(cfg, counter, prescaler) HAL_RTCEx_SetWakeUpTimer_IT(cfg, counter, prescaler)
+    #define HAL_EXT_RtcTimerIRQHandler(cfg) HAL_RTCEx_WakeUpTimerIRQHandler(cfg)
+    #define HAL_EXT_DeactivateRtcTimer(cfg) HAL_RTCEx_DeactivateWakeUpTimer(cfg)
 
     namespace Stm32async
     {
@@ -93,6 +96,9 @@
     #define DMA_FIFOMODE_DISABLE 0U
     #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) UNUSED(channel)
     #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) UNUSED(mode)
+    #define HAL_EXT_SetRtcTimer_IT(cfg, counter, prescaler) HAL_RTCEx_SetSecond_IT(cfg)
+    #define HAL_EXT_RtcTimerIRQHandler(cfg) HAL_RTCEx_RTCIRQHandler(cfg)
+    #define HAL_EXT_DeactivateRtcTimer(cfg) HAL_RTCEx_DeactivateSecond(cfg)
 
     namespace Stm32async
     {

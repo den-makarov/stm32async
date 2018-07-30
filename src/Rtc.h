@@ -86,13 +86,12 @@ public:
     Start::Status start (uint32_t counterMode, uint32_t prescaler);
     void stop ();
 
+    const char * getLocalDate (char sep = '.');
+    const char * getLocalTime (char sep = ':');
+
     inline void processInterrupt ()
     {
-        #ifndef STM32F1
-        HAL_RTCEx_WakeUpTimerIRQHandler(&rtcParameters);
-        #else
-        HAL_RTCEx_RTCIRQHandler(&rtcParameters);
-        #endif
+        HAL_EXT_RtcTimerIRQHandler(&rtcParameters);
     }
 
     inline void processEventCallback ()
@@ -170,6 +169,8 @@ private:
 
     // These variables are modified from interrupt service routine, therefore declare them as volatile
     volatile time_t timeSec; // up-time and current time (in seconds)
+    char localDate[16];
+    char localTime[16];
 };
 
 } // end namespace

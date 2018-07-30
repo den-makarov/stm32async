@@ -20,6 +20,8 @@
 #include "Rtc.h"
 #include "SystemClock.h"
 
+#include <ctime>
+
 using namespace Stm32async;
 
 /************************************************************************
@@ -41,25 +43,11 @@ Rtc::Rtc (HardwareLayout::Interrupt && _wkUpIrq) :
     timeSec { 0 }
 {
     rtcParameters.Instance = RTC;
-#ifndef STM32F1
-    rtcParameters.Init.HourFormat = RTC_HOURFORMAT_24;
-    rtcParameters.Init.AsynchPrediv = 127;
-    rtcParameters.Init.SynchPrediv = 255;
-    rtcParameters.Init.OutPut = RTC_OUTPUT_DISABLE;
-    rtcParameters.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-    rtcParameters.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-#else
-    rtcParameters.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
-    rtcParameters.Init.OutPut = RTC_OUTPUTSOURCE_NONE;
-#endif
+    rtcParameters.Init.OutPut = 0x0;
 
     timeParameters.Hours = 0x0;
     timeParameters.Minutes = 0x0;
     timeParameters.Seconds = 0x0;
-#ifndef STM32F1
-    timeParameters.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-    timeParameters.StoreOperation = RTC_STOREOPERATION_RESET;
-#endif
 
     dateParameters.WeekDay = RTC_WEEKDAY_MONDAY;
     dateParameters.Month = RTC_MONTH_JANUARY;
@@ -96,22 +84,14 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
         return Start::DATE_SET_ERROR;
     }
 
-    #ifndef STM32F1
-    halStatus = HAL_RTCEx_SetWakeUpTimer_IT(&rtcParameters, counter, prescaler);
+    halStatus = HAL_EXT_SetRtcTimer_IT(&rtcParameters, counter, prescaler);
     if (halStatus != HAL_OK)
     {
         return Start::IT_INIT_ERROR;
     }
-    #else
+
     UNUSED(counter);
     UNUSED(prescaler);
-
-    halStatus = HAL_RTCEx_SetSecond_IT(&rtcParameters);
-    if (halStatus != HAL_OK)
-    {
-        return Start::IT_INIT_ERROR;
-    }
-    #endif
 
     wkUpIrq.enable();
     return Start::OK;
@@ -120,12 +100,37 @@ Rtc::Start::Status Rtc::start (uint32_t counter, uint32_t prescaler)
 void Rtc::stop ()
 {
     wkUpIrq.disable();
-    #ifndef STM32F1
-    HAL_RTCEx_DeactivateWakeUpTimer(&rtcParameters);
-    #else
-    HAL_RTCEx_DeactivateSecond(&rtcParameters);
-    #endif
+    HAL_EXT_DeactivateRtcTimer(&rtcParameters);
     HAL_RTC_DeInit(&rtcParameters);
     __HAL_RCC_RTC_DISABLE();
 }
 
+const char * Rtc::getLocalDate (char sep)
+{
+    time_t total_secs = timeSec;
+    struct ::tm * now = ::gmtime(&total_secs);
+    if (sep != 0)
+    {
+        ::sprintf(localDate, "%02d%c%02d%c%04d", now->tm_mday, sep, now->tm_mon+1, sep, now->tm_year+1900);
+    }
+    else
+    {
+        ::sprintf(localDate, "%02d%02d%04d", now->tm_mday, now->tm_mon+1, now->tm_year+1900);
+    }
+    return &localDate[0];
+}
+
+const char * Rtc::getLocalTime (char sep)
+{
+    time_t total_secs = timeSec;
+    struct ::tm * now = ::gmtime(&total_secs);
+    if (sep != 0)
+    {
+        ::sprintf(localTime, "%02d%c%02d%c%02d", now->tm_hour, sep, now->tm_min, sep, now->tm_sec);
+    }
+    else
+    {
+        ::sprintf(localTime, "%02d%02d%02d", now->tm_hour, now->tm_min, now->tm_sec);
+    }
+    return &localTime[0];
+}

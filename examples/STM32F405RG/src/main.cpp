@@ -37,7 +37,6 @@
 
 // Common includes
 #include <functional>
-#include <ctime>
 
 using namespace Stm32async;
 
@@ -70,7 +69,6 @@ private:
     AsyncSpi spi;
     IOPort pinSsdCs;
     Drivers::Ssd_74HC595_SPI ssd;
-    char localTime[24];
 
     // USART logger
     HardwareLayout::Usart6 usart6;
@@ -206,15 +204,13 @@ public:
 
     void onRtcSecondInterrupt ()
     {
-        time_t total_secs = Rtc::getInstance()->getTimeSec();
-        USART_DEBUG("time=" << total_secs << UsartLogger::ENDL);
+        USART_DEBUG(Rtc::getInstance()->getLocalDate() << " "
+                    << Rtc::getInstance()->getLocalTime() << UsartLogger::ENDL);
         ledBlue.toggle();
 
-        struct tm * now = ::gmtime(&total_secs);
-        sprintf(localTime, "%02d%02d", now->tm_min, now->tm_sec);
-
         spi.waitForRelease();
-        ssd.putString(localTime, NULL, 4);
+        const char * shortTime = Rtc::getInstance()->getLocalTime(0);
+        ssd.putString(shortTime + 2, NULL, 4);
     }
 
     inline AsyncUsart & getLoggerUsart ()
