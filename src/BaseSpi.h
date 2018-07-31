@@ -40,6 +40,14 @@ public:
     BaseSpi (const HardwareLayout::Spi & _device);
 
     /**
+     * @brief Getter for the device parameters
+     */
+    inline SPI_HandleTypeDef & getParameters ()
+    {
+        return parameters;
+    }
+
+    /**
      * @brief Open transmission session with given parameters.
      */
     DeviceStart::Status start (uint32_t direction, uint32_t prescaler,
@@ -50,14 +58,6 @@ public:
      * @brief Close the transmission session.
      */
     void stop ();
-
-    /**
-     * @brief Getter for the device parameters
-     */
-    inline SPI_HandleTypeDef & getParameters ()
-    {
-        return parameters;
-    }
 
     /**
      * @brief Send an amount of data in blocking mode.

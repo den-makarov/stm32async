@@ -28,9 +28,10 @@ namespace Drivers
 {
 
 /** 
- * @brief Class that describes a seven segment digit
+ * @brief Class that describes a seven segment display connected to a shift register IC.
+ *        The shift register IC is connected via the SPI interface.
  */
-class Ssd : public SharedDevice::DeviceClient
+class Ssd_74XX595 : public SharedDevice::DeviceClient
 {
 public:
 
@@ -48,41 +49,14 @@ public:
         SegmentsMask ();
     };
 
-    virtual ~Ssd ()
-    {
-        // empty
-    }
+    static const int SEG_NUMBER = 5;
 
-protected:
-
-    SegmentsMask sm;
-
-public:
-
-    Ssd () : sm()
-    {
-        // empty
-    }
+    Ssd_74XX595 (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse);
 
     inline void setSegmentsMask (const SegmentsMask & sm)
     {
         this->sm = sm;
     }
-
-    char getBits (char c, bool dot) const;
-};
-
-/** 
- * @brief Class that describes a seven segment display connected to a shift register IC.
- *        The shift register IC is connected via the SPI interface.
- */
-class Ssd_74HC595_SPI : public Ssd
-{
-public:
-
-    static const int SEG_NUMBER = 5;
-
-    Ssd_74HC595_SPI (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse);
 
     inline void start ()
     {
@@ -104,8 +78,11 @@ private:
 
     AsyncSpi & spi;
     IOPort csPin;
+    SegmentsMask sm;
     uint8_t segData[SEG_NUMBER];
     bool inverse;
+
+    char getBits (char c, bool dot) const;
 
 };
 

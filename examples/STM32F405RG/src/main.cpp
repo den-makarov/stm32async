@@ -71,7 +71,7 @@ private:
     // SPI
     HardwareLayout::Spi1 spi1;
     AsyncSpi spi;
-    Drivers::Ssd_74HC595_SPI ssd;
+    Drivers::Ssd_74XX595 ssd;
 
     // SD Card
     HardwareLayout::Sdio1 sdio1;
@@ -129,7 +129,7 @@ public:
         sysClock.setHSE(&portH, GPIO_PIN_0 | GPIO_PIN_1);
         sysClock.setLSE(&portC, GPIO_PIN_14 | GPIO_PIN_15);
         // Prepare SSD mask
-        Drivers::Ssd::SegmentsMask sm;
+        Drivers::Ssd_74XX595::SegmentsMask sm;
         sm.top = 3;
         sm.rightTop = 5;
         sm.rightBottom = 7;

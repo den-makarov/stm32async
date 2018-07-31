@@ -25,9 +25,9 @@ using namespace Stm32async::Drivers;
 #define setBitToFalse(uInt8Val, bitNr)  (uInt8Val &= ~(1 << bitNr))
 
 /************************************************************************
- * Class SegmentsMask
+ * Class Ssd_74HC595_SPI
  ************************************************************************/
-Ssd::SegmentsMask::SegmentsMask ()
+Ssd_74XX595::SegmentsMask::SegmentsMask ()
 {
     top = 0;
     rightTop = 1;
@@ -39,7 +39,64 @@ Ssd::SegmentsMask::SegmentsMask ()
     dot = 7;
 }
 
-char Ssd::getBits (char c, bool dot) const
+Ssd_74XX595::Ssd_74XX595 (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse) :
+    spi { _spi },
+    csPin { _csPort, _csPin, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_HIGH },
+    sm {},
+    inverse { _inverse }
+{
+    // empty
+}
+
+void Ssd_74XX595::putString (const char * str, const bool * dots, uint16_t segNumbers)
+{
+    if (segNumbers >= SEG_NUMBER)
+    {
+        return;
+    }
+    for (int i = 0; i < segNumbers; ++i)
+    {
+        bool d = dots == NULL ? false : dots[segNumbers - 1 - i];
+        segData[i] = getBits(str[segNumbers - 1 - i], d);
+        if (inverse)
+        {
+            segData[i] = ~segData[i];
+        }
+    }
+    csPin.setLow();
+    spi.transmit(this, &segData[0], segNumbers);
+}
+
+void Ssd_74XX595::putDots (const bool * dots, uint16_t segNumbers)
+{
+    if (segNumbers >= SEG_NUMBER)
+    {
+        return;
+    }
+    for (int i = 0; i < segNumbers; ++i)
+    {
+        bool d = inverse ? !dots[segNumbers - 1 - i] : dots[segNumbers - 1 - i];
+        if (d)
+        {
+            setBitToTrue(segData[i], sm.dot);
+        }
+        else
+        {
+            setBitToFalse(segData[i], sm.dot);
+        }
+    }
+    csPin.setLow();
+    spi.transmit(this, &segData[0], segNumbers);
+}
+
+bool Ssd_74XX595::onTransmissionFinished (SharedDevice::State /*state*/)
+{
+    while (spi.isBusy());
+    csPin.setHigh();
+    return true;
+}
+
+char Ssd_74XX595::getBits (char c, bool dot) const
 {
     char bits = 0;
     switch (c)
@@ -105,63 +162,4 @@ char Ssd::getBits (char c, bool dot) const
         bits |= (1 << sm.dot);
     }
     return bits;
-}
-
-/************************************************************************
- * Class Ssd_74HC595_SPI
- ************************************************************************/
-Ssd_74HC595_SPI::Ssd_74HC595_SPI (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse) :
-    spi { _spi },
-    csPin { _csPort, _csPin, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_HIGH },
-    inverse { _inverse }
-{
-    // empty
-}
-
-void Ssd_74HC595_SPI::putString (const char * str, const bool * dots, uint16_t segNumbers)
-{
-    if (segNumbers >= SEG_NUMBER)
-    {
-        return;
-    }
-    for (int i = 0; i < segNumbers; ++i)
-    {
-        bool d = dots == NULL ? false : dots[segNumbers - 1 - i];
-        segData[i] = getBits(str[segNumbers - 1 - i], d);
-        if (inverse)
-        {
-            segData[i] = ~segData[i];
-        }
-    }
-    csPin.setLow();
-    spi.transmit(this, &segData[0], segNumbers);
-}
-
-void Ssd_74HC595_SPI::putDots (const bool * dots, uint16_t segNumbers)
-{
-    if (segNumbers >= SEG_NUMBER)
-    {
-        return;
-    }
-    for (int i = 0; i < segNumbers; ++i)
-    {
-        bool d = inverse ? !dots[segNumbers - 1 - i] : dots[segNumbers - 1 - i];
-        if (d)
-        {
-            setBitToTrue(segData[i], sm.dot);
-        }
-        else
-        {
-            setBitToFalse(segData[i], sm.dot);
-        }
-    }
-    csPin.setLow();
-    spi.transmit(this, &segData[0], segNumbers);
-}
-
-bool Ssd_74HC595_SPI::onTransmissionFinished (SharedDevice::State /*state*/)
-{
-    while (spi.isBusy());
-    csPin.setHigh();
-    return true;
 }
