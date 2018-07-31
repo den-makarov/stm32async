@@ -17,11 +17,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef STM32ASYNC_BASESPI_H_
-#define STM32ASYNC_BASESPI_H_
+#ifndef STM32ASYNC_SPI_H_
+#define STM32ASYNC_SPI_H_
 
 #include "HardwareLayout/Spi.h"
+
+#ifdef HAL_SPI_MODULE_ENABLED
+
 #include "IODevice.h"
+#include "SharedDevice.h"
 
 namespace Stm32async
 {
@@ -90,5 +94,80 @@ protected:
     SPI_HandleTypeDef parameters;
 };
 
+/**
+ * @brief Class that implements SPI interface.
+ */
+class AsyncSpi : public BaseSpi, public SharedDevice
+{
+public:
+
+    /**
+     * @brief Default constructor.
+     */
+    AsyncSpi (const HardwareLayout::Spi & _device);
+
+    /**
+     * @brief Open transmission session with given parameters.
+     */
+    DeviceStart::Status start (uint32_t direction, uint32_t prescaler,
+                               uint32_t dataSize = SPI_DATASIZE_8BIT,
+                               uint32_t CLKPhase = SPI_PHASE_1EDGE);
+
+    /**
+     * @brief Close the transmission session.
+     */
+    void stop ();
+
+    /**
+     * @brief Send an amount of data in DMA mode.
+     */
+    inline HAL_StatusTypeDef transmit (DeviceClient * _client, uint8_t * buffer, uint16_t n)
+    {
+        startCommunication(_client, State::TX, State::TX_CMPL);
+        halStatus = HAL_SPI_Transmit_DMA(&parameters, buffer, n);
+        return halStatus;
+    }
+
+    /**
+     * @brief Send an amount of data in interrupt mode.
+     */
+    inline HAL_StatusTypeDef transmitIt (DeviceClient * _client, uint8_t * buffer, uint16_t n)
+    {
+        startCommunication(_client, State::TX, State::TX_CMPL);
+        halStatus = HAL_SPI_Transmit_IT(&parameters, buffer, n);
+        return halStatus;
+    }
+
+    /**
+     * @brief Receive an amount of data in DMA mode.
+     */
+    inline HAL_StatusTypeDef receive (DeviceClient * _client, uint8_t * buffer, uint16_t n)
+    {
+        startCommunication(_client, State::RX, State::RX_CMPL);
+        halStatus = HAL_SPI_Receive_DMA(&parameters, buffer, n);
+        return halStatus;
+    }
+
+    /**
+     * @brief Receive an amount of data in interrupt mode.
+     */
+    inline HAL_StatusTypeDef receiveIt (DeviceClient * _client, uint8_t * buffer, uint16_t n)
+    {
+        startCommunication(_client, State::RX, State::RX_CMPL);
+        halStatus = HAL_SPI_Receive_IT(&parameters, buffer, n);
+        return halStatus;
+    }
+
+    /**
+     * @brief Interrupt handling.
+     */
+    inline void processInterrupt ()
+    {
+        HAL_SPI_IRQHandler(&parameters);
+    }
+};
+
+
 } // end namespace
+#endif
 #endif

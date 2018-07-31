@@ -17,7 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "BaseSpi.h"
+#include "Spi.h"
+
+#ifdef HAL_SPI_MODULE_ENABLED
 
 using namespace Stm32async;
 
@@ -84,3 +86,56 @@ void BaseSpi::stop ()
     IODevice::disablePorts();
     device.disableClock();
 }
+
+/************************************************************************
+ * Class AsyncSpi
+ ************************************************************************/
+
+AsyncSpi::AsyncSpi (const HardwareLayout::Spi & _device) :
+    BaseSpi { _device },
+    SharedDevice { device.txDma, device.rxDma, DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
+{
+    // empty
+}
+
+DeviceStart::Status AsyncSpi::start (uint32_t direction, uint32_t prescaler,
+                                     uint32_t dataSize/* = SPI_DATASIZE_8BIT*/,
+                                     uint32_t CLKPhase/* = SPI_PHASE_1EDGE*/)
+{
+    DeviceStart::Status status = BaseSpi::start(direction, prescaler, dataSize, CLKPhase);
+    if (status != DeviceStart::OK)
+    {
+        return status;
+    }
+
+    device.txDma.dma->enableClock();
+    __HAL_LINKDMA(&parameters, hdmatx, txDma);
+    halStatus = HAL_DMA_Init(&txDma);
+    if (halStatus != HAL_OK)
+    {
+        return DeviceStart::TX_DMA_INIT_ERROR;
+    }
+
+    device.rxDma.dma->enableClock();
+    __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+    halStatus = HAL_DMA_Init(&rxDma);
+    if (halStatus != HAL_OK)
+    {
+        return DeviceStart::RX_DMA_INIT_ERROR;
+    }
+
+    device.enableIrq();
+    return DeviceStart::OK;
+}
+
+void AsyncSpi::stop ()
+{
+    device.disableIrq();
+    HAL_DMA_DeInit(&rxDma);
+    device.rxDma.dma->disableClock();
+    HAL_DMA_DeInit(&txDma);
+    device.txDma.dma->disableClock();
+    BaseSpi::stop();
+}
+
+#endif

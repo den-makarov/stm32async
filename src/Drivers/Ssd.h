@@ -20,7 +20,7 @@
 #ifndef DRIVERS_SSD_H_
 #define DRIVERS_SSD_H_
 
-#include "../AsyncSpi.h"
+#include "../Spi.h"
 
 namespace Stm32async
 {
