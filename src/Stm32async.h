@@ -68,5 +68,35 @@ public:
     }
 };
 
+/**
+ * @brief Template class providing operator () for converting a string argument
+ *        to a value of type type T
+ */
+template<typename T, size_t size, const char * strings[]> class ConvertClass
+{
+public:
+    /**
+     * @brief Converts a string to an enumeration literal.
+     *
+     * @return True if conversion was successful.
+     */
+    bool operator() (const char * image, T& value) const
+    {
+        for (size_t i = 0; i < size; ++i)
+        {
+            if (::strcmp(image, strings[i]) == 0)
+            {
+                // everything's OK:
+                value = static_cast<T>(i);
+                return true;
+            }
+        }
+
+        // not found:
+        value = static_cast<T>(0);
+        return false;
+    }
+};
+
 } // end namespace
 #endif

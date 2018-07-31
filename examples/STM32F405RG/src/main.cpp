@@ -26,7 +26,7 @@
 #include "stm32async/HardwareLayout/PortC.h"
 #include "stm32async/HardwareLayout/PortD.h"
 #include "stm32async/HardwareLayout/PortH.h"
-#include "stm32async/HardwareLayout/Usart6.h"
+#include "stm32async/HardwareLayout/Usart1.h"
 #include "stm32async/HardwareLayout/Spi1.h"
 #include "stm32async/HardwareLayout/Sdio1.h"
 
@@ -40,6 +40,7 @@
 
 // Common includes
 #include <functional>
+#include "Config.h"
 
 using namespace Stm32async;
 
@@ -77,9 +78,10 @@ private:
     HardwareLayout::Sdio1 sdio1;
     IOPort pinSdPower, pinSdDetect;
     SdCard sdCard;
+    Config config;
 
     // USART logger
-    HardwareLayout::Usart6 usart6;
+    HardwareLayout::Usart1 usart1;
     UsartLogger usartLogger;
 
 public:
@@ -115,15 +117,16 @@ public:
         pinSdPower { portA, GPIO_PIN_15, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP },
         pinSdDetect { portB, GPIO_PIN_3, GPIO_MODE_INPUT, GPIO_PULLUP },
         sdCard { sdio1, pinSdDetect, /*clockDiv=*/ 2 },
+        config("conf.txt"),
         // USART logger
-        usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true, NULL,
-                 HardwareLayout::Interrupt { USART6_IRQn, 6, 0 },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5,
+        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, /*remapped=*/ true, NULL,
+                 HardwareLayout::Interrupt { USART1_IRQn, 6, 0 },
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4,
                                              HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 7, 0 } },
-                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5,
+                 HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_4,
                                              HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 7, 0 } }
         },
-        usartLogger { usart6, 115200 }
+        usartLogger { usart1, 115200 }
     {
         // External oscillators use system pins
         sysClock.setHSE(&portH, GPIO_PIN_0 | GPIO_PIN_1);
@@ -278,6 +281,7 @@ public:
                             << UsartLogger::TAB << "serial number = " << sdCard.getFatFs().volumeSN << UsartLogger::ENDL
                             << UsartLogger::TAB << "current directory = " << sdCard.getFatFs().currentDirectory << UsartLogger::ENDL);
                 sdCard.listFiles();
+                config.readConfiguration();
             }
         }
     }
@@ -345,7 +349,7 @@ void DMA2_Stream7_IRQHandler (void)
     appPtr->getLoggerUsart().processDmaTxInterrupt();
 }
 
-void USART6_IRQHandler (void)
+void USART1_IRQHandler (void)
 {
     appPtr->getLoggerUsart().processInterrupt();
 }
