@@ -17,9 +17,61 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "AsyncUsart.h"
+#include "Usart.h"
+
+#ifdef HAL_UART_MODULE_ENABLED
 
 using namespace Stm32async;
+
+/************************************************************************
+ * Class BaseUsart
+ ************************************************************************/
+
+BaseUsart::BaseUsart (const HardwareLayout::Usart & _device) :
+    IODevice { _device, {
+        IOPort { _device.txPin.port, _device.txPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP },
+        IOPort { _device.rxPin.port, _device.rxPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP }
+    } }
+{
+    parameters.Instance = device.getInstance();
+    parameters.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    parameters.Init.OverSampling = UART_OVERSAMPLING_16;
+    #ifdef UART_ONE_BIT_SAMPLE_DISABLE
+        usartParameters.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+    #endif
+    #ifdef UART_ADVFEATURE_NO_INIT
+        usartParameters.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+    #endif
+}
+
+HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
+                                    uint32_t wordLength/* = UART_WORDLENGTH_8B*/,
+                                    uint32_t stopBits/* = UART_STOPBITS_1*/,
+                                    uint32_t parity/* = UART_PARITY_NONE*/)
+{
+    device.enableClock();
+    IODevice::enablePorts();
+
+    parameters.Init.Mode = mode;
+    parameters.Init.BaudRate = baudRate;
+    parameters.Init.WordLength = wordLength;
+    parameters.Init.StopBits = stopBits;
+    parameters.Init.Parity = parity;
+    HAL_StatusTypeDef status = HAL_UART_Init(&parameters);
+    if (status != HAL_OK)
+    {
+        return HAL_ERROR;
+    }
+
+    return HAL_OK;
+}
+
+void BaseUsart::stop ()
+{
+    HAL_UART_DeInit(&parameters);
+    IODevice::disablePorts();
+    device.disableClock();
+}
 
 /************************************************************************
  * Class AsyncUsart
@@ -72,3 +124,5 @@ void AsyncUsart::stop ()
     device.txDma.dma->disableClock();
     BaseUsart::stop();
 }
+
+#endif

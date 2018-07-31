@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "AsyncUsart.h"
+#include "Usart.h"
 
 #ifndef STM32ASYNC_USART_LOGGER_H_
 #define STM32ASYNC_USART_LOGGER_H_

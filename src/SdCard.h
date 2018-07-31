@@ -20,12 +20,12 @@
 #ifndef STM32ASYNC_SDCARD_H_
 #define STM32ASYNC_SDCARD_H_
 
-#include "IODevice.h"
-#include "SharedDevice.h"
+#include "HardwareLayout/Sdio.h"
 
 #ifdef HAL_SD_MODULE_ENABLED
 
-#include "HardwareLayout/Sdio.h"
+#include "IODevice.h"
+#include "SharedDevice.h"
 #include "FatFS/ff_gen_drv.h"
 
 namespace Stm32async

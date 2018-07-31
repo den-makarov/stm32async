@@ -17,14 +17,84 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef STM32ASYNC_ASYNCUSART_H_
-#define STM32ASYNC_ASYNCUSART_H_
+#ifndef STM32ASYNC_USART_H_
+#define STM32ASYNC_USART_H_
 
-#include "BaseUsart.h"
+#include "HardwareLayout/Usart.h"
+
+#ifdef HAL_UART_MODULE_ENABLED
+
+#include "IODevice.h"
 #include "SharedDevice.h"
 
 namespace Stm32async
 {
+
+/**
+ * @brief Base USART class that holds the USART parameters and implements the communication in
+ *        a blocking mode.
+ */
+class BaseUsart : public IODevice<HardwareLayout::Usart, 2>
+{
+public:
+
+    /**
+     * @brief Default constructor.
+     */
+    BaseUsart (const HardwareLayout::Usart & _device);
+
+    /**
+     * @brief Getter for the device parameters
+     */
+    inline UART_HandleTypeDef & getParameters ()
+    {
+        return parameters;
+    }
+
+    /**
+     * @brief Open transmission session with given parameters.
+     */
+    HAL_StatusTypeDef start (uint32_t mode, uint32_t baudRate,
+                             uint32_t wordLength = UART_WORDLENGTH_8B,
+                             uint32_t stopBits = UART_STOPBITS_1,
+                             uint32_t parity = UART_PARITY_NONE);
+
+    /**
+     * @brief Close the transmission session.
+     */
+    void stop ();
+
+    /**
+     * @brief Send an amount of data in blocking mode.
+     */
+    inline HAL_StatusTypeDef transmitBlocking (const char * buffer, size_t n,
+                                               uint32_t timeout = __UINT32_MAX__)
+    {
+        return HAL_UART_Transmit(&parameters, (unsigned char *) buffer, n, timeout);
+    }
+
+    /**
+     * @brief Receive an amount of data in blocking mode.
+     */
+    inline HAL_StatusTypeDef receiveBlocking (const char * buffer, size_t n,
+                                              uint32_t timeout = __UINT32_MAX__)
+    {
+        return HAL_UART_Receive(&parameters, (unsigned char *) buffer, n, timeout);
+    }
+
+    /**
+     * @brief Procedure waits in a blocking mode until USART is ready.
+     */
+    inline void ensureReady ()
+    {
+        while (HAL_UART_GetState(&parameters) != HAL_UART_STATE_READY);
+    }
+
+protected:
+
+    UART_HandleTypeDef parameters;
+};
+
 
 /**
  * @brief Class that implements UART interface.
@@ -96,6 +166,7 @@ public:
     }
 };
 
+
 } // end namespace
 #endif
-
+#endif
