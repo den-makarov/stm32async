@@ -25,5 +25,12 @@ const char * DeviceStart::strings[] = {
     "Device started",
     "Can not initialize device",
     "Can not initialize TX DMA channel",
-    "Can not initialize RX DMA channel"
+    "Can not initialize RX DMA channel",
+    "SD Card is not inserted",
+    "Can not initialize SD Wide Bus Operation",
+    "Can not read SD Card status",
+    "Can not link FAT FS driver",
+    "Can not mount FAT FS volume",
+    "Can not retrieve FAT FS volume label",
+    "Can not retrieve FAT FS current directory"
 };

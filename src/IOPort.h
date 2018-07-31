@@ -124,6 +124,14 @@ public:
         return port.getInstance()->IDR;
     }
 
+    /**
+     * @brief Return the current value of the pin.
+     */
+    inline bool getBit () const
+    {
+        return (bool)HAL_GPIO_ReadPin(port.getInstance(), parameters.Pin);
+    }
+
 protected:
 
     /**

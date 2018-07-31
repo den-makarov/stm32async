@@ -37,9 +37,16 @@ public:
     enum Status
     {
         OK = 0,
-        DEVICE_INIT_ERROR = 1,
-        TX_DMA_INIT_ERROR = 2,
-        RX_DMA_INIT_ERROR = 3
+        DEVICE_INIT_ERROR        = 1,
+        TX_DMA_INIT_ERROR        = 2,
+        RX_DMA_INIT_ERROR        = 3,
+        SD_NOT_INSERTED          = 4,
+        SD_WIDE_BUS_ERROR        = 5,
+        SD_READ_STATUS_ERROR     = 6,
+        FAT_DRIVER_NOT_LINKED    = 7,
+        FAT_VOLUME_NOT_MOUNTED   = 8,
+        FAT_VOLUME_STATUS_ERROR  = 9,
+        FAT_DIR_STATUS_ERROR     = 10
     };
 
     /**
@@ -47,7 +54,7 @@ public:
      */
     enum
     {
-        size = 4
+        size = 11
     };
 
     /**

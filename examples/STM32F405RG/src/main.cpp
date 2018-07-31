@@ -28,11 +28,13 @@
 #include "stm32async/HardwareLayout/PortH.h"
 #include "stm32async/HardwareLayout/Usart6.h"
 #include "stm32async/HardwareLayout/Spi1.h"
+#include "stm32async/HardwareLayout/Sdio1.h"
 
 // Used devices
 #include "stm32async/SystemClock.h"
 #include "stm32async/Rtc.h"
 #include "stm32async/IOPort.h"
+#include "stm32async/SdCard.h"
 #include "stm32async/UsartLogger.h"
 #include "stm32async/Drivers/Ssd.h"
 
@@ -71,6 +73,11 @@ private:
     AsyncSpi spi;
     Drivers::Ssd_74HC595_SPI ssd;
 
+    // SD Card
+    HardwareLayout::Sdio1 sdio1;
+    IOPort pinSdPower, pinSdDetect;
+    SdCard sdCard;
+
     // USART logger
     HardwareLayout::Usart6 usart6;
     UsartLogger usartLogger;
@@ -95,13 +102,26 @@ public:
         },
         spi { spi1 },
         ssd { spi, portC, GPIO_PIN_4, true },
+        // SD card
+        sdio1 {
+                portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
+                portD, /*SDIO_CMD*/GPIO_PIN_2,
+                HardwareLayout::Interrupt { SDIO_IRQn, 3, 0 },
+                HardwareLayout::DmaStream { &dma2, DMA2_Stream6, DMA_CHANNEL_4,
+                                            HardwareLayout::Interrupt { DMA2_Stream6_IRQn, 4, 0 } },
+                HardwareLayout::DmaStream { &dma2, DMA2_Stream3, DMA_CHANNEL_4,
+                                            HardwareLayout::Interrupt { DMA2_Stream3_IRQn, 5, 0 } }
+        },
+        pinSdPower { portA, GPIO_PIN_15, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP },
+        pinSdDetect { portB, GPIO_PIN_3, GPIO_MODE_INPUT, GPIO_PULLUP },
+        sdCard { sdio1, pinSdDetect, /*clockDiv=*/ 2 },
         // USART logger
         usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7, /*remapped=*/ true, NULL,
-                 HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
+                 HardwareLayout::Interrupt { USART6_IRQn, 6, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5,
-                                             HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 3, 0 } },
+                                             HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 7, 0 } },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5,
-                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 3, 0 } }
+                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 7, 0 } }
         },
         usartLogger { usart6, 115200 }
     {
@@ -175,11 +195,22 @@ public:
         HAL_Delay(500);
         ledRed.setLow();
 
+        pinSdDetect.start();
+        if (sdCard.isCardInserted())
+        {
+            initSdCard();
+        }
+
         for (int i = 0; i < 15; ++i)
         {
             // main loop empty for 15 sec
             HAL_Delay(1000);
         }
+
+        sdCard.stop();
+        pinSdPower.setHigh();
+        pinSdPower.stop();
+        pinSdDetect.stop();
 
         ssd.stop();
         spi.stop();
@@ -203,6 +234,16 @@ public:
         sysClock.stop();
     }
 
+    inline AsyncUsart & getLoggerUsart ()
+    {
+        return usartLogger.getUsart();
+    }
+
+    inline AsyncSpi & getSpi ()
+    {
+        return spi;
+    }
+
     void onRtcSecondInterrupt ()
     {
         USART_DEBUG(Rtc::getInstance()->getLocalDate() << " "
@@ -214,14 +255,31 @@ public:
         ssd.putString(shortTime + 2, NULL, 4);
     }
 
-    inline AsyncUsart & getLoggerUsart ()
+    void initSdCard ()
     {
-        return usartLogger.getUsart();
-    }
-
-    inline AsyncSpi & getSpi ()
-    {
-        return spi;
+        pinSdPower.start();
+        pinSdPower.setLow();
+        HAL_Delay(250);
+        DeviceStart::Status devStatus = sdCard.start();
+        USART_DEBUG("SD card status: " << DeviceStart::asString(devStatus) << " (" << sdCard.getHalStatus() << ")" << UsartLogger::ENDL);
+        if (devStatus == DeviceStart::OK)
+        {
+            USART_DEBUG("CardType = " << sdCard.getCardInfo().CardType << UsartLogger::ENDL
+                     << UsartLogger::TAB << "CardCapacity = " << sdCard.getCardInfo().CardCapacity/1024L/1024L << "Mb" << UsartLogger::ENDL
+                     << UsartLogger::TAB << "CardBlockSize = " << sdCard.getCardInfo().CardBlockSize << UsartLogger::ENDL
+                     << UsartLogger::TAB << "DAT_BUS_WIDTH = " << sdCard.getCardStatus().DAT_BUS_WIDTH << UsartLogger::ENDL
+                     << UsartLogger::TAB << "SD_CARD_TYPE = " << sdCard.getCardStatus().SD_CARD_TYPE << UsartLogger::ENDL
+                     << UsartLogger::TAB << "SPEED_CLASS = " << sdCard.getCardStatus().SPEED_CLASS << UsartLogger::ENDL);
+            devStatus = sdCard.mountFatFs();
+            USART_DEBUG("FAT FS card status: " << DeviceStart::asString(devStatus) << " (" << sdCard.getHalStatus() << ")" << UsartLogger::ENDL);
+            if (devStatus == DeviceStart::OK)
+            {
+                USART_DEBUG("label = " << sdCard.getFatFs().volumeLabel << UsartLogger::ENDL
+                            << UsartLogger::TAB << "serial number = " << sdCard.getFatFs().volumeSN << UsartLogger::ENDL
+                            << UsartLogger::TAB << "current directory = " << sdCard.getFatFs().currentDirectory << UsartLogger::ENDL);
+                sdCard.listFiles();
+            }
+        }
     }
 };
 
@@ -311,6 +369,22 @@ void DMA2_Stream5_IRQHandler (void)
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * /*channel*/)
 {
     appPtr->getSpi().processCallback(SharedDevice::State::TX_CMPL);
+}
+
+// SD card
+void DMA2_Stream3_IRQHandler (void)
+{
+    SdCard::getInstance()->processDmaRxInterrupt();
+}
+
+void DMA2_Stream6_IRQHandler (void)
+{
+    SdCard::getInstance()->processDmaTxInterrupt();
+}
+
+void SDIO_IRQHandler (void)
+{
+    SdCard::getInstance()->processSdIOInterrupt();
 }
 
 }
