@@ -27,6 +27,7 @@
 #include "stm32async/HardwareLayout/PortD.h"
 #include "stm32async/HardwareLayout/PortH.h"
 #include "stm32async/HardwareLayout/Usart1.h"
+#include "stm32async/HardwareLayout/Usart2.h"
 #include "stm32async/HardwareLayout/Spi1.h"
 #include "stm32async/HardwareLayout/Sdio1.h"
 
@@ -37,6 +38,7 @@
 #include "stm32async/SdCard.h"
 #include "stm32async/UsartLogger.h"
 #include "stm32async/Drivers/Ssd.h"
+#include "stm32async/Drivers/Esp8266.h"
 
 // Common includes
 #include <functional>
@@ -80,6 +82,35 @@ private:
     SdCard sdCard;
     Config config;
 
+    // ESP
+    HardwareLayout::Usart2 usart2;
+    Drivers::Esp8266 esp;
+    Drivers::EspSender espSender;
+    bool ntpRequestActive;
+
+    // NTP Message
+    static const size_t NTP_PACKET_SIZE = 48;  // NTP time is in the first 48 bytes of message
+    struct NtpPacket {
+            uint8_t flags;
+            uint8_t stratum;
+            uint8_t poll;
+            uint8_t precision;
+            uint32_t root_delay;
+            uint32_t root_dispersion;
+            uint8_t referenceID[4];
+            uint32_t ref_ts_sec;
+            uint32_t ref_ts_frac;
+            uint32_t origin_ts_sec;
+            uint32_t origin_ts_frac;
+            uint32_t recv_ts_sec;
+            uint32_t recv_ts_frac;
+            uint32_t trans_ts_sec;
+            uint32_t trans_ts_frac;
+    } __attribute__((__packed__));
+
+    struct NtpPacket ntpPacket;
+    char messageBuffer[2048];
+
     // USART logger
     HardwareLayout::Usart1 usart1;
     UsartLogger usartLogger;
@@ -89,11 +120,13 @@ public:
     MyApplication () :
         // System, RTC and MCO
         sysClock { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
-        rtc { HardwareLayout::Interrupt { RTC_WKUP_IRQn, 10, 0 } },
+        rtc { HardwareLayout::Interrupt { RTC_WKUP_IRQn, 15, 0 } },
         mco { portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5 },
+
         // LEDs
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
+
         // SPI
         spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, GPIO_PIN_6, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { SPI1_IRQn, 1, 0 },
@@ -104,6 +137,7 @@ public:
         },
         spi { spi1 },
         ssd { spi, portC, GPIO_PIN_4, true },
+
         // SD card
         sdio1 {
                 portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
@@ -118,13 +152,26 @@ public:
         pinSdDetect { portB, GPIO_PIN_3, GPIO_MODE_INPUT, GPIO_PULLUP },
         sdCard { sdio1, pinSdDetect, /*clockDiv=*/ 2 },
         config("conf.txt"),
+
+        //ESP
+        usart2 { portA, GPIO_PIN_2, portA, GPIO_PIN_3, /*remapped=*/ true, NULL,
+                 HardwareLayout::Interrupt { USART2_IRQn, 6, 0 },
+                 HardwareLayout::DmaStream { &dma1, DMA1_Stream6, DMA_CHANNEL_4,
+                                             HardwareLayout::Interrupt { DMA1_Stream6_IRQn, 7, 0 } },
+                 HardwareLayout::DmaStream { &dma1, DMA1_Stream5, DMA_CHANNEL_4,
+                                             HardwareLayout::Interrupt { DMA1_Stream5_IRQn, 8, 0 } }
+        },
+        esp { usart2, portA, GPIO_PIN_1 },
+        espSender { esp, ledRed },
+        ntpRequestActive { false },
+
         // USART logger
         usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, /*remapped=*/ true, NULL,
-                 HardwareLayout::Interrupt { USART1_IRQn, 6, 0 },
+                 HardwareLayout::Interrupt { USART1_IRQn, 13, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4,
-                                             HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 7, 0 } },
+                                             HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 14, 0 } },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_4,
-                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 7, 0 } }
+                                             HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 14, 0 } }
         },
         usartLogger { usart1, 115200 }
     {
@@ -204,10 +251,33 @@ public:
             initSdCard();
         }
 
-        for (int i = 0; i < 15; ++i)
+        // Prepare ESP11
+        esp.setMode(1);
+        esp.setIp(config.getThisIp());
+        esp.setGatway(config.getGateIp());
+        esp.setMask(config.getIpMask());
+        esp.setSsid(config.getWlanName());
+        esp.setPasswd(config.getWlanPass());
+        espSender.setRepeatDelay(config.getRepeatDelay() * MILLIS_IN_SEC);
+        espSender.setTurnOffDelay(config.getTurnOffDelay() * MILLIS_IN_SEC);
+
+        uint32_t start = HAL_GetTick();
+        uint32_t end = start + 30 * MILLIS_IN_SEC;
+
+        ntpRequestActive = true;
+        while (HAL_GetTick() < end)
         {
-            // main loop empty for 15 sec
-            HAL_Delay(1000);
+            __NOP();
+
+            espSender.periodic();
+
+            if (esp.getInputMessageSize() > 0)
+            {
+                esp.getInputMessage(messageBuffer, esp.getInputMessageSize());
+                ::memcpy(&ntpPacket, messageBuffer, NTP_PACKET_SIZE);
+                decodeNtpMessage(ntpPacket);
+                ntpRequestActive = false;
+            }
         }
 
         sdCard.stop();
@@ -247,15 +317,25 @@ public:
         return spi;
     }
 
+    inline Drivers::Esp8266 & getEsp ()
+    {
+        return esp;
+    }
+
     void onRtcSecondInterrupt ()
     {
         USART_DEBUG(Rtc::getInstance()->getLocalDate() << " "
-                    << Rtc::getInstance()->getLocalTime() << UsartLogger::ENDL);
+                    << Rtc::getInstance()->getLocalTime()
+                    << ": ESP state=" << (int)espSender.getEspState()
+                    << ", message send=" << espSender.isOutputMessageSent()
+                    << UsartLogger::ENDL);
         ledBlue.toggle();
 
         spi.waitForRelease();
         const char * shortTime = Rtc::getInstance()->getLocalTime(0);
         ssd.putString(shortTime + 2, NULL, 4);
+
+        handleNtpRequest();
     }
 
     void initSdCard ()
@@ -285,6 +365,45 @@ public:
             }
         }
     }
+
+    void handleNtpRequest ()
+    {
+        if (ntpRequestActive && espSender.isOutputMessageSent())
+        {
+            fillNtpRrequst(ntpPacket);
+            espSender.sendMessage("UDP", config.getNtpServer(), "123", (const char *)(&ntpPacket), NTP_PACKET_SIZE);
+        }
+    }
+
+    void fillNtpRrequst (NtpPacket & ntpPacket)
+    {
+        ::memset(&ntpPacket, 0, NTP_PACKET_SIZE);
+        ntpPacket.flags = 0xe3;
+    }
+
+    #define UNIX_OFFSET             2208988800L
+    #define ENDIAN_SWAP32(data)     ((data >> 24) | /* right shift 3 bytes */ \
+                                    ((data & 0x00ff0000) >> 8) | /* right shift 1 byte */ \
+                                    ((data & 0x0000ff00) << 8) | /* left shift 1 byte */ \
+                                    ((data & 0x000000ff) << 24)) /* left shift 3 bytes */
+
+    void decodeNtpMessage (NtpPacket & ntpPacket)
+    {
+        ntpPacket.root_delay = ENDIAN_SWAP32(ntpPacket.root_delay);
+        ntpPacket.root_dispersion = ENDIAN_SWAP32(ntpPacket.root_dispersion);
+        ntpPacket.ref_ts_sec = ENDIAN_SWAP32(ntpPacket.ref_ts_sec);
+        ntpPacket.ref_ts_frac = ENDIAN_SWAP32(ntpPacket.ref_ts_frac);
+        ntpPacket.origin_ts_sec = ENDIAN_SWAP32(ntpPacket.origin_ts_sec);
+        ntpPacket.origin_ts_frac = ENDIAN_SWAP32(ntpPacket.origin_ts_frac);
+        ntpPacket.recv_ts_sec = ENDIAN_SWAP32(ntpPacket.recv_ts_sec);
+        ntpPacket.recv_ts_frac = ENDIAN_SWAP32(ntpPacket.recv_ts_frac);
+        ntpPacket.trans_ts_sec = ENDIAN_SWAP32(ntpPacket.trans_ts_sec);
+        ntpPacket.trans_ts_frac = ENDIAN_SWAP32(ntpPacket.trans_ts_frac);
+        time_t total_secs = ntpPacket.recv_ts_sec - UNIX_OFFSET; /* convert to unix time */;
+        Rtc::getInstance()->setTimeSec(total_secs);
+        USART_DEBUG("NTP time: " << Rtc::getInstance()->getLocalTime() << UsartLogger::ENDL);
+    }
+
 };
 
 MyApplication * appPtr = NULL;
@@ -325,6 +444,10 @@ extern "C"
 void SysTick_Handler (void)
 {
     HAL_IncTick();
+    if (Rtc::getInstance() != NULL)
+    {
+        Rtc::getInstance()->onMilliSecondInterrupt();
+    }
 }
 
 void RTC_WKUP_IRQHandler ()
@@ -343,7 +466,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef * /*hrtc*/)
     }
 }
 
-// UART: uses both USART and DMA interrupts
+// UARTs: uses both USART and DMA interrupts
 void DMA2_Stream7_IRQHandler (void)
 {
     appPtr->getLoggerUsart().processDmaTxInterrupt();
@@ -354,14 +477,45 @@ void USART1_IRQHandler (void)
     appPtr->getLoggerUsart().processInterrupt();
 }
 
-void HAL_UART_TxCpltCallback (UART_HandleTypeDef * /*channel*/)
+void USART2_IRQHandler (void)
 {
-    appPtr->getLoggerUsart().processCallback(SharedDevice::State::TX_CMPL);
+    appPtr->getEsp().processInterrupt();
 }
 
-void HAL_UART_ErrorCallback (UART_HandleTypeDef * /*channel*/)
+void HAL_UART_TxCpltCallback (UART_HandleTypeDef * channel)
 {
-    appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
+    if (channel->Instance == USART1)
+    {
+        appPtr->getLoggerUsart().processCallback(SharedDevice::State::TX_CMPL);
+    }
+    else if (channel->Instance == USART2)
+    {
+        appPtr->getEsp().processTxCpltCallback();
+    }
+}
+
+void HAL_UART_RxCpltCallback (UART_HandleTypeDef * channel)
+{
+    if (channel->Instance == USART1)
+    {
+        appPtr->getLoggerUsart().processCallback(SharedDevice::State::RX_CMPL);
+    }
+    else if (channel->Instance == USART2)
+    {
+        appPtr->getEsp().processRxCpltCallback();
+    }
+}
+
+void HAL_UART_ErrorCallback (UART_HandleTypeDef * channel)
+{
+    if (channel->Instance == USART1)
+    {
+        appPtr->getLoggerUsart().processCallback(SharedDevice::State::ERROR);
+    }
+    else if (channel->Instance == USART2)
+    {
+        appPtr->getEsp().processErrorCallback();
+    }
 }
 
 // SPI

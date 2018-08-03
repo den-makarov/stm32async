@@ -86,7 +86,7 @@ private:
 
 };
 
-} // end of namespace Devices
+} // end of namespace Drivers
 } // end of namespace Stm32async
 
 #endif

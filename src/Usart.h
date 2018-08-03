@@ -60,6 +60,15 @@ public:
                              uint32_t parity = UART_PARITY_NONE);
 
     /**
+     * @brief Open transmission session with given mode.
+     */
+    inline HAL_StatusTypeDef changeMode (uint32_t mode)
+    {
+        parameters.Init.Mode = mode;
+        return HAL_UART_Init(&parameters);
+    }
+
+    /**
      * @brief Close the transmission session.
      */
     void stop ();

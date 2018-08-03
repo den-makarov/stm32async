@@ -40,6 +40,7 @@ Rtc::Rtc (HardwareLayout::Interrupt && _wkUpIrq) :
     wkUpIrq { std::move(_wkUpIrq) },
     handler { NULL },
     halStatus { HAL_ERROR },
+    upTimeMillisec {0L},
     timeSec { 0 }
 {
     rtcParameters.Instance = RTC;
@@ -115,7 +116,7 @@ const char * Rtc::getLocalDate (char sep)
     }
     else
     {
-        ::sprintf(localDate, "%02d%02d%04d", now->tm_mday, now->tm_mon+1, now->tm_year+1900);
+        ::sprintf(localDate, "%02d%02d%04d", now->tm_mday, now->tm_mon+1, now->tm_year + FIRST_CALENDAR_YEAR);
     }
     return &localDate[0];
 }

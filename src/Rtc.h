@@ -89,6 +89,11 @@ public:
     const char * getLocalDate (char sep = '.');
     const char * getLocalTime (char sep = ':');
 
+    inline void onMilliSecondInterrupt ()
+    {
+        ++upTimeMillisec;
+    }
+
     inline void processInterrupt ()
     {
         HAL_EXT_RtcTimerIRQHandler(&rtcParameters);
@@ -121,6 +126,11 @@ public:
     inline time_t getTimeSec () const
     {
         return timeSec;
+    }
+
+    void setTimeSec (time_t timeSec)
+    {
+        this->timeSec = timeSec;
     }
 
     inline time_t getTime () const
@@ -157,6 +167,11 @@ public:
         }
     }
 
+    inline time_ms getUpTimeMillisec () const
+    {
+        return upTimeMillisec;
+    }
+
 private:
 
     mutable RTC_HandleTypeDef rtcParameters;
@@ -168,6 +183,7 @@ private:
     mutable HAL_StatusTypeDef halStatus;
 
     // These variables are modified from interrupt service routine, therefore declare them as volatile
+    volatile time_ms upTimeMillisec; // up time (in milliseconds)
     volatile time_t timeSec; // up-time and current time (in seconds)
     char localDate[16];
     char localTime[16];
