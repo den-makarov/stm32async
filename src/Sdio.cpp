@@ -113,6 +113,16 @@ void Sdio::stop ()
     device.disableClock();
 }
 
+void Sdio::printInfo ()
+{
+    USART_DEBUG("CardType = " << cardInfo.CardType << UsartLogger::ENDL
+             << UsartLogger::TAB << "CardCapacity = " << cardInfo.CardCapacity/1024L/1024L << "Mb" << UsartLogger::ENDL
+             << UsartLogger::TAB << "CardBlockSize = " << cardInfo.CardBlockSize << UsartLogger::ENDL
+             << UsartLogger::TAB << "DAT_BUS_WIDTH = " << cardStatus.DAT_BUS_WIDTH << UsartLogger::ENDL
+             << UsartLogger::TAB << "SD_CARD_TYPE = " << cardStatus.SD_CARD_TYPE << UsartLogger::ENDL
+             << UsartLogger::TAB << "SPEED_CLASS = " << cardStatus.SPEED_CLASS << UsartLogger::ENDL);
+}
+
 HAL_SD_ErrorTypedef Sdio::readBlocks (uint32_t *pData, uint64_t addr, uint32_t blockSize, uint32_t numOfBlocks)
 {
     HAL_SD_ErrorTypedef status = HAL_SD_ReadBlocks_DMA(&parameters, pData, addr, blockSize, numOfBlocks);

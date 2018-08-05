@@ -35,9 +35,11 @@
 #include "stm32async/SystemClock.h"
 #include "stm32async/Rtc.h"
 #include "stm32async/IOPort.h"
-#include "stm32async/SdCard.h"
 #include "stm32async/UsartLogger.h"
+
+// Drivers
 #include "stm32async/Drivers/Ssd.h"
+#include "stm32async/Drivers/SdCardFat.h"
 #include "stm32async/Drivers/Esp8266.h"
 
 // Common includes
@@ -79,7 +81,7 @@ private:
     // SD Card
     HardwareLayout::Sdio1 sdio1;
     IOPort pinSdPower, pinSdDetect;
-    SdCard sdCard;
+    Drivers::SdCardFat sdCard;
     Config config;
 
     // ESP
@@ -322,6 +324,11 @@ public:
         return spi;
     }
 
+    inline Sdio & getSdio ()
+    {
+        return sdCard.getSdio();
+    }
+
     inline Drivers::Esp8266 & getEsp ()
     {
         return esp;
@@ -349,17 +356,12 @@ public:
         pinSdPower.setLow();
         HAL_Delay(250);
         DeviceStart::Status devStatus = sdCard.start();
-        USART_DEBUG("SD card status: " << DeviceStart::asString(devStatus) << " (" << sdCard.getHalStatus() << ")" << UsartLogger::ENDL);
+        USART_DEBUG("SD card status: " << DeviceStart::asString(devStatus) << " (" << getSdio().getHalStatus() << ")" << UsartLogger::ENDL);
         if (devStatus == DeviceStart::OK)
         {
-            USART_DEBUG("CardType = " << sdCard.getCardInfo().CardType << UsartLogger::ENDL
-                     << UsartLogger::TAB << "CardCapacity = " << sdCard.getCardInfo().CardCapacity/1024L/1024L << "Mb" << UsartLogger::ENDL
-                     << UsartLogger::TAB << "CardBlockSize = " << sdCard.getCardInfo().CardBlockSize << UsartLogger::ENDL
-                     << UsartLogger::TAB << "DAT_BUS_WIDTH = " << sdCard.getCardStatus().DAT_BUS_WIDTH << UsartLogger::ENDL
-                     << UsartLogger::TAB << "SD_CARD_TYPE = " << sdCard.getCardStatus().SD_CARD_TYPE << UsartLogger::ENDL
-                     << UsartLogger::TAB << "SPEED_CLASS = " << sdCard.getCardStatus().SPEED_CLASS << UsartLogger::ENDL);
+            getSdio().printInfo();
             devStatus = sdCard.mountFatFs();
-            USART_DEBUG("FAT FS card status: " << DeviceStart::asString(devStatus) << " (" << sdCard.getHalStatus() << ")" << UsartLogger::ENDL);
+            USART_DEBUG("FAT FS card status: " << DeviceStart::asString(devStatus) << " (" << getSdio().getHalStatus() << ")" << UsartLogger::ENDL);
             if (devStatus == DeviceStart::OK)
             {
                 USART_DEBUG("label = " << sdCard.getFatFs().volumeLabel << UsartLogger::ENDL
@@ -542,17 +544,17 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * /*channel*/)
 // SD card
 void DMA2_Stream3_IRQHandler (void)
 {
-    SdCard::getInstance()->processDmaRxInterrupt();
+    appPtr->getSdio().processDmaRxInterrupt();
 }
 
 void DMA2_Stream6_IRQHandler (void)
 {
-    SdCard::getInstance()->processDmaTxInterrupt();
+    appPtr->getSdio().processDmaTxInterrupt();
 }
 
 void SDIO_IRQHandler (void)
 {
-    SdCard::getInstance()->processSdIOInterrupt();
+    appPtr->getSdio().processSdIOInterrupt();
 }
 
 }

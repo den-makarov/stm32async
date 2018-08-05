@@ -46,6 +46,8 @@ public:
 
     DeviceStart::Status start ();
     void stop ();
+    void printInfo ();
+
     HAL_SD_ErrorTypedef readBlocks (uint32_t *pData, uint64_t addr, uint32_t blockSize, uint32_t numOfBlocks);
     HAL_SD_ErrorTypedef writeBlocks (uint32_t *pData, uint64_t addr, uint32_t blockSize, uint32_t numOfBlocks);
 

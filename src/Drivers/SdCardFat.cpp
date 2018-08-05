@@ -17,12 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "SdCard.h"
-#include "UsartLogger.h"
+#include "SdCardFat.h"
+#include "../UsartLogger.h"
 
 #ifdef HAL_SD_MODULE_ENABLED
 
-using namespace Stm32async;
+using namespace Stm32async::Drivers;
 
 #define USART_DEBUG_MODULE "SD: "
 
@@ -30,7 +30,7 @@ using namespace Stm32async;
  * FAT FS driver
  ************************************************************************/
 
-SdCard * SdCard::instance = NULL;
+SdCardFat * SdCardFat::instance = NULL;
 
 /**
   * @brief  Initializes a Drive
@@ -62,8 +62,8 @@ DSTATUS SD_status(BYTE /*lun*/)
   */
 DRESULT SD_read(BYTE /*lun*/, BYTE *buff, DWORD sector, UINT count)
 {
-    HAL_SD_ErrorTypedef status = SdCard::getInstance()->readBlocks(
-            (uint32_t*)buff, (uint64_t) (sector * SdCard::SDHC_BLOCK_SIZE), SdCard::SDHC_BLOCK_SIZE, count);
+    HAL_SD_ErrorTypedef status = SdCardFat::getInstance()->getSdio().readBlocks(
+            (uint32_t*)buff, (uint64_t) (sector * SdCardFat::SDHC_BLOCK_SIZE), SdCardFat::SDHC_BLOCK_SIZE, count);
     return (status != SD_OK)? RES_ERROR : RES_OK;
 }
 
@@ -77,8 +77,8 @@ DRESULT SD_read(BYTE /*lun*/, BYTE *buff, DWORD sector, UINT count)
   */
 DRESULT SD_write(BYTE /*lun*/, const BYTE *buff, DWORD sector, UINT count)
 {
-    HAL_SD_ErrorTypedef status = SdCard::getInstance()->writeBlocks(
-            (uint32_t*)buff, (uint64_t)(sector * SdCard::SDHC_BLOCK_SIZE), SdCard::SDHC_BLOCK_SIZE, count);
+    HAL_SD_ErrorTypedef status = SdCardFat::getInstance()->getSdio().writeBlocks(
+            (uint32_t*)buff, (uint64_t)(sector * SdCardFat::SDHC_BLOCK_SIZE), SdCardFat::SDHC_BLOCK_SIZE, count);
     return (status != SD_OK)? RES_ERROR : RES_OK;
 }
 
@@ -92,7 +92,7 @@ DRESULT SD_write(BYTE /*lun*/, const BYTE *buff, DWORD sector, UINT count)
 DRESULT SD_ioctl(BYTE /*lun*/, BYTE cmd, void *buff)
 {
     DRESULT res = RES_ERROR;
-    const HAL_SD_CardInfoTypedef & cardInfo = SdCard::getInstance()->getCardInfo();
+    const HAL_SD_CardInfoTypedef & cardInfo = SdCardFat::getInstance()->getSdio().getCardInfo();
     switch (cmd)
     {
     /* Make sure that no pending write process */
@@ -102,19 +102,19 @@ DRESULT SD_ioctl(BYTE /*lun*/, BYTE cmd, void *buff)
 
     /* Get number of sectors on the disk (DWORD) */
     case GET_SECTOR_COUNT :
-        *(DWORD*)buff = cardInfo.CardCapacity / SdCard::SDHC_BLOCK_SIZE;
+        *(DWORD*)buff = cardInfo.CardCapacity / SdCardFat::SDHC_BLOCK_SIZE;
         res = RES_OK;
         break;
 
     /* Get R/W sector size (WORD) */
     case GET_SECTOR_SIZE :
-        *(WORD*)buff = SdCard::SDHC_BLOCK_SIZE;
+        *(WORD*)buff = SdCardFat::SDHC_BLOCK_SIZE;
         res = RES_OK;
         break;
 
     /* Get erase block size in unit of sector (DWORD) */
     case GET_BLOCK_SIZE :
-        *(DWORD*)buff = SdCard::SDHC_BLOCK_SIZE;
+        *(DWORD*)buff = SdCardFat::SDHC_BLOCK_SIZE;
         break;
 
     default:
@@ -124,7 +124,7 @@ DRESULT SD_ioctl(BYTE /*lun*/, BYTE cmd, void *buff)
 }
 
 
-Diskio_drvTypeDef SdCard::fatFsDriver =
+Diskio_drvTypeDef SdCardFat::fatFsDriver =
 {
   SD_initialize,
   SD_status,
@@ -135,18 +135,18 @@ Diskio_drvTypeDef SdCard::fatFsDriver =
 
 
 /************************************************************************
- * Class SdCard
+ * Class SdCardFat
  ************************************************************************/
 
-SdCard::SdCard (const HardwareLayout::Sdio & _device, IOPort & _sdDetect, uint32_t _clockDiv):
-    Sdio { _device, _clockDiv},
+SdCardFat::SdCardFat (const HardwareLayout::Sdio & _device, IOPort & _sdDetect, uint32_t _clockDiv):
+    sdio { _device, _clockDiv },
     sdDetect { _sdDetect }
 {
     instance = this;
 }
 
 
-DeviceStart::Status SdCard::mountFatFs ()
+Stm32async::DeviceStart::Status SdCardFat::mountFatFs ()
 {
     uint8_t code1 = FATFS_LinkDriver(&fatFsDriver, fatFs.path);
     if (code1 != 0)
@@ -176,7 +176,7 @@ DeviceStart::Status SdCard::mountFatFs ()
 }
 
 
-void SdCard::listFiles()
+void SdCardFat::listFiles()
 {
     FRESULT res;
     DIR dir;

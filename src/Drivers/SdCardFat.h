@@ -17,25 +17,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef STM32ASYNC_SDCARD_H_
-#define STM32ASYNC_SDCARD_H_
+#ifndef DRIVERS_SDCARDFAT_H_
+#define DRIVERS_SDCARDFAT_H_
 
-#include "HardwareLayout/Sdio.h"
+#include "../Sdio.h"
 
 #ifdef HAL_SD_MODULE_ENABLED
 
-#include "Sdio.h"
 #include "FatFS/ff_gen_drv.h"
 
 namespace Stm32async
+{
+namespace Drivers
 {
 
 /**
  * @brief Class that implements SD card handling using FAT FS.
  */
-class SdCard : public Sdio
+class SdCardFat
 {
-    DECLARE_STATIC_INSTANCE(SdCard)
+    DECLARE_STATIC_INSTANCE(SdCardFat)
 
 public:
 
@@ -44,7 +45,7 @@ public:
 
     typedef struct
     {
-        FATFS key;  /* File system object for SD card logical drive */
+        FATFS key; /* File system object for SD card logical drive */
         char path[4]; /* SD card logical drive path */
         DWORD volumeSN;
         char volumeLabel[FAT_FS_OBJECT_LENGHT];
@@ -54,17 +55,22 @@ public:
     /**
      * @brief Default constructor.
      */
-    SdCard (const HardwareLayout::Sdio & _device, IOPort & _sdDetect, uint32_t _clockDiv);
+    SdCardFat (const HardwareLayout::Sdio & _device, IOPort & _sdDetect, uint32_t _clockDiv);
 
     DeviceStart::Status mountFatFs ();
     void listFiles ();
+
+    inline Sdio & getSdio ()
+    {
+        return sdio;
+    }
 
     inline bool isCardInserted () const
     {
         return !sdDetect.getBit();
     }
 
-    const FatFs & getFatFs () const
+    inline const FatFs & getFatFs () const
     {
         return fatFs;
     }
@@ -75,22 +81,24 @@ public:
         {
             return DeviceStart::SD_NOT_INSERTED;
         }
-        return Sdio::start();
+        return sdio.start();
     }
 
     inline void stop ()
     {
-        Sdio::stop();
+        sdio.stop();
     }
 
 private:
 
+    Sdio sdio;
     IOPort & sdDetect;
     static Diskio_drvTypeDef fatFsDriver;
     FatFs fatFs;
 };
 
-} // end namespace
+} // end of namespace Drivers
+} // end of namespace Stm32async
 
 #endif
 #endif
