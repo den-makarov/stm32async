@@ -105,11 +105,6 @@ public:
         return halStatus;
     }
 
-    const DEVICE & getDevice () const
-    {
-        return device;
-    }
-
     /**
      * @brief Helper method that activates all ports used by this device.
      */

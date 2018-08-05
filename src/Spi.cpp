@@ -124,13 +124,13 @@ DeviceStart::Status AsyncSpi::start (uint32_t direction, uint32_t prescaler,
         return DeviceStart::RX_DMA_INIT_ERROR;
     }
 
-    device.enableIrq();
+    enableIrq();
     return DeviceStart::OK;
 }
 
 void AsyncSpi::stop ()
 {
-    device.disableIrq();
+    disableIrq();
     HAL_DMA_DeInit(&rxDma);
     device.rxDma.dma->disableClock();
     HAL_DMA_DeInit(&txDma);

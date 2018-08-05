@@ -111,13 +111,13 @@ HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
         return HAL_ERROR;
     }
 
-    device.enableIrq();
+    enableIrq();
     return HAL_OK;
 }
 
 void AsyncUsart::stop ()
 {
-    device.disableIrq();
+    disableIrq();
     HAL_DMA_DeInit(&rxDma);
     device.rxDma.dma->disableClock();
     HAL_DMA_DeInit(&txDma);

@@ -165,6 +165,22 @@ public:
     {
         HAL_SPI_IRQHandler(&parameters);
     }
+
+    /**
+     * @brief Disable all related interrupts.
+     */
+    inline void disableIrq ()
+    {
+        device.disableIrq();
+    }
+
+    /**
+     * @brief Enable all related interrupts.
+     */
+    inline void enableIrq ()
+    {
+        device.enableIrq();
+    }
 };
 
 
