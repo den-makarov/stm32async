@@ -64,9 +64,14 @@ bool Esp8266::init ()
         return false;
     }
     ::memset(rxBuffer, 0, BUFFER_SIZE);
+
+    usart.getDevice().disableIrq();
+    __HAL_UART_CLEAR_FLAG(&usart.getParameters(), UART_FLAG_RXNE);
+
     pinPower.start();
     pinPower.setHigh();
     bool isReady = waitForResponce(RESP_READY);
+    usart.getDevice().enableIrq();
     if (!isReady)
     {
         powerOff();
