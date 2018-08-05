@@ -134,7 +134,7 @@ bool Esp8266::sendCmd (const char * cmd, size_t cmdLen, bool addCmdEnd)
         return false;
     }
 
-    status = usart.transmitIt(NULL, txBuffer, cmdLen);
+    status = usart.transmit(NULL, txBuffer, cmdLen);
     if (status != HAL_OK)
     {
         USART_DEBUG("Cannot transmit ESP request message: " << status << UsartLogger::ENDL);

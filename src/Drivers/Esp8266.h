@@ -93,6 +93,16 @@ public:
         commState = CommState::ERROR;
     }
 
+    inline void processDmaTxInterrupt ()
+    {
+        usart.processDmaTxInterrupt();
+    }
+
+    inline void processDmaRxInterrupt ()
+    {
+        usart.processDmaRxInterrupt();
+    }
+
     inline void processInterrupt ()
     {
         usart.processInterrupt();

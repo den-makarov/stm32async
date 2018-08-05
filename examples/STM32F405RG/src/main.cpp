@@ -69,7 +69,7 @@ private:
     MCO mco;
 
     // LEDs
-    IOPort ledBlue, ledRed;
+    IOPort ledGreen, ledBlue, ledRed;
 
     // SPI
     HardwareLayout::Spi1 spi1;
@@ -124,6 +124,7 @@ public:
         mco { portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5 },
 
         // LEDs
+        ledGreen { portC, GPIO_PIN_1, GPIO_MODE_OUTPUT_PP },
         ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
 
@@ -234,6 +235,7 @@ public:
         while (rtc.getHalStatus() != HAL_OK);
 
         mco.start();
+        ledGreen.start();
         ledBlue.start();
         ledRed.start();
 
@@ -252,6 +254,7 @@ public:
         }
 
         // Prepare ESP11
+        esp.assignSendLed(&ledGreen);
         esp.setMode(1);
         esp.setIp(config.getThisIp());
         esp.setGatway(config.getGateIp());
@@ -280,6 +283,7 @@ public:
             }
         }
 
+        esp.assignSendLed(NULL);
         sdCard.stop();
         pinSdPower.setHigh();
         pinSdPower.stop();
@@ -289,6 +293,7 @@ public:
         spi.stop();
         ledBlue.stop();
         ledRed.stop();
+        ledGreen.stop();
         mco.stop();
         rtc.stop();
 
@@ -475,6 +480,11 @@ void DMA2_Stream7_IRQHandler (void)
 void USART1_IRQHandler (void)
 {
     appPtr->getLoggerUsart().processInterrupt();
+}
+
+void DMA1_Stream6_IRQHandler (void)
+{
+    appPtr->getEsp().processDmaTxInterrupt();
 }
 
 void USART2_IRQHandler (void)
