@@ -17,77 +17,63 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef STM32ASYNC_SDCARD_H_
-#define STM32ASYNC_SDCARD_H_
+#ifndef STM32ASYNC_SDIO_H_
+#define STM32ASYNC_SDIO_H_
 
 #include "HardwareLayout/Sdio.h"
 
 #ifdef HAL_SD_MODULE_ENABLED
 
-#include "Sdio.h"
-#include "FatFS/ff_gen_drv.h"
+#include "IODevice.h"
+#include "SharedDevice.h"
 
 namespace Stm32async
 {
 
 /**
- * @brief Class that implements SD card handling using FAT FS.
+ * @brief Class that implements SDIO interface.
  */
-class SdCard : public Sdio
+class Sdio : public IODevice<HardwareLayout::Sdio, 2>, public SharedDevice
 {
-    DECLARE_STATIC_INSTANCE(SdCard)
-
 public:
 
-    static const uint32_t SDHC_BLOCK_SIZE = 512;
-    static const size_t FAT_FS_OBJECT_LENGHT = 64;
-
-    typedef struct
-    {
-        FATFS key;  /* File system object for SD card logical drive */
-        char path[4]; /* SD card logical drive path */
-        DWORD volumeSN;
-        char volumeLabel[FAT_FS_OBJECT_LENGHT];
-        char currentDirectory[FAT_FS_OBJECT_LENGHT];
-    } FatFs;
+    static const uint32_t TIMEOUT = 10000;
 
     /**
      * @brief Default constructor.
      */
-    SdCard (const HardwareLayout::Sdio & _device, IOPort & _sdDetect, uint32_t _clockDiv);
+    Sdio (const HardwareLayout::Sdio & _device, uint32_t _clockDiv);
 
-    DeviceStart::Status mountFatFs ();
-    void listFiles ();
+    DeviceStart::Status start ();
+    void stop ();
+    HAL_SD_ErrorTypedef readBlocks (uint32_t *pData, uint64_t addr, uint32_t blockSize, uint32_t numOfBlocks);
+    HAL_SD_ErrorTypedef writeBlocks (uint32_t *pData, uint64_t addr, uint32_t blockSize, uint32_t numOfBlocks);
 
-    inline bool isCardInserted () const
+    inline SD_HandleTypeDef & getParameters ()
     {
-        return !sdDetect.getBit();
+        return parameters;
     }
 
-    const FatFs & getFatFs () const
+    inline const HAL_SD_CardInfoTypedef & getCardInfo () const
     {
-        return fatFs;
+        return cardInfo;
     }
 
-    inline DeviceStart::Status start ()
+    inline const HAL_SD_CardStatusTypedef & getCardStatus () const
     {
-        if (!isCardInserted())
-        {
-            return DeviceStart::SD_NOT_INSERTED;
-        }
-        return Sdio::start();
+        return cardStatus;
     }
 
-    inline void stop ()
+    inline void processSdIOInterrupt ()
     {
-        Sdio::stop();
+        HAL_SD_IRQHandler(&parameters);
     }
 
 private:
 
-    IOPort & sdDetect;
-    static Diskio_drvTypeDef fatFsDriver;
-    FatFs fatFs;
+    SD_HandleTypeDef parameters;
+    HAL_SD_CardInfoTypedef cardInfo;
+    HAL_SD_CardStatusTypedef cardStatus;
 };
 
 } // end namespace
