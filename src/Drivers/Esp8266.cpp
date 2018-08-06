@@ -63,7 +63,6 @@ bool Esp8266::init ()
         USART_DEBUG("Cannot start ESP USART/RX: " << status << UsartLogger::ENDL);
         return false;
     }
-    ::memset(rxBuffer, 0, BUFFER_SIZE);
 
     usart.disableIrq();
     pinPower.start();
@@ -82,17 +81,15 @@ bool Esp8266::waitForResponce (const char * responce)
 {
     bool retValue = false;
     size_t responceLen = ::strlen(responce);
-    char tmp[10];
-    char * tmpPtr = &tmp[0];
     size_t idx = 0;
     while (true)
     {
-        if (usart.receiveBlocking(tmpPtr, 1, ESP_TIMEOUT) != HAL_OK)
+        if (usart.receiveBlocking(rxBuffer, 1, ESP_TIMEOUT) != HAL_OK)
         {
             break;
         }
         
-        if (*tmpPtr != responce[idx])
+        if (rxBuffer[0] != responce[idx])
         {
             idx = 0;
             continue;
@@ -154,8 +151,7 @@ bool Esp8266::applyMode ()
     {
         return false;
     }
-    ::strcpy(cmdBuffer, CMD_SETMODE);
-    ::__itoa(mode, cmdBuffer + ::strlen(CMD_SETMODE), 10);
+    ::sprintf(cmdBuffer, "AT+CWMODE=%d", mode);
     return sendCmd(cmdBuffer);
 }
 
@@ -165,14 +161,7 @@ bool Esp8266::applyIpAddress ()
     {
         return false;
     }
-    ::strcpy(cmdBuffer, CMD_SETIP);
-    ::strcat(cmdBuffer, "\"");
-    ::strcat(cmdBuffer, ip);
-    ::strcat(cmdBuffer, "\",\"");
-    ::strcat(cmdBuffer, gatway);
-    ::strcat(cmdBuffer, "\",\"");
-    ::strcat(cmdBuffer, mask);
-    ::strcat(cmdBuffer, "\"");
+    ::sprintf(cmdBuffer, "AT+CIPSTA_CUR=\"%s\",\"%s\",\"%s\"", ip, gatway, mask);
     return sendCmd(cmdBuffer);
 }
 
@@ -182,10 +171,7 @@ bool Esp8266::searchWlan ()
     {
         return false;
     }
-    ::strcpy(cmdBuffer, CMD_GETNET);
-    ::strcat(cmdBuffer, "\"");
-    ::strcat(cmdBuffer, ssid);
-    ::strcat(cmdBuffer, "\"");
+    ::sprintf(cmdBuffer, "AT+CWLAP=\"%s\"", ssid);
     return sendCmd(cmdBuffer);
 }
 
@@ -195,12 +181,7 @@ bool Esp8266::connectToWlan ()
     {
         return false;
     }
-    ::strcpy(cmdBuffer, CMD_CONNECT_WLAN);
-    ::strcat(cmdBuffer, "\"");
-    ::strcat(cmdBuffer, ssid);
-    ::strcat(cmdBuffer, "\",\"");
-    ::strcat(cmdBuffer, passwd);
-    ::strcat(cmdBuffer, "\"");
+    ::sprintf(cmdBuffer, "AT+CWJAP_CUR=\"%s\",\"%s\"", ssid, passwd);
     return sendCmd(cmdBuffer);
 }
 
@@ -210,10 +191,7 @@ bool Esp8266::ping ()
     {
         return false;
     }
-    ::strcpy(cmdBuffer, CMD_PING);
-    ::strcat(cmdBuffer, "\"");
-    ::strcat(cmdBuffer, server);
-    ::strcat(cmdBuffer, "\"");
+    ::sprintf(cmdBuffer, "AT+PING=\"%s\"", server);
     return sendCmd(cmdBuffer);
 }
 
@@ -223,17 +201,13 @@ bool Esp8266::connectToServer ()
     {
         return false;
     }
-    ::strcpy(cmdBuffer, CMD_CONNECT_SERVER);
-    ::strcat(cmdBuffer, "\"");
-    ::strcat(cmdBuffer, protocol);
-    ::strcat(cmdBuffer, "\",\"");
-    ::strcat(cmdBuffer, server);
-    ::strcat(cmdBuffer, "\",");
-    ::strcat(cmdBuffer, port);
     if (::strcmp(protocol, "UDP") == 0)
     {
-        ::strcat(cmdBuffer, ",");
-        ::strcat(cmdBuffer, UDP_PORT);
+        ::sprintf(cmdBuffer, "AT+CIPSTART=\"%s\",\"%s\",%s,%s", protocol, server, port, UDP_PORT);
+    }
+    else
+    {
+        ::sprintf(cmdBuffer, "AT+CIPSTART=\"%s\",\"%s\",%s", protocol, server, port);
     }
     return sendCmd(cmdBuffer);
 }
@@ -244,9 +218,7 @@ bool Esp8266::sendMessageSize ()
     {
         return false;
     }
-    size_t len = messageSize;
-    ::strcpy(cmdBuffer, CMD_SEND);
-    ::__itoa(len, cmdBuffer + ::strlen(CMD_SEND), 10);
+    ::sprintf(cmdBuffer, "AT+CIPSEND=%d", messageSize);
     return sendCmd(cmdBuffer);
 }
 

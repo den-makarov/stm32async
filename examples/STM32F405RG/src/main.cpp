@@ -270,7 +270,7 @@ public:
         uint32_t end = start + 30 * MILLIS_IN_SEC;
 
         ntpRequestActive = true;
-        while (HAL_GetTick() < end)
+        while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF)
         {
             __NOP();
 

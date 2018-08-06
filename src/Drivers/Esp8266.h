@@ -261,30 +261,18 @@ public:
 private:
 
     const char * CMD_AT = "AT";
-    const char * CMD_VERSION = "AT+GMR";
     const char * CMD_ECHO_OFF = "ATE0";
-    const char * CMD_ECHO_ON = "ATE1";
     const char * CMD_GETMODE = "AT+CWMODE?";
-    const char * CMD_SETMODE = "AT+CWMODE=";
     const char * RESP_GETMODE = "+CWMODE:";
-    const char * CMD_SETIP = "AT+CIPSTA_CUR=";
-    const char * CMD_GETIP = "AT+CIFSR";
-    const char * CMD_GETNET = "AT+CWLAP=";
     const char * RESP_GETNET = "+CWLAP:";
-    const char * CMD_CONNECT_WLAN = "AT+CWJAP_CUR=";
-    const char * CMD_PING = "AT+PING=";
-    const char * CMD_MULTCON = "AT+CIPMUX=1";
-    const char * CMD_TCPSERVER = "AT+CIPSERVER=1,";
     const char * CMD_SET_NORMAL_MODE = "AT+CIPMODE=0";
     const char * CMD_SET_SINGLE_CONNECTION = "AT+CIPMUX=0";
-    const char * CMD_CONNECT_SERVER = "AT+CIPSTART=";
     const char * CMD_CONNECT_SERVER_RESPONCE = "CONNECT";
-    const char * CMD_SEND = "AT+CIPSEND=";
     const char * CMD_CLOSE_CONNECT = "AT+CIPCLOSE";
     const char * CMD_INPUT_MESSAGE = "+IPD,";
     const char * CMD_END = "\r\n";
     const char * RESP_READY = "ready\r\n";
-    const char * UDP_PORT = "5888,0";
+    const char * UDP_PORT = "5888";
 
     AsyncUsart usart;
     IOPort pinPower;
