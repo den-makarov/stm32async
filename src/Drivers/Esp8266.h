@@ -18,8 +18,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef ESP8266_H_
-#define ESP8266_H_
+#ifndef DRIVERS_ESP8266_H_
+#define DRIVERS_ESP8266_H_
 
 #include "../Usart.h"
 #include "../Rtc.h"

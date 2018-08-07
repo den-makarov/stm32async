@@ -30,8 +30,9 @@
 #include "stm32async/HardwareLayout/Usart2.h"
 #include "stm32async/HardwareLayout/Spi1.h"
 #include "stm32async/HardwareLayout/Sdio1.h"
+#include "stm32async/HardwareLayout/I2S2.h"
 
-// Used devices
+// Common includes
 #include "stm32async/SystemClock.h"
 #include "stm32async/Rtc.h"
 #include "stm32async/IOPort.h"
@@ -41,6 +42,7 @@
 #include "stm32async/Drivers/Ssd.h"
 #include "stm32async/Drivers/SdCardFat.h"
 #include "stm32async/Drivers/Esp8266.h"
+#include "stm32async/Drivers/WavStreamer.h"
 
 // Common includes
 #include <functional>
@@ -50,7 +52,7 @@ using namespace Stm32async;
 
 #define USART_DEBUG_MODULE "Main: "
 
-class MyApplication : public Rtc::EventHandler
+class MyApplication : public Rtc::EventHandler, public Drivers::WavStreamer::EventHandler
 {
 private:
 
@@ -113,6 +115,12 @@ private:
     struct NtpPacket ntpPacket;
     char messageBuffer[2048];
 
+    // I2S2 Audio
+    HardwareLayout::I2S2 i2s2;
+    AsyncI2S i2s;
+    Drivers::AudioDac_UDA1334 audioDac;
+    Drivers::WavStreamer streamer;
+
     // USART logger
     HardwareLayout::Usart1 usart1;
     UsartLogger usartLogger;
@@ -168,6 +176,21 @@ public:
         espSender { esp, ledRed },
         ntpRequestActive { false },
 
+        // I2S2 Audio
+        i2s2 { portB, /*I2S2_CK*/GPIO_PIN_10 | /*I2S2_WS*/GPIO_PIN_12 | /*I2S2_SD*/GPIO_PIN_15,
+              /*remapped=*/ true, NULL,
+              HardwareLayout::DmaStream { &dma1, DMA1_Stream4, DMA_CHANNEL_0,
+                                          HardwareLayout::Interrupt { DMA1_Stream4_IRQn, 9, 0 } },
+              HardwareLayout::DmaStream { &dma1, DMA1_Stream3, DMA_CHANNEL_0,
+                                          HardwareLayout::Interrupt { DMA1_Stream3_IRQn, 9, 0 } }
+        },
+        i2s { i2s2 },
+        audioDac { i2s,
+                  /* power    = */ portB, GPIO_PIN_11,
+                  /* mute     = */ portB, GPIO_PIN_13,
+                  /* smplFreq = */ portB, GPIO_PIN_14 },
+        streamer { sdCard, audioDac },
+
         // USART logger
         usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { USART1_IRQn, 13, 0 },
@@ -211,11 +234,14 @@ public:
         SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
         SystemClock::getInstance()->setLatency(FLASH_LATENCY_3);
         SystemClock::getInstance()->setRTC();
+        SystemClock::getInstance()->setI2S(192, 2);
         SystemClock::getInstance()->start();
     }
 
     void run (uint32_t runId, uint32_t pllp)
     {
+        audioDac.powerOn();
+
         initClock(pllp);
         usartLogger.initInstance();
 
@@ -266,14 +292,19 @@ public:
         espSender.setRepeatDelay(config.getRepeatDelay() * MILLIS_IN_SEC);
         espSender.setTurnOffDelay(config.getTurnOffDelay() * MILLIS_IN_SEC);
 
+        streamer.setHandler(this);
+        streamer.setVolume(0.5);
+        streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM, config.getWavFile());
+
         uint32_t start = HAL_GetTick();
-        uint32_t end = start + 30 * MILLIS_IN_SEC;
+        uint32_t end = start + 60 * MILLIS_IN_SEC;
 
         ntpRequestActive = true;
-        while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF)
+        while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF || streamer.isActive())
         {
             __NOP();
 
+            streamer.periodic();
             espSender.periodic();
 
             if (esp.getInputMessageSize() > 0)
@@ -285,6 +316,7 @@ public:
             }
         }
 
+        streamer.stop();
         esp.assignSendLed(NULL);
         sdCard.stop();
         pinSdPower.setHigh();
@@ -314,6 +346,11 @@ public:
         sysClock.stop();
     }
 
+    inline IOPort & getLedRed ()
+    {
+        return ledRed;
+    }
+
     inline AsyncUsart & getLoggerUsart ()
     {
         return usartLogger.getUsart();
@@ -332,6 +369,11 @@ public:
     inline Drivers::Esp8266 & getEsp ()
     {
         return esp;
+    }
+
+    inline AsyncI2S & getI2S ()
+    {
+        return i2s;
     }
 
     void onRtcSecondInterrupt ()
@@ -371,6 +413,24 @@ public:
                 config.readConfiguration();
             }
         }
+    }
+
+    virtual bool onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s)
+    {
+        if (s == Drivers::AudioDac_UDA1334::SourceType::STREAM)
+        {
+            if (!sdCard.isCardInserted())
+            {
+                USART_DEBUG("SD Card is not inserted");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    virtual void onFinishSteaming ()
+    {
+        // empty
     }
 
     void handleNtpRequest ()
@@ -446,6 +506,42 @@ int main (void)
 
 extern "C"
 {
+// Errors
+void HardFault_Handler (void)
+{
+    appPtr->getLedRed().setHigh();
+    while(1)
+    {
+        __NOP();
+    }
+}
+
+void MemManage_Handler (void)
+{
+    appPtr->getLedRed().setHigh();
+    while(1)
+    {
+        __NOP();
+    }
+}
+
+void BusFault_Handler (void)
+{
+    appPtr->getLedRed().setHigh();
+    while(1)
+    {
+        __NOP();
+    }
+}
+
+void UsageFault_Handler (void)
+{
+    appPtr->getLedRed().setHigh();
+    while(1)
+    {
+        __NOP();
+    }
+}
 
 // System
 void SysTick_Handler (void)
@@ -555,6 +651,17 @@ void DMA2_Stream6_IRQHandler (void)
 void SDIO_IRQHandler (void)
 {
     appPtr->getSdio().processSdIOInterrupt();
+}
+
+// I2S
+void DMA1_Stream4_IRQHandler (void)
+{
+    appPtr->getI2S().processDmaTxInterrupt();
+}
+
+void HAL_I2S_TxCpltCallback (I2S_HandleTypeDef * /*channel*/)
+{
+    appPtr->getI2S().processCallback(SharedDevice::State::TX_CMPL);
 }
 
 }

@@ -132,6 +132,18 @@ public:
         return (bool)HAL_GPIO_ReadPin(port.getInstance(), parameters.Pin);
     }
 
+    /**
+     * @brief Set or clear the selected data port bit.
+     *
+     * @note   This function uses GPIOx_BSRR and GPIOx_BRR registers to allow atomic read/modify
+     *         accesses. In this way, there is no risk of an IRQ occurring between
+     *         the read and the modify access.
+     */
+    inline void putBit (bool value)
+    {
+        HAL_GPIO_WritePin(port.getInstance(), parameters.Pin, (GPIO_PinState)value);
+    }
+
 protected:
 
     /**
