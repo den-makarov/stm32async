@@ -194,24 +194,22 @@ bool WavStreamer::startSdCard (const char * fileName)
         char waveString[5];
         ::strncpy(waveString, wavHeader.fields.WAVE, 4);
         waveString[4] = 0;
-        USART_DEBUG("WAV header successfully parsed:" << UsartLogger::ENDL
-                    << "  RIFF Header = " << riffString << UsartLogger::ENDL
-                    << "  WAVE Header = " << waveString << UsartLogger::ENDL
-                    << "  audioFormat = " << wavHeader.fields.audioFormat << UsartLogger::ENDL
-                    << "  numOfChan = " << wavHeader.fields.numOfChan << UsartLogger::ENDL
-                    << "  samplesPerSec = " << wavHeader.fields.samplesPerSec << UsartLogger::ENDL
-                    << "  bytesPerSec = " << wavHeader.fields.bytesPerSec << UsartLogger::ENDL
-                    << "  blockAlign = " << wavHeader.fields.blockAlign << UsartLogger::ENDL
-                    << "  bitsPerSample = " << wavHeader.fields.bitsPerSample << UsartLogger::ENDL
-                    << "  chunkSize = " << totalBytes << UsartLogger::ENDL
-                    << "  bytesPerSample = " << bytesPerSample << UsartLogger::ENDL
-                    << "  total samples = " << totalBytes / bytesPerSample << UsartLogger::ENDL);
+        USART_DEBUG("WAV streaming from file started: " << fileName << UsartLogger::ENDL
+                    << UsartLogger::TAB << "RIFF Header = " << riffString << UsartLogger::ENDL
+                    << UsartLogger::TAB << "WAVE Header = " << waveString << UsartLogger::ENDL
+                    << UsartLogger::TAB << "audioFormat = " << wavHeader.fields.audioFormat << UsartLogger::ENDL
+                    << UsartLogger::TAB << "numOfChan = " << wavHeader.fields.numOfChan << UsartLogger::ENDL
+                    << UsartLogger::TAB << "samplesPerSec = " << wavHeader.fields.samplesPerSec << UsartLogger::ENDL
+                    << UsartLogger::TAB << "bytesPerSec = " << wavHeader.fields.bytesPerSec << UsartLogger::ENDL
+                    << UsartLogger::TAB << "blockAlign = " << wavHeader.fields.blockAlign << UsartLogger::ENDL
+                    << UsartLogger::TAB << "bitsPerSample = " << wavHeader.fields.bitsPerSample << UsartLogger::ENDL
+                    << UsartLogger::TAB << "chunkSize = " << totalBytes << UsartLogger::ENDL
+                    << UsartLogger::TAB << "bytesPerSample = " << bytesPerSample << UsartLogger::ENDL
+                    << UsartLogger::TAB << "total samples = " << totalBytes / bytesPerSample << UsartLogger::ENDL);
     }
     
     f_lseek(&wavFile, WAV_HEADER_LENGTH);
     totalBytesRead = 0;
-    
-    USART_DEBUG("WAV streaming from file started: " << fileName << UsartLogger::ENDL);
     
     return true;
 }

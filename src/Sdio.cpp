@@ -75,13 +75,7 @@ DeviceStart::Status Sdio::start ()
     txDma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
     txDma.Init.MemBurst = DMA_MBURST_INC4;
     txDma.Init.PeriphBurst = DMA_PBURST_INC4;
-    device.txDma.dma->enableClock();
     __HAL_LINKDMA(&parameters, hdmatx, txDma);
-    halStatus = HAL_DMA_Init(&txDma);
-    if (halStatus != HAL_OK)
-    {
-        return DeviceStart::TX_DMA_INIT_ERROR;
-    }
 
     rxDma.Init.Mode = DMA_PFCTRL;
     rxDma.Init.Priority = DMA_PRIORITY_LOW;
@@ -89,25 +83,20 @@ DeviceStart::Status Sdio::start ()
     rxDma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
     rxDma.Init.MemBurst = DMA_MBURST_INC4;
     rxDma.Init.PeriphBurst = DMA_PBURST_INC4;
-    device.rxDma.dma->enableClock();
     __HAL_LINKDMA(&parameters, hdmarx, rxDma);
-    halStatus = HAL_DMA_Init(&rxDma);
-    if (halStatus != HAL_OK)
-    {
-        return DeviceStart::RX_DMA_INIT_ERROR;
-    }
 
-    device.enableIrq();
-    return DeviceStart::OK;
+    DeviceStart::Status status = startDma(halStatus);
+    if (status == DeviceStart::OK)
+    {
+        device.enableIrq();
+    }
+    return status;
 }
 
 void Sdio::stop ()
 {
     device.disableIrq();
-    HAL_DMA_DeInit(&rxDma);
-    device.rxDma.dma->disableClock();
-    HAL_DMA_DeInit(&txDma);
-    device.txDma.dma->disableClock();
+    stopDma();
     HAL_SD_DeInit(&parameters);
     IODevice::disablePorts();
     device.disableClock();

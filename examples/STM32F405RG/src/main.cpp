@@ -120,6 +120,7 @@ private:
     AsyncI2S i2s;
     Drivers::AudioDac_UDA1334 audioDac;
     Drivers::WavStreamer streamer;
+    std::array<const char *, 3> fileNames;
 
     // USART logger
     HardwareLayout::Usart1 usart1;
@@ -190,6 +191,7 @@ public:
                   /* mute     = */ portB, GPIO_PIN_13,
                   /* smplFreq = */ portB, GPIO_PIN_14 },
         streamer { sdCard, audioDac },
+        fileNames { { "NOLIMIT.WAV", "S44.WAV", "S48.WAV" } },
 
         // USART logger
         usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, /*remapped=*/ true, NULL,
@@ -232,7 +234,7 @@ public:
         pllConfig.PLLQ = 7;
         SystemClock::getInstance()->setPLL(&pllConfig);
         SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
-        SystemClock::getInstance()->setLatency(FLASH_LATENCY_3);
+        SystemClock::getInstance()->setLatency(FLASH_LATENCY_7);
         SystemClock::getInstance()->setRTC();
         SystemClock::getInstance()->setI2S(192, 2);
         SystemClock::getInstance()->start();
@@ -240,16 +242,25 @@ public:
 
     void run (uint32_t runId, uint32_t pllp)
     {
-        audioDac.powerOn();
-
         initClock(pllp);
-        usartLogger.initInstance();
+        mco.start();
 
+        // Logger
+        usartLogger.initInstance();
         USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL
                     << "Oscillator frequency: " << SystemClock::getInstance()->getHSEFreq()
                     << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL
                     << UsartLogger::TAB << "runId=" << runId << UsartLogger::ENDL
                     << UsartLogger::TAB << "pllp=" << pllp << UsartLogger::ENDL);
+
+        // LEDs
+        ledGreen.start();
+        ledBlue.start();
+        ledRed.start();
+
+        ledRed.setHigh();
+        HAL_Delay(500);
+        ledRed.toggle();
 
         // For RTC, it is necessary to reset the state since it will not be
         // automatically reset after MCU programming.
@@ -262,19 +273,12 @@ public:
         }
         while (rtc.getHalStatus() != HAL_OK);
 
-        mco.start();
-        ledGreen.start();
-        ledBlue.start();
-        ledRed.start();
-
+        // SPI and SSD
         DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_64, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
         USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
         ssd.start();
 
-        ledRed.setHigh();
-        HAL_Delay(500);
-        ledRed.setLow();
-
+        // SD card
         pinSdDetect.start();
         if (sdCard.isCardInserted())
         {
@@ -292,13 +296,17 @@ public:
         espSender.setRepeatDelay(config.getRepeatDelay() * MILLIS_IN_SEC);
         espSender.setTurnOffDelay(config.getTurnOffDelay() * MILLIS_IN_SEC);
 
+        // WAV streamer
+        audioDac.powerOn();
         streamer.setHandler(this);
         streamer.setVolume(0.5);
-        streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM, config.getWavFile());
+        streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM,
+                       (runId < fileNames.size()? fileNames[runId] : config.getWavFile()));
 
+        // Start main loop
+        printResourceOccupation();
         uint32_t start = HAL_GetTick();
         uint32_t end = start + 60 * MILLIS_IN_SEC;
-
         ntpRequestActive = true;
         while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF || streamer.isActive())
         {
@@ -316,13 +324,12 @@ public:
             }
         }
 
-        streamer.stop();
+        // Stop all devices
         esp.assignSendLed(NULL);
         sdCard.stop();
         pinSdPower.setHigh();
         pinSdPower.stop();
         pinSdDetect.stop();
-
         ssd.stop();
         spi.stop();
         ledBlue.stop();
@@ -331,16 +338,9 @@ public:
         mco.stop();
         rtc.stop();
 
-        // Log resource occupations after all devices (expect USART1 for logging, HSE, LSE) are stopped
+        // Log resource occupations after all devices (except USART1 for logging, HSE, LSE) are stopped.
         // Desired: two at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
-        USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
-                    << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "portB=" << portB.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "portC=" << portC.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "portH=" << portH.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
-                    << UsartLogger::TAB << "dma2=" << dma2.getObjectsCount() << UsartLogger::ENDL);
+        printResourceOccupation();
         usartLogger.clearInstance();
 
         sysClock.stop();
@@ -378,11 +378,13 @@ public:
 
     void onRtcSecondInterrupt ()
     {
+        /*
         USART_DEBUG(Rtc::getInstance()->getLocalDate() << " "
                     << Rtc::getInstance()->getLocalTime()
                     << ": ESP state=" << (int)espSender.getEspState()
                     << ", message send=" << espSender.isOutputMessageSent()
                     << UsartLogger::ENDL);
+        */
         ledBlue.toggle();
 
         spi.waitForRelease();
@@ -471,6 +473,17 @@ public:
         USART_DEBUG("NTP time: " << Rtc::getInstance()->getLocalTime() << UsartLogger::ENDL);
     }
 
+    void printResourceOccupation ()
+    {
+        USART_DEBUG("Resource occupations: " << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portA=" << portA.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portB=" << portB.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portC=" << portC.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portD=" << portD.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "portH=" << portH.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
+                    << UsartLogger::TAB << "dma2=" << dma2.getObjectsCount() << UsartLogger::ENDL);
+    }
 };
 
 MyApplication * appPtr = NULL;
@@ -495,10 +508,11 @@ int main (void)
     uint32_t pllp = 2, runId = 0;
     while (true)
     {
-        app.run(++runId, pllp);
+        app.run(runId++, pllp);
         pllp += 2;
-        if (pllp > 8)
+        if (runId > 2)
         {
+            runId = 0;
             pllp = 2;
         }
     }

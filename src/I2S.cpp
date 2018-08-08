@@ -62,34 +62,21 @@ DeviceStart::Status AsyncI2S::start (uint32_t standard, uint32_t audioFreq, uint
         return DeviceStart::DEVICE_INIT_ERROR;
     }
 
-    device.txDma.dma->enableClock();
     __HAL_LINKDMA(&parameters, hdmatx, txDma);
-    halStatus = HAL_DMA_Init(&txDma);
-    if (halStatus != HAL_OK)
-    {
-        return DeviceStart::TX_DMA_INIT_ERROR;
-    }
-
-    device.rxDma.dma->enableClock();
     __HAL_LINKDMA(&parameters, hdmarx, rxDma);
-    halStatus = HAL_DMA_Init(&rxDma);
-    if (halStatus != HAL_OK)
+    DeviceStart::Status status = startDma(halStatus);
+    if (status == DeviceStart::OK)
     {
-        return DeviceStart::RX_DMA_INIT_ERROR;
+        device.enableIrq();
     }
-
-    device.enableIrq();
-    return DeviceStart::OK;
+    return status;
 }
 
 
 void AsyncI2S::stop ()
 {
     device.disableIrq();
-    HAL_DMA_DeInit(&rxDma);
-    device.rxDma.dma->disableClock();
-    HAL_DMA_DeInit(&txDma);
-    device.txDma.dma->disableClock();
+    stopDma();
     HAL_I2S_DeInit(&parameters);
     device.disableClock();
     IODevice::disablePorts();

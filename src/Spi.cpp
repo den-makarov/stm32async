@@ -81,10 +81,10 @@ DeviceStart::Status BaseSpi::start (uint32_t direction, uint32_t prescaler,
 
 void BaseSpi::stop ()
 {
-    __HAL_SPI_DISABLE(&parameters);
     HAL_SPI_DeInit(&parameters);
     IODevice::disablePorts();
     device.disableClock();
+    __HAL_SPI_DISABLE(&parameters);
 }
 
 /************************************************************************
@@ -103,38 +103,23 @@ DeviceStart::Status AsyncSpi::start (uint32_t direction, uint32_t prescaler,
                                      uint32_t CLKPhase/* = SPI_PHASE_1EDGE*/)
 {
     DeviceStart::Status status = BaseSpi::start(direction, prescaler, dataSize, CLKPhase);
-    if (status != DeviceStart::OK)
+    if (status == DeviceStart::OK)
     {
-        return status;
+        __HAL_LINKDMA(&parameters, hdmatx, txDma);
+        __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+        status = startDma(halStatus);
+        if (status == DeviceStart::OK)
+        {
+            enableIrq();
+        }
     }
-
-    device.txDma.dma->enableClock();
-    __HAL_LINKDMA(&parameters, hdmatx, txDma);
-    halStatus = HAL_DMA_Init(&txDma);
-    if (halStatus != HAL_OK)
-    {
-        return DeviceStart::TX_DMA_INIT_ERROR;
-    }
-
-    device.rxDma.dma->enableClock();
-    __HAL_LINKDMA(&parameters, hdmarx, rxDma);
-    halStatus = HAL_DMA_Init(&rxDma);
-    if (halStatus != HAL_OK)
-    {
-        return DeviceStart::RX_DMA_INIT_ERROR;
-    }
-
-    enableIrq();
-    return DeviceStart::OK;
+    return status;
 }
 
 void AsyncSpi::stop ()
 {
     disableIrq();
-    HAL_DMA_DeInit(&rxDma);
-    device.rxDma.dma->disableClock();
-    HAL_DMA_DeInit(&txDma);
-    device.txDma.dma->disableClock();
+    stopDma();
     BaseSpi::stop();
 }
 

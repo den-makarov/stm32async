@@ -54,10 +54,10 @@ public:
     /**
      * @brief Open transmission session with given parameters.
      */
-    HAL_StatusTypeDef start (uint32_t mode, uint32_t baudRate,
-                             uint32_t wordLength = UART_WORDLENGTH_8B,
-                             uint32_t stopBits = UART_STOPBITS_1,
-                             uint32_t parity = UART_PARITY_NONE);
+    DeviceStart::Status start (uint32_t mode, uint32_t baudRate,
+                               uint32_t wordLength = UART_WORDLENGTH_8B,
+                               uint32_t stopBits = UART_STOPBITS_1,
+                               uint32_t parity = UART_PARITY_NONE);
 
     /**
      * @brief Open transmission session with given mode.
@@ -65,7 +65,8 @@ public:
     inline HAL_StatusTypeDef changeMode (uint32_t mode)
     {
         parameters.Init.Mode = mode;
-        return HAL_UART_Init(&parameters);
+        halStatus = HAL_UART_Init(&parameters);
+        return halStatus;
     }
 
     /**
@@ -79,7 +80,8 @@ public:
     inline HAL_StatusTypeDef transmitBlocking (const char * buffer, size_t n,
                                                uint32_t timeout = __UINT32_MAX__)
     {
-        return HAL_UART_Transmit(&parameters, (unsigned char *) buffer, n, timeout);
+        halStatus = HAL_UART_Transmit(&parameters, (unsigned char *) buffer, n, timeout);
+        return halStatus;
     }
 
     /**
@@ -88,7 +90,8 @@ public:
     inline HAL_StatusTypeDef receiveBlocking (const char * buffer, size_t n,
                                               uint32_t timeout = __UINT32_MAX__)
     {
-        return HAL_UART_Receive(&parameters, (unsigned char *) buffer, n, timeout);
+        halStatus = HAL_UART_Receive(&parameters, (unsigned char *) buffer, n, timeout);
+        return halStatus;
     }
 
     /**
@@ -120,10 +123,10 @@ public:
     /**
      * @brief Open transmission session with given parameters.
      */
-    HAL_StatusTypeDef start (uint32_t mode, uint32_t baudRate,
-                             uint32_t wordLength = UART_WORDLENGTH_8B,
-                             uint32_t stopBits = UART_STOPBITS_1,
-                             uint32_t parity = UART_PARITY_NONE);
+    DeviceStart::Status start (uint32_t mode, uint32_t baudRate,
+                               uint32_t wordLength = UART_WORDLENGTH_8B,
+                               uint32_t stopBits = UART_STOPBITS_1,
+                               uint32_t parity = UART_PARITY_NONE);
 
     /**
      * @brief Close the transmission session.
@@ -136,7 +139,8 @@ public:
     inline HAL_StatusTypeDef transmit (DeviceClient * _client, const char * buffer, size_t n)
     {
         startCommunication(_client, State::TX, State::TX_CMPL);
-        return HAL_UART_Transmit_DMA(&parameters, (unsigned char *) buffer, n);
+        halStatus = HAL_UART_Transmit_DMA(&parameters, (unsigned char *) buffer, n);
+        return halStatus;
     }
 
     /**
@@ -145,7 +149,8 @@ public:
     inline HAL_StatusTypeDef transmitIt (DeviceClient * _client, const char * buffer, size_t n)
     {
         startCommunication(_client, State::TX, State::TX_CMPL);
-        return HAL_UART_Transmit_IT(&parameters, (unsigned char *) buffer, n);
+        halStatus = HAL_UART_Transmit_IT(&parameters, (unsigned char *) buffer, n);
+        return halStatus;
     }
 
     /**
@@ -154,7 +159,8 @@ public:
     inline HAL_StatusTypeDef receive (DeviceClient * _client, const char * buffer, size_t n)
     {
         startCommunication(_client, State::RX, State::RX_CMPL);
-        return HAL_UART_Receive_DMA(&parameters, (unsigned char *) buffer, n);
+        halStatus = HAL_UART_Receive_DMA(&parameters, (unsigned char *) buffer, n);
+        return halStatus;
     }
 
     /**
@@ -163,7 +169,8 @@ public:
     inline HAL_StatusTypeDef receiveIt (DeviceClient * _client, const char * buffer, size_t n)
     {
         startCommunication(_client, State::RX, State::RX_CMPL);
-        return HAL_UART_Receive_IT(&parameters, (unsigned char *) buffer, n);
+        halStatus = HAL_UART_Receive_IT(&parameters, (unsigned char *) buffer, n);
+        return halStatus;
     }
 
     /**

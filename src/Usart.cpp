@@ -44,10 +44,10 @@ BaseUsart::BaseUsart (const HardwareLayout::Usart & _device) :
     #endif
 }
 
-HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
-                                    uint32_t wordLength/* = UART_WORDLENGTH_8B*/,
-                                    uint32_t stopBits/* = UART_STOPBITS_1*/,
-                                    uint32_t parity/* = UART_PARITY_NONE*/)
+DeviceStart::Status BaseUsart::start (uint32_t mode, uint32_t baudRate,
+                                      uint32_t wordLength/* = UART_WORDLENGTH_8B*/,
+                                      uint32_t stopBits/* = UART_STOPBITS_1*/,
+                                      uint32_t parity/* = UART_PARITY_NONE*/)
 {
     device.enableClock();
     IODevice::enablePorts();
@@ -60,10 +60,10 @@ HAL_StatusTypeDef BaseUsart::start (uint32_t mode, uint32_t baudRate,
     HAL_StatusTypeDef status = HAL_UART_Init(&parameters);
     if (status != HAL_OK)
     {
-        return HAL_ERROR;
+        return DeviceStart::DEVICE_INIT_ERROR;
     }
 
-    return HAL_OK;
+    return DeviceStart::OK;
 }
 
 void BaseUsart::stop ()
@@ -84,44 +84,29 @@ AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     // empty
 }
 
-HAL_StatusTypeDef AsyncUsart::start (uint32_t mode, uint32_t baudRate,
-                                     uint32_t wordLength/* = UART_WORDLENGTH_8B*/,
-                                     uint32_t stopBits/* = UART_STOPBITS_1*/,
-                                     uint32_t parity/* = UART_PARITY_NONE*/)
+DeviceStart::Status AsyncUsart::start (uint32_t mode, uint32_t baudRate,
+                                       uint32_t wordLength/* = UART_WORDLENGTH_8B*/,
+                                       uint32_t stopBits/* = UART_STOPBITS_1*/,
+                                       uint32_t parity/* = UART_PARITY_NONE*/)
 {
-    HAL_StatusTypeDef status = BaseUsart::start(mode, baudRate, wordLength, stopBits, parity);
-    if (status != HAL_OK)
+    DeviceStart::Status status = BaseUsart::start(mode, baudRate, wordLength, stopBits, parity);
+    if (status == DeviceStart::OK)
     {
-        return HAL_ERROR;
+        __HAL_LINKDMA(&parameters, hdmatx, txDma);
+        __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+        status = startDma(halStatus);
+        if (status == DeviceStart::OK)
+        {
+            enableIrq();
+        }
     }
-
-    device.txDma.dma->enableClock();
-    __HAL_LINKDMA(&parameters, hdmatx, txDma);
-    status = HAL_DMA_Init(&txDma);
-    if (status != HAL_OK)
-    {
-        return HAL_ERROR;
-    }
-
-    device.rxDma.dma->enableClock();
-    __HAL_LINKDMA(&parameters, hdmarx, rxDma);
-    status = HAL_DMA_Init(&rxDma);
-    if (status != HAL_OK)
-    {
-        return HAL_ERROR;
-    }
-
-    enableIrq();
-    return HAL_OK;
+    return status;
 }
 
 void AsyncUsart::stop ()
 {
     disableIrq();
-    HAL_DMA_DeInit(&rxDma);
-    device.rxDma.dma->disableClock();
-    HAL_DMA_DeInit(&txDma);
-    device.txDma.dma->disableClock();
+    stopDma();
     BaseUsart::stop();
 }
 

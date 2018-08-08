@@ -37,20 +37,47 @@ class AsyncI2S : public IODevice<HardwareLayout::I2S, 1>, public SharedDevice
 {
 public:
 
+    /**
+     * @brief Default constructor.
+     */
     AsyncI2S (const HardwareLayout::I2S & _device);
 
+    /**
+     * @brief Open transmission session with given parameters.
+     */
     DeviceStart::Status start (uint32_t standard, uint32_t audioFreq, uint32_t dataFormat);
+
+    /**
+     * @brief Close the transmission session.
+     */
     void stop ();
 
+    /**
+     * @brief Getter for the device parameters
+     */
     inline I2S_HandleTypeDef & getParameters ()
     {
         return parameters;
     }
 
+    /**
+     * @brief Send an amount of data in DMA mode.
+     */
     inline HAL_StatusTypeDef transmit (DeviceClient * _client, uint16_t * pData, uint16_t size)
     {
         startCommunication(_client, State::TX, State::TX_CMPL);
-        return HAL_I2S_Transmit_DMA(&parameters, pData, size);
+        halStatus = HAL_I2S_Transmit_DMA(&parameters, pData, size);
+        return halStatus;
+    }
+
+    /**
+     * @brief Receive an amount of data in DMA mode.
+     */
+    inline HAL_StatusTypeDef receive (DeviceClient * _client, uint16_t * pData, uint16_t size)
+    {
+        startCommunication(_client, State::RX, State::RX_CMPL);
+        halStatus = HAL_I2S_Receive_DMA(&parameters, pData, size);
+        return halStatus;
     }
 
 private:

@@ -56,11 +56,11 @@ Esp8266::Esp8266 (const HardwareLayout::Usart & _device, const HardwareLayout::P
 
 bool Esp8266::init ()
 {
-    HAL_StatusTypeDef status = usart.start(UART_MODE_RX, ESP_BAUDRATE, UART_WORDLENGTH_8B,
-                                           UART_STOPBITS_1, UART_PARITY_NONE);
-    if (status != HAL_OK)
+    DeviceStart::Status status = usart.start(UART_MODE_RX, ESP_BAUDRATE, UART_WORDLENGTH_8B,
+                                             UART_STOPBITS_1, UART_PARITY_NONE);
+    if (status != DeviceStart::OK)
     {
-        USART_DEBUG("Cannot start ESP USART/RX: " << status << UsartLogger::ENDL);
+        USART_DEBUG("Cannot start ESP USART/RX: " << usart.getHalStatus() << UsartLogger::ENDL);
         return false;
     }
 
