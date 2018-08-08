@@ -620,4 +620,37 @@ const EspSender::AsyncState * EspSender::findState (Esp8266::AsyncCmd st)
     return NULL;
 }
 
+/************************************************************************
+ * Class NtpMessage
+ ************************************************************************/
 
+#define UNIX_OFFSET             2208988800L
+#define ENDIAN_SWAP32(data)     ((data >> 24) | /* right shift 3 bytes */ \
+                                ((data & 0x00ff0000) >> 8) | /* right shift 1 byte */ \
+                                ((data & 0x0000ff00) << 8) | /* left shift 1 byte */ \
+                                ((data & 0x000000ff) << 24)) /* left shift 3 bytes */
+
+const char * NtpMessage::getRequest ()
+{
+    ::memset(&ntpPacket, 0, NTP_PACKET_SIZE);
+    ntpPacket.flags = 0xe3;
+    return (const char *)(&ntpPacket);
+}
+
+void NtpMessage::decodeResponce (const char * responce)
+{
+    ::memcpy(&ntpPacket, responce, NTP_PACKET_SIZE);
+    ntpPacket.root_delay = ENDIAN_SWAP32(ntpPacket.root_delay);
+    ntpPacket.root_dispersion = ENDIAN_SWAP32(ntpPacket.root_dispersion);
+    ntpPacket.ref_ts_sec = ENDIAN_SWAP32(ntpPacket.ref_ts_sec);
+    ntpPacket.ref_ts_frac = ENDIAN_SWAP32(ntpPacket.ref_ts_frac);
+    ntpPacket.origin_ts_sec = ENDIAN_SWAP32(ntpPacket.origin_ts_sec);
+    ntpPacket.origin_ts_frac = ENDIAN_SWAP32(ntpPacket.origin_ts_frac);
+    ntpPacket.recv_ts_sec = ENDIAN_SWAP32(ntpPacket.recv_ts_sec);
+    ntpPacket.recv_ts_frac = ENDIAN_SWAP32(ntpPacket.recv_ts_frac);
+    ntpPacket.trans_ts_sec = ENDIAN_SWAP32(ntpPacket.trans_ts_sec);
+    ntpPacket.trans_ts_frac = ENDIAN_SWAP32(ntpPacket.trans_ts_frac);
+    time_t total_secs = ntpPacket.recv_ts_sec - UNIX_OFFSET; /* convert to unix time */;
+    Rtc::getInstance()->setTimeSec(total_secs);
+    USART_DEBUG("NTP time: " << Rtc::getInstance()->getLocalTime() << UsartLogger::ENDL);
+}

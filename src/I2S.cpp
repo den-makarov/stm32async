@@ -62,8 +62,11 @@ DeviceStart::Status AsyncI2S::start (uint32_t standard, uint32_t audioFreq, uint
         return DeviceStart::DEVICE_INIT_ERROR;
     }
 
+    HAL_DMA_DeInit(&txDma);
     __HAL_LINKDMA(&parameters, hdmatx, txDma);
+    HAL_DMA_DeInit(&rxDma);
     __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+
     DeviceStart::Status status = startDma(halStatus);
     if (status == DeviceStart::OK)
     {

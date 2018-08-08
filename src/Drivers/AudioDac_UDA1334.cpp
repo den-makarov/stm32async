@@ -82,7 +82,6 @@ bool AudioDac_UDA1334::start (AudioDac_UDA1334::SourceType s, uint32_t standard,
         break;
     }
 
-    i2s.stop();
     DeviceStart::Status status = i2s.start(standard, audioFreq, dataFormat);
     USART_DEBUG("I2S status: " << DeviceStart::asString(status) << " (" << i2s.getHalStatus() << ")" << UsartLogger::ENDL);
     if (status != DeviceStart::Status::OK)

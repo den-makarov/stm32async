@@ -90,29 +90,8 @@ private:
     HardwareLayout::Usart2 usart2;
     Drivers::Esp8266 esp;
     Drivers::EspSender espSender;
+    Drivers::NtpMessage ntpMessage;
     bool ntpRequestActive;
-
-    // NTP Message
-    static const size_t NTP_PACKET_SIZE = 48;  // NTP time is in the first 48 bytes of message
-    struct NtpPacket {
-            uint8_t flags;
-            uint8_t stratum;
-            uint8_t poll;
-            uint8_t precision;
-            uint32_t root_delay;
-            uint32_t root_dispersion;
-            uint8_t referenceID[4];
-            uint32_t ref_ts_sec;
-            uint32_t ref_ts_frac;
-            uint32_t origin_ts_sec;
-            uint32_t origin_ts_frac;
-            uint32_t recv_ts_sec;
-            uint32_t recv_ts_frac;
-            uint32_t trans_ts_sec;
-            uint32_t trans_ts_frac;
-    } __attribute__((__packed__));
-
-    struct NtpPacket ntpPacket;
     char messageBuffer[2048];
 
     // I2S2 Audio
@@ -175,6 +154,7 @@ public:
         },
         esp { usart2, portA, GPIO_PIN_1 },
         espSender { esp, ledRed },
+        ntpMessage {},
         ntpRequestActive { false },
 
         // I2S2 Audio
@@ -318,8 +298,7 @@ public:
             if (esp.getInputMessageSize() > 0)
             {
                 esp.getInputMessage(messageBuffer, esp.getInputMessageSize());
-                ::memcpy(&ntpPacket, messageBuffer, NTP_PACKET_SIZE);
-                decodeNtpMessage(ntpPacket);
+                ntpMessage.decodeResponce(messageBuffer);
                 ntpRequestActive = false;
             }
         }
@@ -439,38 +418,8 @@ public:
     {
         if (ntpRequestActive && espSender.isOutputMessageSent())
         {
-            fillNtpRrequst(ntpPacket);
-            espSender.sendMessage("UDP", config.getNtpServer(), "123", (const char *)(&ntpPacket), NTP_PACKET_SIZE);
+            espSender.sendMessage("UDP", config.getNtpServer(), "123", ntpMessage.getRequest(), Drivers::NtpMessage::NTP_PACKET_SIZE);
         }
-    }
-
-    void fillNtpRrequst (NtpPacket & ntpPacket)
-    {
-        ::memset(&ntpPacket, 0, NTP_PACKET_SIZE);
-        ntpPacket.flags = 0xe3;
-    }
-
-    #define UNIX_OFFSET             2208988800L
-    #define ENDIAN_SWAP32(data)     ((data >> 24) | /* right shift 3 bytes */ \
-                                    ((data & 0x00ff0000) >> 8) | /* right shift 1 byte */ \
-                                    ((data & 0x0000ff00) << 8) | /* left shift 1 byte */ \
-                                    ((data & 0x000000ff) << 24)) /* left shift 3 bytes */
-
-    void decodeNtpMessage (NtpPacket & ntpPacket)
-    {
-        ntpPacket.root_delay = ENDIAN_SWAP32(ntpPacket.root_delay);
-        ntpPacket.root_dispersion = ENDIAN_SWAP32(ntpPacket.root_dispersion);
-        ntpPacket.ref_ts_sec = ENDIAN_SWAP32(ntpPacket.ref_ts_sec);
-        ntpPacket.ref_ts_frac = ENDIAN_SWAP32(ntpPacket.ref_ts_frac);
-        ntpPacket.origin_ts_sec = ENDIAN_SWAP32(ntpPacket.origin_ts_sec);
-        ntpPacket.origin_ts_frac = ENDIAN_SWAP32(ntpPacket.origin_ts_frac);
-        ntpPacket.recv_ts_sec = ENDIAN_SWAP32(ntpPacket.recv_ts_sec);
-        ntpPacket.recv_ts_frac = ENDIAN_SWAP32(ntpPacket.recv_ts_frac);
-        ntpPacket.trans_ts_sec = ENDIAN_SWAP32(ntpPacket.trans_ts_sec);
-        ntpPacket.trans_ts_frac = ENDIAN_SWAP32(ntpPacket.trans_ts_frac);
-        time_t total_secs = ntpPacket.recv_ts_sec - UNIX_OFFSET; /* convert to unix time */;
-        Rtc::getInstance()->setTimeSec(total_secs);
-        USART_DEBUG("NTP time: " << Rtc::getInstance()->getLocalTime() << UsartLogger::ENDL);
     }
 
     void printResourceOccupation ()

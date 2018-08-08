@@ -417,6 +417,44 @@ private:
 };
 
 
+/************************************************************************
+ * Class NtpMessage
+ ************************************************************************/
+
+class NtpMessage
+{
+public:
+
+    static const size_t NTP_PACKET_SIZE = 48;  // NTP time is in the first 48 bytes of message
+    struct NtpPacket {
+            uint8_t flags;
+            uint8_t stratum;
+            uint8_t poll;
+            uint8_t precision;
+            uint32_t root_delay;
+            uint32_t root_dispersion;
+            uint8_t referenceID[4];
+            uint32_t ref_ts_sec;
+            uint32_t ref_ts_frac;
+            uint32_t origin_ts_sec;
+            uint32_t origin_ts_frac;
+            uint32_t recv_ts_sec;
+            uint32_t recv_ts_frac;
+            uint32_t trans_ts_sec;
+            uint32_t trans_ts_frac;
+    } __attribute__((__packed__));
+
+    struct NtpPacket ntpPacket;
+
+    NtpMessage ()
+    {
+        // empty
+    }
+
+    const char * getRequest ();
+    void decodeResponce (const char * responce);
+};
+
 } // end of namespace Drivers
 } // end of namespace Stm32async
 
