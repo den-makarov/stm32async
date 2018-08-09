@@ -32,33 +32,21 @@ SystemClock::SystemClock (HardwareLayout::Interrupt && _sysTickIrq) :
     hsePort { NULL },
     lsePort { NULL },
     mcuFreq { 0 },
-#if defined(STM32F4)
-    fLatency { FLASH_LATENCY_7 }
-#elif defined(STM32F1)
-    fLatency { FLASH_LATENCY_2 }
-#endif
+    fLatency { HAL_EXT_MAX_FLASH_LATENCY }
 {
+    // By default, HSI is set as a clock source
     oscParameters.OscillatorType = RCC_OSCILLATORTYPE_HSI;
     oscParameters.HSEState = RCC_HSE_OFF;
-    // By default at least next one should be enabled
     oscParameters.HSIState = RCC_HSI_ON;
     oscParameters.LSEState = RCC_LSE_OFF;
     oscParameters.LSIState = RCC_LSI_OFF;
-
     clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+
+    // Clock types enabled by default
     clkParameters.ClockType = RCC_CLOCKTYPE_HCLK | 
                               RCC_CLOCKTYPE_SYSCLK | 
                               RCC_CLOCKTYPE_PCLK1 | 
                               RCC_CLOCKTYPE_PCLK2;
-
-#if defined(STM32F1)
-    periphClkParameters.AdcClockSelection = RCC_ADCPCLK2_DIV8;
-    periphClkParameters.PeriphClockSelection = RCC_PERIPHCLK_ADC;
-    periphClkParameters.RTCClockSelection = RCC_RTCCLKSOURCE_NO_CLK;
-#elif defined(STM32F4)
-
-#else
-#endif
 
     instance = this;
 }
@@ -108,22 +96,18 @@ void SystemClock::setLSI ()
 void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
 {
     oscParameters.PLL.PLLState = RCC_PLL_ON;
-    oscParameters.PLL.PLLMUL = factors->PLLMUL;
-
     if (factors->PLLSource == RCC_PLLSOURCE_HSE)
     {
-        setHSE(NULL, 0);
         oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     }
     else
     {
-        setHSI();
         oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI_DIV2;
     }
 
+    oscParameters.PLL.PLLMUL = factors->PLLMUL;
     oscParameters.HSEPredivValue = factors->HSEPredivValue;
     oscParameters.Prediv1Source = factors->Prediv1Source;
-
     if (oscParameters.Prediv1Source == RCC_PREDIV1_SOURCE_PLL2)
     {
         oscParameters.PLL2.PLL2State = RCC_PLL2_ON;
@@ -132,29 +116,6 @@ void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
     }
 }
 #endif /* STM32F1 */
-
-#ifdef STM32F4
-void SystemClock::setPLL (HardwareLayout::SystemPllFactors * factors)
-{
-    oscParameters.PLL.PLLState = RCC_PLL_ON;
-    if (oscParameters.HSEState == RCC_HSE_ON)
-    {
-        oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    }
-    else
-    {
-        oscParameters.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-    }
-    oscParameters.PLL.PLLM = factors->PLLM;
-    oscParameters.PLL.PLLN = factors->PLLN;
-    oscParameters.PLL.PLLP = factors->PLLP;
-    oscParameters.PLL.PLLQ = factors->PLLQ;
-#ifdef STM32F410Rx
-    oscParameters.PLL.PLLR = factors->PLLR;
-#endif
-    //clkParameters.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-}
-#endif /* STM32F4 */
 
 void SystemClock::setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider)
 {
@@ -179,42 +140,26 @@ void SystemClock::setRTC ()
 
 void SystemClock::setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR)
 {
-#ifdef HAL_I2S_MODULE_ENABLED
-    periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
-    periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
-    periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
-#else
-    UNUSED(PLLI2SN);
-    UNUSED(PLLI2SR);
-#endif
+    #ifdef HAL_I2S_MODULE_ENABLED
+        periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_I2S;
+        periphClkParameters.PLLI2S.PLLI2SN = PLLI2SN;
+        periphClkParameters.PLLI2S.PLLI2SR = PLLI2SR;
+    #else
+        UNUSED(PLLI2SN);
+        UNUSED(PLLI2SR);
+    #endif
 }
 
-#ifdef STM32F1
-void SystemClock::start ()
+void SystemClock::setADC (uint32_t clock)
 {
-    if (HAL_RCC_OscConfig(&oscParameters) != HAL_OK)
-    {
-        /* Initialization Error */
-        while(1);
-    }
-
-    if (HAL_RCC_ClockConfig(&clkParameters, fLatency) != HAL_OK)
-    {
-        /* Initialization Error */
-        while(1);
-    }
-
-    if (HAL_RCCEx_PeriphCLKConfig(&periphClkParameters) != HAL_OK)
-    {
-        /* Initialization Error */
-        while(1);
-    }
-
-    mcuFreq = HAL_RCC_GetHCLKFreq();
+    #ifdef RCC_PERIPHCLK_ADC
+        periphClkParameters.PeriphClockSelection |= RCC_PERIPHCLK_ADC;
+        periphClkParameters.AdcClockSelection = clock;
+    #else
+        UNUSED(clock);
+    #endif
 }
-#endif /* STM32F1 */
 
-#ifdef STM32F4
 void SystemClock::start ()
 {
     if (hsePort != NULL)
@@ -249,7 +194,6 @@ void SystemClock::start ()
     /* SysTick_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(sysTickIrq.irqn, sysTickIrq.prio, sysTickIrq.subPrio);
 }
-#endif /* STM32F4 */
 
 void SystemClock::stop ()
 {

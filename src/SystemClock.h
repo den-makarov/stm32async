@@ -41,10 +41,13 @@ public:
     void setHSI ();
     void setLSE (const HardwareLayout::Port * _port, uint32_t pin);
     void setLSI ();
+#ifdef STM32F1
     void setPLL (HardwareLayout::SystemPllFactors * factors = NULL);
+#endif /* STM32F1 */
     void setAHB (uint32_t AHBCLKDivider, uint32_t APB1CLKDivider, uint32_t APB2CLKDivider);
     void setRTC ();
     void setI2S (uint32_t PLLI2SN, uint32_t PLLI2SR);
+    void setADC (uint32_t clock);
 
     void start ();
     void stop ();

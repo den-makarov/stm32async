@@ -27,6 +27,7 @@
      */
     #include "stm32f4xx.h"
 
+    #define HAL_EXT_MAX_FLASH_LATENCY FLASH_LATENCY_7
     #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) (cfg.Init.Channel = channel)
     #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) (cfg.Init.FIFOMode = mode)
     #define HAL_EXT_SetRtcTimer_IT(cfg, counter, prescaler) HAL_RTCEx_SetWakeUpTimer_IT(cfg, counter, prescaler)
@@ -41,43 +42,6 @@
         {
             bool remap;
         } AFIO_TypeDef;
-
-        typedef struct
-        {
-            /**
-             * @brief PLLM: Division factor for PLL VCO input clock.
-             *        This parameter must be a number between Min_Data = 0 and Max_Data = 63
-             */
-            uint32_t PLLM;
-
-            /**
-             * @brief PLLN: Multiplication factor for PLL VCO output clock.
-             *        This parameter must be a number between Min_Data = 50 and Max_Data = 432
-             *        except for STM32F411xE devices where the Min_Data
-             */
-            uint32_t PLLN;
-
-            /**
-             * @brief Division factor for main system clock (SYSCLK).
-             *        This parameter must be a value of @ref RCC_PLLP_Clock_Divider
-             */
-            uint32_t PLLP;
-
-            /**
-             * @brief PLLQ: Division factor for OTG FS, SDIO and RNG clocks.
-             *        This parameter must be a number between Min_Data = 4 and Max_Data = 15
-             */
-            uint32_t PLLQ;
-
-            #ifdef STM32F410Rx
-            /**
-             * @brief PLLR: PLL division factor for I2S, SAI, SYSTEM, SPDIFRX clocks.
-             *        This parameter is only available in STM32F410xx/STM32F446xx/STM32F469xx and STM32F479xx devices.
-             *        This parameter must be a number between Min_Data = 2 and Max_Data = 7
-             */
-            uint32_t PLLR;
-            #endif
-        } SystemPllFactors;
 
         typedef DMA_Stream_TypeDef DMA_Stream_Struct;
 
@@ -94,6 +58,8 @@
     #define GPIO_AF0_MCO 0U
 
     #define DMA_FIFOMODE_DISABLE 0U
+
+    #define HAL_EXT_MAX_FLASH_LATENCY FLASH_LATENCY_2
     #define HAL_EXT_DMA_SET_CHANNEL(cfg, channel) UNUSED(channel)
     #define HAL_EXT_DMA_SET_FIFOMODE(cfg, mode) UNUSED(mode)
     #define HAL_EXT_SetRtcTimer_IT(cfg, counter, prescaler) HAL_RTCEx_SetSecond_IT(cfg)

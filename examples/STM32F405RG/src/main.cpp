@@ -206,18 +206,17 @@ public:
 
     void initClock (uint32_t pllp)
     {
-        SystemClock::getInstance()->setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);        
-        HardwareLayout::SystemPllFactors pllConfig;
-        pllConfig.PLLM = 16;
-        pllConfig.PLLN = 336;
-        pllConfig.PLLP = pllp;
-        pllConfig.PLLQ = 7;
-        SystemClock::getInstance()->setPLL(&pllConfig);
-        SystemClock::getInstance()->setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
-        SystemClock::getInstance()->setLatency(FLASH_LATENCY_7);
-        SystemClock::getInstance()->setRTC();
-        SystemClock::getInstance()->setI2S(192, 2);
-        SystemClock::getInstance()->start();
+        sysClock.setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);
+        sysClock.getOscParameters().PLL.PLLSource = RCC_PLLSOURCE_HSE;
+        sysClock.getOscParameters().PLL.PLLM = 16;
+        sysClock.getOscParameters().PLL.PLLN = 336;
+        sysClock.getOscParameters().PLL.PLLP = pllp;
+        sysClock.getOscParameters().PLL.PLLQ = 7;
+        sysClock.setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
+        sysClock.setLatency(FLASH_LATENCY_7);
+        sysClock.setRTC();
+        sysClock.setI2S(192, 2);
+        sysClock.start();
     }
 
     void run (uint32_t runId, uint32_t pllp)
