@@ -35,7 +35,7 @@ Sdio::Sdio (const HardwareLayout::Sdio & _device, uint32_t _clockDiv) :
                        GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH },
               IOPort { _device.pins2.port, _device.pins2.pins, GPIO_MODE_AF_PP,
                        GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH } } },
-    SharedDevice { _device.txDma, _device.rxDma, DMA_PDATAALIGN_WORD, DMA_MDATAALIGN_WORD }
+    SharedDevice { &device.txDma, &device.rxDma, DMA_PDATAALIGN_WORD, DMA_MDATAALIGN_WORD }
 {
     parameters.Instance = device.getInstance();
     parameters.Init.ClockEdge = SDIO_CLOCK_EDGE_RISING;

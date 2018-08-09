@@ -124,8 +124,7 @@ Project {
             files: [
                 STM32ASYNC_PATH+"/IOPort.cpp",
                 STM32ASYNC_PATH+"/SystemClock.cpp",
-                STM32ASYNC_PATH+"/BaseUsart.cpp",
-                STM32ASYNC_PATH+"/AsyncUsart.cpp",
+                STM32ASYNC_PATH+"/Usart.cpp",
                 STM32ASYNC_PATH+"/SharedDevice.cpp",
                 STM32ASYNC_PATH+"/UsartLogger.cpp",
                 STM32ASYNC_PATH+"/Rtc.cpp",

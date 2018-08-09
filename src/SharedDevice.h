@@ -70,7 +70,7 @@ public:
      *
      * Sets the initial state of this device.
      */
-    SharedDevice (const HardwareLayout::DmaStream & _txStream, const HardwareLayout::DmaStream & _rxStream,
+    SharedDevice (const HardwareLayout::DmaStream * _txStream, const HardwareLayout::DmaStream * _rxStream,
                   uint32_t _periphDataAlignment, uint32_t _memDataAlignment);
 
     /**
@@ -200,13 +200,16 @@ protected:
     volatile State currState;
     State targetState;
     uint32_t startTime, timeout;
-    const HardwareLayout::DmaStream & txStream;
-    const HardwareLayout::DmaStream & rxStream;
     DMA_HandleTypeDef txDma;
     DMA_HandleTypeDef rxDma;
 
     DeviceStart::Status startDma (HAL_StatusTypeDef & halStatus);
     void stopDma ();
+
+private:
+
+    const HardwareLayout::DmaStream * txStream;
+    const HardwareLayout::DmaStream * rxStream;
 };
 
 } // end namespace

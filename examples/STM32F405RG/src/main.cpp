@@ -119,7 +119,7 @@ public:
         ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
 
         // SPI
-        spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, GPIO_PIN_6, /*remapped=*/ true, NULL,
+        spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, UNUSED_PIN, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { SPI1_IRQn, 1, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream5, DMA_CHANNEL_3,
                                              HardwareLayout::Interrupt { DMA2_Stream5_IRQn, 2, 0 } },
@@ -174,7 +174,7 @@ public:
         fileNames { { "NOLIMIT.WAV", "S44.WAV", "S48.WAV" } },
 
         // USART logger
-        usart1 { portB, GPIO_PIN_6, portB, GPIO_PIN_7, /*remapped=*/ true, NULL,
+        usart1 { portB, GPIO_PIN_6, portB, UNUSED_PIN, /*remapped=*/ true, NULL,
                  HardwareLayout::Interrupt { USART1_IRQn, 13, 0 },
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4,
                                              HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 14, 0 } },
@@ -207,6 +207,7 @@ public:
     void initClock (uint32_t pllp)
     {
         sysClock.setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);
+        sysClock.getOscParameters().PLL.PLLState = RCC_PLL_ON;
         sysClock.getOscParameters().PLL.PLLSource = RCC_PLLSOURCE_HSE;
         sysClock.getOscParameters().PLL.PLLM = 16;
         sysClock.getOscParameters().PLL.PLLN = 336;
@@ -317,7 +318,7 @@ public:
         rtc.stop();
 
         // Log resource occupations after all devices (except USART1 for logging, HSE, LSE) are stopped.
-        // Desired: two at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
+        // Desired: one at portB and DMA2 (USART1), one for portC (LSE), one for portH (HSE)
         printResourceOccupation();
         usartLogger.clearInstance();
 

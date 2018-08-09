@@ -68,12 +68,23 @@ public:
     static AsStringClass<Status, size, strings> asString;
 };
 
+static const uint16_t UNUSED_PIN = 0;
+
 /**
  * @brief A base class that represents IO device working on some IOPort.
  */
 template <typename DEVICE, typename PARAMETERS, std::size_t PORTS> class IODevice
 {
 public:
+
+    /**
+     * @brief Bits that define TX/RX mode.
+     */
+    enum class Mode : uint32_t
+    {
+        TX = 1,
+        RX = 2
+    };
 
     /**
      * @brief Standard initialization constructor.
@@ -83,8 +94,9 @@ public:
      */
     explicit IODevice (const DEVICE & _device, std::array<IOPort, PORTS> && _ports) :
         device { _device },
-        ports { std::move(_ports) },
-        halStatus { HAL_ERROR }
+        mode { (uint32_t)Mode::TX | (uint32_t)Mode::RX },
+        halStatus { HAL_ERROR },
+        ports { std::move(_ports) }
     {
         // empty
     }
@@ -98,11 +110,19 @@ public:
     }
 
     /**
-     * @brief Getter for the ports registered for this device.
+     * @brief Procedure checks whether a device has TX mode active.
      */
-    const std::array<IOPort, PORTS> & getPorts () const
+    inline bool isTxMode () const
     {
-        return ports;
+        return mode & (uint32_t)Mode::TX;
+    }
+
+    /**
+     * @brief Procedure checks whether a device has RX mode active.
+     */
+    inline bool isRxMode () const
+    {
+        return mode & (uint32_t)Mode::RX;
     }
 
     /**
@@ -124,8 +144,11 @@ public:
         }
         for (auto & p : ports)
         {
-            device.remapPins(p.getParameters());
-            p.start();
+            if (p.getParameters().Pin != UNUSED_PIN)
+            {
+                device.remapPins(p.getParameters());
+                p.start();
+            }
         }
     }
 
@@ -136,8 +159,11 @@ public:
     {
         for (auto & p : ports)
         {
-            p.stop();
-            device.unremapPins(p.getParameters());
+            if (p.getParameters().Pin != UNUSED_PIN)
+            {
+                p.stop();
+                device.unremapPins(p.getParameters());
+            }
         }
         if (device.afio != NULL)
         {
@@ -147,10 +173,14 @@ public:
 
 protected:
 
-    const DEVICE & device;
     PARAMETERS parameters;
-    std::array<IOPort, PORTS> ports;
+    const DEVICE & device;
+    uint32_t mode;
     HAL_StatusTypeDef halStatus;
+
+private:
+
+    std::array<IOPort, PORTS> ports;
 };
 
 } // end namespace

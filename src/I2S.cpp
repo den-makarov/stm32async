@@ -31,7 +31,7 @@ AsyncI2S::AsyncI2S (const HardwareLayout::I2S & _device):
     IODevice { _device, {
               IOPort { _device.pins.port, _device.pins.pins, GPIO_MODE_AF_PP,
                        GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH } } },
-    SharedDevice { _device.txDma, _device.rxDma, DMA_PDATAALIGN_HALFWORD, DMA_MDATAALIGN_HALFWORD }
+    SharedDevice { &device.txDma, &device.rxDma, DMA_PDATAALIGN_HALFWORD, DMA_MDATAALIGN_HALFWORD }
 {
     parameters.Instance = device.getInstance();
     parameters.Init.Mode = I2S_MODE_MASTER_TX;
@@ -62,10 +62,16 @@ DeviceStart::Status AsyncI2S::start (uint32_t standard, uint32_t audioFreq, uint
         return DeviceStart::DEVICE_INIT_ERROR;
     }
 
-    HAL_DMA_DeInit(&txDma);
-    __HAL_LINKDMA(&parameters, hdmatx, txDma);
-    HAL_DMA_DeInit(&rxDma);
-    __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+    if (isTxMode())
+    {
+        HAL_DMA_DeInit(&txDma);
+        __HAL_LINKDMA(&parameters, hdmatx, txDma);
+    }
+    if (isRxMode())
+    {
+        HAL_DMA_DeInit(&rxDma);
+        __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+    }
 
     DeviceStart::Status status = startDma(halStatus);
     if (status == DeviceStart::OK)

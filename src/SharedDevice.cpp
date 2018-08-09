@@ -25,7 +25,7 @@ using namespace Stm32async;
  * Class SharedDevice
  ************************************************************************/
 
-SharedDevice::SharedDevice (const HardwareLayout::DmaStream & _txStream, const HardwareLayout::DmaStream & _rxStream,
+SharedDevice::SharedDevice (const HardwareLayout::DmaStream * _txStream, const HardwareLayout::DmaStream * _rxStream,
                             uint32_t _periphDataAlignment, uint32_t _memDataAlignment) :
     client { NULL },
     currState { State::NONE },
@@ -35,27 +35,33 @@ SharedDevice::SharedDevice (const HardwareLayout::DmaStream & _txStream, const H
     txStream { _txStream },
     rxStream { _rxStream }
 {
-    txDma.Instance = txStream.stream;
-    HAL_EXT_DMA_SET_CHANNEL(txDma, txStream.channel);
-    txDma.Init.Direction = DMA_MEMORY_TO_PERIPH;
-    txDma.Init.PeriphInc = DMA_PINC_DISABLE;
-    txDma.Init.MemInc = DMA_MINC_ENABLE;
-    txDma.Init.PeriphDataAlignment = _periphDataAlignment;
-    txDma.Init.MemDataAlignment = _memDataAlignment;
-    txDma.Init.Mode = DMA_NORMAL;
-    txDma.Init.Priority = DMA_PRIORITY_LOW;
-    HAL_EXT_DMA_SET_FIFOMODE(txDma, DMA_FIFOMODE_DISABLE);
+    if (txStream != NULL)
+    {
+        txDma.Instance = txStream->stream;
+        HAL_EXT_DMA_SET_CHANNEL(txDma, txStream->channel);
+        txDma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+        txDma.Init.PeriphInc = DMA_PINC_DISABLE;
+        txDma.Init.MemInc = DMA_MINC_ENABLE;
+        txDma.Init.PeriphDataAlignment = _periphDataAlignment;
+        txDma.Init.MemDataAlignment = _memDataAlignment;
+        txDma.Init.Mode = DMA_NORMAL;
+        txDma.Init.Priority = DMA_PRIORITY_LOW;
+        HAL_EXT_DMA_SET_FIFOMODE(txDma, DMA_FIFOMODE_DISABLE);
+    }
 
-    rxDma.Instance = rxStream.stream;
-    HAL_EXT_DMA_SET_CHANNEL(rxDma, rxStream.channel);
-    rxDma.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    rxDma.Init.PeriphInc = DMA_PINC_DISABLE;
-    rxDma.Init.MemInc = DMA_MINC_ENABLE;
-    rxDma.Init.PeriphDataAlignment = _periphDataAlignment;
-    rxDma.Init.MemDataAlignment = _memDataAlignment;
-    rxDma.Init.Mode = DMA_NORMAL;
-    rxDma.Init.Priority = DMA_PRIORITY_LOW;
-    HAL_EXT_DMA_SET_FIFOMODE(rxDma, DMA_FIFOMODE_DISABLE);
+    if (rxStream != NULL)
+    {
+        rxDma.Instance = rxStream->stream;
+        HAL_EXT_DMA_SET_CHANNEL(rxDma, rxStream->channel);
+        rxDma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+        rxDma.Init.PeriphInc = DMA_PINC_DISABLE;
+        rxDma.Init.MemInc = DMA_MINC_ENABLE;
+        rxDma.Init.PeriphDataAlignment = _periphDataAlignment;
+        rxDma.Init.MemDataAlignment = _memDataAlignment;
+        rxDma.Init.Mode = DMA_NORMAL;
+        rxDma.Init.Priority = DMA_PRIORITY_LOW;
+        HAL_EXT_DMA_SET_FIFOMODE(rxDma, DMA_FIFOMODE_DISABLE);
+    }
 }
 
 void SharedDevice::startCommunication (DeviceClient * client, State currState, State targetState)
@@ -76,18 +82,24 @@ void SharedDevice::waitForRelease ()
 
 DeviceStart::Status SharedDevice::startDma (HAL_StatusTypeDef & halStatus)
 {
-    txStream.dma->enableClock();
-    halStatus = HAL_DMA_Init(&txDma);
-    if (halStatus != HAL_OK)
+    if (txStream != NULL)
     {
-        return DeviceStart::TX_DMA_INIT_ERROR;
+        txStream->dma->enableClock();
+        halStatus = HAL_DMA_Init(&txDma);
+        if (halStatus != HAL_OK)
+        {
+            return DeviceStart::TX_DMA_INIT_ERROR;
+        }
     }
 
-    rxStream.dma->enableClock();
-    halStatus = HAL_DMA_Init(&rxDma);
-    if (halStatus != HAL_OK)
+    if (rxStream != NULL)
     {
-        return DeviceStart::RX_DMA_INIT_ERROR;
+        rxStream->dma->enableClock();
+        halStatus = HAL_DMA_Init(&rxDma);
+        if (halStatus != HAL_OK)
+        {
+            return DeviceStart::RX_DMA_INIT_ERROR;
+        }
     }
 
     return DeviceStart::OK;
@@ -95,8 +107,14 @@ DeviceStart::Status SharedDevice::startDma (HAL_StatusTypeDef & halStatus)
 
 void SharedDevice::stopDma ()
 {
-    HAL_DMA_DeInit(&rxDma);
-    txStream.dma->disableClock();
-    HAL_DMA_DeInit(&txDma);
-    rxStream.dma->disableClock();
+    if (txStream != NULL)
+    {
+        HAL_DMA_DeInit(&txDma);
+        txStream->dma->disableClock();
+    }
+    if (rxStream != NULL)
+    {
+        HAL_DMA_DeInit(&rxDma);
+        rxStream->dma->disableClock();
+    }
 }

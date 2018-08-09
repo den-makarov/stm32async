@@ -44,6 +44,17 @@ BaseSpi::BaseSpi (const HardwareLayout::Spi & _device) :
     parameters.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
     parameters.Init.CRCPolynomial = 7;
     parameters.Init.NSS = SPI_NSS_SOFT;
+
+    // detect TX/RX mode
+    mode = 0;
+    if (device.mosiPin.pins != UNUSED_PIN)
+    {
+        mode |= (uint32_t) Mode::TX;
+    }
+    if (device.misoPin.pins != UNUSED_PIN)
+    {
+        mode |= (uint32_t) Mode::RX;
+    }
 }
 
 DeviceStart::Status BaseSpi::start (uint32_t direction, uint32_t prescaler,
@@ -93,7 +104,8 @@ void BaseSpi::stop ()
 
 AsyncSpi::AsyncSpi (const HardwareLayout::Spi & _device) :
     BaseSpi { _device },
-    SharedDevice { device.txDma, device.rxDma, DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
+    SharedDevice { (isTxMode()? &device.txDma : NULL), (isRxMode()? &device.rxDma : NULL),
+                   DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
 {
     // empty
 }
@@ -105,8 +117,14 @@ DeviceStart::Status AsyncSpi::start (uint32_t direction, uint32_t prescaler,
     DeviceStart::Status status = BaseSpi::start(direction, prescaler, dataSize, CLKPhase);
     if (status == DeviceStart::OK)
     {
-        __HAL_LINKDMA(&parameters, hdmatx, txDma);
-        __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+        if (isTxMode())
+        {
+            __HAL_LINKDMA(&parameters, hdmatx, txDma);
+        }
+        if (isRxMode())
+        {
+            __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+        }
         status = startDma(halStatus);
         if (status == DeviceStart::OK)
         {

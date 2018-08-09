@@ -36,12 +36,17 @@ BaseUsart::BaseUsart (const HardwareLayout::Usart & _device) :
     parameters.Instance = device.getInstance();
     parameters.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     parameters.Init.OverSampling = UART_OVERSAMPLING_16;
-    #ifdef UART_ONE_BIT_SAMPLE_DISABLE
-        usartParameters.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-    #endif
-    #ifdef UART_ADVFEATURE_NO_INIT
-        usartParameters.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-    #endif
+
+    // detect TX/RX mode
+    mode = 0;
+    if (device.txPin.pins != UNUSED_PIN)
+    {
+        mode |= (uint32_t) Mode::TX;
+    }
+    if (device.rxPin.pins != UNUSED_PIN)
+    {
+        mode |= (uint32_t) Mode::RX;
+    }
 }
 
 DeviceStart::Status BaseUsart::start (uint32_t mode, uint32_t baudRate,
@@ -79,7 +84,8 @@ void BaseUsart::stop ()
 
 AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     BaseUsart { _device },
-    SharedDevice { device.txDma, device.rxDma, DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
+    SharedDevice { (isTxMode()? &device.txDma : NULL), (isRxMode()? &device.rxDma : NULL),
+                   DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
 {
     // empty
 }
@@ -92,8 +98,14 @@ DeviceStart::Status AsyncUsart::start (uint32_t mode, uint32_t baudRate,
     DeviceStart::Status status = BaseUsart::start(mode, baudRate, wordLength, stopBits, parity);
     if (status == DeviceStart::OK)
     {
-        __HAL_LINKDMA(&parameters, hdmatx, txDma);
-        __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+        if (isTxMode())
+        {
+            __HAL_LINKDMA(&parameters, hdmatx, txDma);
+        }
+        if (isRxMode())
+        {
+            __HAL_LINKDMA(&parameters, hdmarx, rxDma);
+        }
         status = startDma(halStatus);
         if (status == DeviceStart::OK)
         {

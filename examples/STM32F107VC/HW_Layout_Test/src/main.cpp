@@ -105,6 +105,7 @@ public:
     void initClock ()
     {
         // Switch RTC clock source to use LSE crystal
+        SystemClock::getInstance()->setHSE(NULL, 0);
         SystemClock::getInstance()->setLSE(NULL, 0/*&portC, GPIO_PIN_14 | GPIO_PIN_15*/);
         SystemClock::getInstance()->setRTC();
 
