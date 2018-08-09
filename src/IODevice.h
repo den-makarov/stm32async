@@ -46,7 +46,8 @@ public:
         FAT_DRIVER_NOT_LINKED    = 7,
         FAT_VOLUME_NOT_MOUNTED   = 8,
         FAT_VOLUME_STATUS_ERROR  = 9,
-        FAT_DIR_STATUS_ERROR     = 10
+        FAT_DIR_STATUS_ERROR     = 10,
+        ADC_CHANNEL_ERROR        = 11
     };
 
     /**
@@ -54,7 +55,7 @@ public:
      */
     enum
     {
-        size = 11
+        size = 12
     };
 
     /**

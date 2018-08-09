@@ -61,6 +61,8 @@ DeviceStart::Status BaseSpi::start (uint32_t direction, uint32_t prescaler,
                                     uint32_t dataSize/* = SPI_DATASIZE_8BIT*/,
                                     uint32_t CLKPhase/* = SPI_PHASE_1EDGE*/)
 {
+    __HAL_SPI_ENABLE(&parameters);
+
     device.enableClock();
     IODevice::enablePorts();
 
@@ -78,13 +80,6 @@ DeviceStart::Status BaseSpi::start (uint32_t direction, uint32_t prescaler,
     if (parameters.Init.Direction == SPI_DIRECTION_1LINE)
     {
         SPI_1LINE_TX(&parameters);
-    }
-
-    /* Check if the SPI is already enabled */
-    if ((parameters.Instance->CR1 & SPI_CR1_SPE) != SPI_CR1_SPE)
-    {
-        /* Enable SPI peripheral */
-        __HAL_SPI_ENABLE(&parameters);
     }
 
     return DeviceStart::OK;

@@ -32,5 +32,6 @@ const char * DeviceStart::strings[] = {
     "Can not link FAT FS driver",
     "Can not mount FAT FS volume",
     "Can not retrieve FAT FS volume label",
-    "Can not retrieve FAT FS current directory"
+    "Can not retrieve FAT FS current directory",
+    "Can not configure ACD channel"
 };

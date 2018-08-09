@@ -31,11 +31,13 @@
 #include "stm32async/HardwareLayout/Spi1.h"
 #include "stm32async/HardwareLayout/Sdio1.h"
 #include "stm32async/HardwareLayout/I2S2.h"
+#include "stm32async/HardwareLayout/Adc1.h"
 
 // Common includes
 #include "stm32async/SystemClock.h"
 #include "stm32async/Rtc.h"
 #include "stm32async/IOPort.h"
+#include "stm32async/Adc.h"
 #include "stm32async/UsartLogger.h"
 
 // Drivers
@@ -100,6 +102,10 @@ private:
     Drivers::AudioDac_UDA1334 audioDac;
     Drivers::WavStreamer streamer;
     std::array<const char *, 3> fileNames;
+
+    // ADC
+    HardwareLayout::Adc1 adc1;
+    BaseAdc adc;
 
     // USART logger
     HardwareLayout::Usart1 usart1;
@@ -172,6 +178,13 @@ public:
                   /* smplFreq = */ portB, GPIO_PIN_14 },
         streamer { sdCard, audioDac },
         fileNames { { "NOLIMIT.WAV", "S44.WAV", "S48.WAV" } },
+
+        // ADC
+        adc1 { portA, GPIO_PIN_0, /*remapped=*/ false, NULL,
+            HardwareLayout::DmaStream { &dma2, DMA2_Stream0, DMA_CHANNEL_0,
+                                        HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 12, 0 } }
+        },
+        adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_56CYCLES },
 
         // USART logger
         usart1 { portB, GPIO_PIN_6, portB, UNUSED_PIN, /*remapped=*/ true, NULL,
@@ -258,6 +271,12 @@ public:
         USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
         ssd.start();
 
+        // ADC
+        devStatus = adc.start();
+        adc.setVRef(2.93);
+        USART_DEBUG("ADC1 status: " << DeviceStart::asString(devStatus) << " (" << adc.getHalStatus() << ")" << UsartLogger::ENDL);
+        USART_DEBUG("ADC value: " << adc.readBlockingMV() << UsartLogger::ENDL);
+
         // SD card
         pinSdDetect.start();
         if (sdCard.isCardInserted())
@@ -304,6 +323,7 @@ public:
         }
 
         // Stop all devices
+        adc.stop();
         esp.assignSendLed(NULL);
         sdCard.stop();
         pinSdPower.setHigh();
