@@ -22,6 +22,8 @@
 
 #include "Stm32async.h"
 
+#ifdef HAL_RTC_MODULE_ENABLED
+
 namespace Stm32async
 {
 
@@ -133,40 +135,6 @@ public:
         this->timeSec = timeSec;
     }
 
-    inline time_t getTime () const
-    {
-        if(HAL_RTC_GetTime(&rtcParameters, const_cast<RTC_TimeTypeDef *>(&timeParameters), RTC_FORMAT_BCD) != HAL_OK)
-        {
-            halStatus = HAL_ERROR;
-        }
-        return static_cast<time_t>(timeParameters.Seconds);
-    }
-
-    inline void setTime (const RTC_TimeTypeDef * time)
-    {
-        if(HAL_RTC_SetTime(&rtcParameters, const_cast<RTC_TimeTypeDef *>(time), RTC_FORMAT_BCD) != HAL_OK)
-        {
-            halStatus = HAL_ERROR;
-        }
-    }
-
-    inline const RTC_DateTypeDef & getDate () const
-    {
-        if(HAL_RTC_GetDate(&rtcParameters, const_cast<RTC_DateTypeDef *>(&dateParameters), RTC_FORMAT_BCD) != HAL_OK)
-        {
-            halStatus = HAL_ERROR;
-        }
-        return dateParameters;
-    }
-
-    inline void setDate (const RTC_DateTypeDef * date)
-    {
-        if(HAL_RTC_SetDate(&rtcParameters, const_cast<RTC_DateTypeDef *>(date), RTC_FORMAT_BCD) != HAL_OK)
-        {
-            halStatus = HAL_ERROR;
-        }
-    }
-
     inline time_ms getUpTimeMillisec () const
     {
         return upTimeMillisec;
@@ -174,13 +142,13 @@ public:
 
 private:
 
-    mutable RTC_HandleTypeDef rtcParameters;
-    mutable RTC_TimeTypeDef timeParameters;
-    mutable RTC_DateTypeDef dateParameters;
+    RTC_HandleTypeDef rtcParameters;
+    RTC_TimeTypeDef timeParameters;
+    RTC_DateTypeDef dateParameters;
 
     HardwareLayout::Interrupt wkUpIrq;
     EventHandler * handler;
-    mutable HAL_StatusTypeDef halStatus;
+    HAL_StatusTypeDef halStatus;
 
     // These variables are modified from interrupt service routine, therefore declare them as volatile
     volatile time_ms upTimeMillisec; // up time (in milliseconds)
@@ -191,4 +159,4 @@ private:
 
 } // end namespace
 #endif
-
+#endif

@@ -18,8 +18,10 @@
  ******************************************************************************/
 
 #include "Rtc.h"
-#include "SystemClock.h"
 
+#ifdef HAL_RTC_MODULE_ENABLED
+
+#include "SystemClock.h"
 #include <ctime>
 
 using namespace Stm32async;
@@ -135,3 +137,5 @@ const char * Rtc::getLocalTime (char sep)
     }
     return &localTime[0];
 }
+
+#endif
