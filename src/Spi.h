@@ -34,7 +34,7 @@ namespace Stm32async
  * @brief Base SPI class that holds the SPI parameters and implements the communication in
  *        a blocking mode.
  */
-class BaseSpi : public IODevice<HardwareLayout::Spi, 3>
+class BaseSpi : public IODevice<HardwareLayout::Spi, SPI_HandleTypeDef, 3>
 {
 public:
 
@@ -42,14 +42,6 @@ public:
      * @brief Default constructor.
      */
     BaseSpi (const HardwareLayout::Spi & _device);
-
-    /**
-     * @brief Getter for the device parameters
-     */
-    inline SPI_HandleTypeDef & getParameters ()
-    {
-        return parameters;
-    }
 
     /**
      * @brief Open transmission session with given parameters.
@@ -88,10 +80,6 @@ public:
     {
         return (((parameters.Instance->SR) & (SPI_FLAG_BSY)) == (SPI_FLAG_BSY));
     }
-
-protected:
-
-    SPI_HandleTypeDef parameters;
 };
 
 /**

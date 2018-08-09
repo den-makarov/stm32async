@@ -33,7 +33,7 @@ namespace Stm32async
 /**
  * @brief Class that implements I2S interface
  */
-class AsyncI2S : public IODevice<HardwareLayout::I2S, 1>, public SharedDevice
+class AsyncI2S : public IODevice<HardwareLayout::I2S, I2S_HandleTypeDef, 1>, public SharedDevice
 {
 public:
 
@@ -51,14 +51,6 @@ public:
      * @brief Close the transmission session.
      */
     void stop ();
-
-    /**
-     * @brief Getter for the device parameters
-     */
-    inline I2S_HandleTypeDef & getParameters ()
-    {
-        return parameters;
-    }
 
     /**
      * @brief Send an amount of data in DMA mode.
@@ -79,10 +71,6 @@ public:
         halStatus = HAL_I2S_Receive_DMA(&parameters, pData, size);
         return halStatus;
     }
-
-private:
-
-    I2S_HandleTypeDef parameters;
 };
 
 } // end namespace

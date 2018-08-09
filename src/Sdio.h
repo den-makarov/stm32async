@@ -33,7 +33,7 @@ namespace Stm32async
 /**
  * @brief Class that implements SDIO interface.
  */
-class Sdio : public IODevice<HardwareLayout::Sdio, 2>, public SharedDevice
+class Sdio : public IODevice<HardwareLayout::Sdio, SD_HandleTypeDef, 2>, public SharedDevice
 {
 public:
 
@@ -50,11 +50,6 @@ public:
 
     HAL_SD_ErrorTypedef readBlocks (uint32_t *pData, uint64_t addr, uint32_t blockSize, uint32_t numOfBlocks);
     HAL_SD_ErrorTypedef writeBlocks (uint32_t *pData, uint64_t addr, uint32_t blockSize, uint32_t numOfBlocks);
-
-    inline SD_HandleTypeDef & getParameters ()
-    {
-        return parameters;
-    }
 
     inline const HAL_SD_CardInfoTypedef & getCardInfo () const
     {
@@ -73,7 +68,6 @@ public:
 
 private:
 
-    SD_HandleTypeDef parameters;
     HAL_SD_CardInfoTypedef cardInfo;
     HAL_SD_CardStatusTypedef cardStatus;
 };

@@ -71,7 +71,7 @@ public:
 /**
  * @brief A base class that represents IO device working on some IOPort.
  */
-template <typename DEVICE, std::size_t PORTS> class IODevice
+template <typename DEVICE, typename PARAMETERS, std::size_t PORTS> class IODevice
 {
 public:
 
@@ -87,6 +87,14 @@ public:
         halStatus { HAL_ERROR }
     {
         // empty
+    }
+
+    /**
+     * @brief Getter for the device parameters
+     */
+    inline PARAMETERS & getParameters ()
+    {
+        return parameters;
     }
 
     /**
@@ -140,6 +148,7 @@ public:
 protected:
 
     const DEVICE & device;
+    PARAMETERS parameters;
     std::array<IOPort, PORTS> ports;
     HAL_StatusTypeDef halStatus;
 };

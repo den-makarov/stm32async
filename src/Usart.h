@@ -34,7 +34,7 @@ namespace Stm32async
  * @brief Base USART class that holds the USART parameters and implements the communication in
  *        a blocking mode.
  */
-class BaseUsart : public IODevice<HardwareLayout::Usart, 2>
+class BaseUsart : public IODevice<HardwareLayout::Usart, UART_HandleTypeDef, 2>
 {
 public:
 
@@ -42,14 +42,6 @@ public:
      * @brief Default constructor.
      */
     BaseUsart (const HardwareLayout::Usart & _device);
-
-    /**
-     * @brief Getter for the device parameters
-     */
-    inline UART_HandleTypeDef & getParameters ()
-    {
-        return parameters;
-    }
 
     /**
      * @brief Open transmission session with given parameters.
@@ -101,10 +93,6 @@ public:
     {
         while (HAL_UART_GetState(&parameters) != HAL_UART_STATE_READY);
     }
-
-protected:
-
-    UART_HandleTypeDef parameters;
 };
 
 
