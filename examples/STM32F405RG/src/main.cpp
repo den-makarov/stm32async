@@ -111,6 +111,9 @@ private:
     HardwareLayout::Usart1 usart1;
     UsartLogger usartLogger;
 
+    // Test pin
+    IOPort testPin;
+
 public:
 
     MyApplication () :
@@ -194,7 +197,10 @@ public:
                  HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_4,
                                              HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 14, 0 } }
         },
-        usartLogger { usart1, 115200 }
+        usartLogger { usart1, 115200 },
+
+        // Test pin
+        testPin { portC, GPIO_PIN_7, GPIO_MODE_OUTPUT_PP }
     {
         // External oscillators use system pins
         sysClock.setHSE(&portH, GPIO_PIN_0 | GPIO_PIN_1);
@@ -236,6 +242,8 @@ public:
     void run (uint32_t runId, uint32_t pllp)
     {
         initClock(pllp);
+        testPin.start();
+        testPin.setHigh();
         mco.start();
 
         // Logger
@@ -303,6 +311,7 @@ public:
                        (runId < fileNames.size()? fileNames[runId] : config.getWavFile()));
 
         // Start main loop
+        testPin.setLow();
         printResourceOccupation();
         uint32_t start = HAL_GetTick();
         uint32_t end = start + 60 * MILLIS_IN_SEC;
@@ -335,6 +344,7 @@ public:
         ledRed.stop();
         ledGreen.stop();
         mco.stop();
+        testPin.stop();
         rtc.stop();
 
         // Log resource occupations after all devices (except USART1 for logging, HSE, LSE) are stopped.
