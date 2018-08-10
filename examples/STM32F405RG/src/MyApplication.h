@@ -18,36 +18,55 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "MyApplication.h"
+#ifndef MYAPPLICATION_H_
+#define MYAPPLICATION_H_
 
-MyApplication * appPtr = NULL;
+#include "Hardware.h"
+#include "Config.h"
 
-int main (void)
+class MyApplication : public Hardware, public Drivers::WavStreamer::EventHandler
 {
-    // Note: check the Value of the External oscillator mounted in PCB
-    // and set this value in the file stm32f4xx_hal_conf.h
-    HAL_Init();
+public:
 
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-    /* STM32F405x/407x/415x/417x Revision Z devices: prefetch is supported  */
-    if (HAL_GetREVID() == 0x1001)
+    enum class EventType
     {
-        /* Enable the Flash prefetch */
-        __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+        SECOND_INTERRUPT = 0,
+        ADC1_READY = 1
+    };
+
+public:
+
+    MyApplication ();
+
+    virtual ~MyApplication ();
+
+    void run (uint32_t runId, uint32_t pllp);
+
+    void handleSeconds ();
+
+    void initSdCard ();
+
+    virtual bool onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s);
+
+    virtual void onFinishSteaming ();
+
+    void handleNtpRequest ();
+
+    float lmt86Temperature (int mv);
+
+    inline void scheduleEvent (EventType t)
+    {
+        eventQueue.put(t);
     }
 
-    MyApplication app;
-    appPtr = &app;
+private:
 
-    uint32_t pllp = 2, runId = 0;
-    while (true)
-    {
-        app.run(runId++, pllp);
-        pllp += 2;
-        if (runId > 2)
-        {
-            runId = 0;
-            pllp = 2;
-        }
-    }
-}
+    EventQueue<EventType, 100> eventQueue;
+    Config config;
+    std::array<const char *, 3> fileNames;
+    Drivers::NtpMessage ntpMessage;
+    bool ntpRequestActive;
+    char messageBuffer[2048];
+};
+
+#endif
