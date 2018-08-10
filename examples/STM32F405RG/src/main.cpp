@@ -49,14 +49,25 @@
 // Common includes
 #include <functional>
 #include "Config.h"
+#include "stm32async/EventQueue.h"
 
 using namespace Stm32async;
 
 #define USART_DEBUG_MODULE "Main: "
 
-class MyApplication : public Rtc::EventHandler, public Drivers::WavStreamer::EventHandler
+class MyApplication : public Drivers::WavStreamer::EventHandler
 {
+public:
+
+    enum class EventType
+    {
+        SECOND_INTERRUPT = 0
+    };
+
 private:
+
+    // Events
+    EventQueue<EventType, 100> eventQueue;
 
     // Used ports
     HardwareLayout::PortA portA;
@@ -266,7 +277,6 @@ public:
         // For RTC, it is necessary to reset the state since it will not be
         // automatically reset after MCU programming.
         rtc.stop();
-        rtc.setHandler(this);
         do
         {
             Rtc::Start::Status status = rtc.start(8 * 2047 + 7, RTC_WAKEUPCLOCK_RTCCLK_DIV2);
@@ -318,10 +328,19 @@ public:
         ntpRequestActive = true;
         while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF || streamer.isActive())
         {
-            __NOP();
-
             streamer.periodic();
             espSender.periodic();
+
+            if (!eventQueue.empty())
+            {
+                switch (eventQueue.get())
+                {
+                case EventType::SECOND_INTERRUPT:
+                    handleSeconds();
+                    handleNtpRequest();
+                    break;
+                }
+            }
 
             if (esp.getInputMessageSize() > 0)
             {
@@ -355,6 +374,11 @@ public:
         sysClock.stop();
     }
 
+    inline void scheduleEvent (EventType t)
+    {
+        eventQueue.put(t);
+    }
+
     inline IOPort & getLedRed ()
     {
         return ledRed;
@@ -385,7 +409,7 @@ public:
         return i2s;
     }
 
-    void onRtcSecondInterrupt ()
+    void handleSeconds ()
     {
         /*
         USART_DEBUG(Rtc::getInstance()->getLocalDate() << " "
@@ -399,8 +423,6 @@ public:
         spi.waitForRelease();
         const char * shortTime = Rtc::getInstance()->getLocalTime(0);
         ssd.putString(shortTime + 2, NULL, 4);
-
-        handleNtpRequest();
     }
 
     void initSdCard ()
@@ -559,6 +581,7 @@ void HAL_RTCEx_WakeUpTimerEventCallback (RTC_HandleTypeDef * /*hrtc*/)
     if (Rtc::getInstance() != NULL)
     {
         Rtc::getInstance()->processEventCallback();
+        appPtr->scheduleEvent(MyApplication::EventType::SECOND_INTERRUPT);
     }
 }
 
