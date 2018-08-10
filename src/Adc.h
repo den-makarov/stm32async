@@ -25,6 +25,7 @@
 #ifdef HAL_ADC_MODULE_ENABLED
 
 #include "IODevice.h"
+#include "SharedDevice.h"
 
 namespace Stm32async
 {
@@ -104,6 +105,33 @@ protected:
     ADC_ChannelConfTypeDef adcChannel;
     float vRef;
 };
+
+
+/**
+ * @brief Class that implements analog-to-digit converter
+ */
+class AsyncAdc : public BaseAdc, public SharedDevice
+{
+public:
+
+    static const size_t ADC_BUFFER_LENGTH = 100;
+
+    AsyncAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32_t _samplingTime);
+
+    DeviceStart::Status start ();
+
+    void stop ();
+
+    HAL_StatusTypeDef read ();
+
+    bool processConvCpltCallback ();
+
+private:
+
+    size_t nrReadings;
+    std::array<uint32_t, ADC_BUFFER_LENGTH> adcBuffer;
+};
+
 
 } // end namespace
 #endif

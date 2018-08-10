@@ -33,6 +33,8 @@ BaseAdc::BaseAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32
     } },
     vRef { 0.0 }
 {
+    mode = (uint32_t) Mode::RX;
+
     parameters.Instance = device.getInstance();
     parameters.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV2;
     parameters.Init.Resolution = ADC_RESOLUTION_12B;
@@ -99,6 +101,66 @@ uint32_t BaseAdc::readBlocking ()
     }
     HAL_ADC_Stop(&parameters);
     return value;
+}
+
+/************************************************************************
+ * Class AsyncAdc
+ ************************************************************************/
+
+AsyncAdc::AsyncAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32_t _samplingTime):
+    BaseAdc { _device, _channel, _samplingTime },
+    SharedDevice { NULL, &device.rxDma, DMA_PDATAALIGN_WORD, DMA_MDATAALIGN_WORD },
+    nrReadings{0}
+{
+    // empty
+}
+
+
+DeviceStart::Status AsyncAdc::start ()
+{
+    DeviceStart::Status status = BaseAdc::start();
+    if (status == DeviceStart::OK)
+    {
+        if (isRxMode())
+        {
+            rxDma.Init.Mode = DMA_CIRCULAR;
+            __HAL_LINKDMA(&parameters, DMA_Handle, rxDma);
+        }
+        status = startDma(halStatus);
+    }
+    return status;
+}
+
+
+void AsyncAdc::stop ()
+{
+    disableIrq();
+    stopDma();
+    BaseAdc::stop();
+}
+
+
+HAL_StatusTypeDef AsyncAdc::read ()
+{
+    nrReadings = 0;
+    adcBuffer.fill(0);
+    enableIrq();
+    halStatus = HAL_ADC_Start_DMA(&parameters, adcBuffer.data(), ADC_BUFFER_LENGTH - 1);
+    return halStatus;
+}
+
+
+bool AsyncAdc::processConvCpltCallback ()
+{
+    ++nrReadings;
+    if (nrReadings + 1 < ADC_BUFFER_LENGTH)
+    {
+        return false;
+    }
+
+    disableIrq();
+    HAL_ADC_Stop_DMA(&parameters);
+    return true;
 }
 
 #endif
