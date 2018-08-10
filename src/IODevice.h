@@ -172,6 +172,22 @@ public:
         }
     }
 
+    /**
+     * @brief Disable all related interrupts.
+     */
+    inline void disableIrq ()
+    {
+        device.disableIrq();
+    }
+
+    /**
+     * @brief Enable all related interrupts.
+     */
+    inline void enableIrq ()
+    {
+        device.enableIrq();
+    }
+
 protected:
 
     PARAMETERS parameters;
