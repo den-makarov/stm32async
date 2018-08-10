@@ -18,6 +18,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+// STD includes
+#include <functional>
+#include <cmath>
+
 // Peripherie used in this projects
 #include "stm32async/HardwareLayout/Dma1.h"
 #include "stm32async/HardwareLayout/Dma2.h"
@@ -39,17 +43,14 @@
 #include "stm32async/IOPort.h"
 #include "stm32async/Adc.h"
 #include "stm32async/UsartLogger.h"
+#include "stm32async/EventQueue.h"
+#include "Config.h"
 
 // Drivers
 #include "stm32async/Drivers/Ssd.h"
 #include "stm32async/Drivers/SdCardFat.h"
 #include "stm32async/Drivers/Esp8266.h"
 #include "stm32async/Drivers/WavStreamer.h"
-
-// Common includes
-#include <functional>
-#include "Config.h"
-#include "stm32async/EventQueue.h"
 
 using namespace Stm32async;
 
@@ -61,7 +62,8 @@ public:
 
     enum class EventType
     {
-        SECOND_INTERRUPT = 0
+        SECOND_INTERRUPT = 0,
+        ADC1_READY = 1
     };
 
 private:
@@ -116,7 +118,7 @@ private:
 
     // ADC
     HardwareLayout::Adc1 adc1;
-    BaseAdc adc;
+    AsyncAdc adc;
 
     // USART logger
     HardwareLayout::Usart1 usart1;
@@ -291,9 +293,8 @@ public:
 
         // ADC
         devStatus = adc.start();
-        adc.setVRef(2.93);
+        adc.setVRef(2.94);
         USART_DEBUG("ADC1 status: " << DeviceStart::asString(devStatus) << " (" << adc.getHalStatus() << ")" << UsartLogger::ENDL);
-        USART_DEBUG("ADC value: " << adc.readBlockingMV() << UsartLogger::ENDL);
 
         // SD card
         pinSdDetect.start();
@@ -338,6 +339,17 @@ public:
                 case EventType::SECOND_INTERRUPT:
                     handleSeconds();
                     handleNtpRequest();
+                    if (rtc.getTimeSec() > 1000)
+                    {
+                        adc.read();
+                    }
+                    break;
+
+                case EventType::ADC1_READY:
+                    {
+                        int mv = adc.getMedianMV();
+                        USART_DEBUG("ADC1: " <<  mv << " mV =" << (int)(lmt86Temperature(mv)*10.0) << UsartLogger::ENDL);
+                    }
                     break;
                 }
             }
@@ -407,6 +419,11 @@ public:
     inline AsyncI2S & getI2S ()
     {
         return i2s;
+    }
+
+    inline AsyncAdc & getAdc ()
+    {
+        return adc;
     }
 
     void handleSeconds ()
@@ -484,6 +501,11 @@ public:
                     << UsartLogger::TAB << "portH=" << portH.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma1=" << dma1.getObjectsCount() << UsartLogger::ENDL
                     << UsartLogger::TAB << "dma2=" << dma2.getObjectsCount() << UsartLogger::ENDL);
+    }
+
+    float lmt86Temperature (int mv)
+    {
+        return 30.0 + (10.888 - ::sqrt(10.888*10.888 + 4.0*0.00347*(1777.3 - (float)mv)))/(-2.0*0.00347);
     }
 };
 
@@ -678,6 +700,20 @@ void DMA1_Stream4_IRQHandler (void)
 void HAL_I2S_TxCpltCallback (I2S_HandleTypeDef * /*channel*/)
 {
     appPtr->getI2S().processCallback(SharedDevice::State::TX_CMPL);
+}
+
+// ADC
+void DMA2_Stream0_IRQHandler()
+{
+    appPtr->getAdc().processDmaRxInterrupt();
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef * /*channel*/)
+{
+    if (appPtr->getAdc().processConvCpltCallback())
+    {
+        appPtr->scheduleEvent(MyApplication::EventType::ADC1_READY);
+    }
 }
 
 }

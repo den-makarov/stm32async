@@ -21,6 +21,8 @@
 
 #ifdef HAL_ADC_MODULE_ENABLED
 
+#include <algorithm>
+
 using namespace Stm32async;
 
 /************************************************************************
@@ -110,9 +112,9 @@ uint32_t BaseAdc::readBlocking ()
 AsyncAdc::AsyncAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32_t _samplingTime):
     BaseAdc { _device, _channel, _samplingTime },
     SharedDevice { NULL, &device.rxDma, DMA_PDATAALIGN_WORD, DMA_MDATAALIGN_WORD },
-    nrReadings{0}
+    nrReadings { 0 }
 {
-    // empty
+    rxDma.Init.Mode = DMA_CIRCULAR;
 }
 
 
@@ -121,12 +123,13 @@ DeviceStart::Status AsyncAdc::start ()
     DeviceStart::Status status = BaseAdc::start();
     if (status == DeviceStart::OK)
     {
-        if (isRxMode())
-        {
-            rxDma.Init.Mode = DMA_CIRCULAR;
-            __HAL_LINKDMA(&parameters, DMA_Handle, rxDma);
-        }
+        HAL_DMA_DeInit(&rxDma);
+        __HAL_LINKDMA(&parameters, DMA_Handle, rxDma);
         status = startDma(halStatus);
+        if (status == DeviceStart::OK)
+        {
+            enableIrq();
+        }
     }
     return status;
 }
@@ -144,8 +147,7 @@ HAL_StatusTypeDef AsyncAdc::read ()
 {
     nrReadings = 0;
     adcBuffer.fill(0);
-    enableIrq();
-    halStatus = HAL_ADC_Start_DMA(&parameters, adcBuffer.data(), ADC_BUFFER_LENGTH - 1);
+    halStatus = HAL_ADC_Start_DMA(&parameters, adcBuffer.data(), ADC_BUFFER_LENGTH);
     return halStatus;
 }
 
@@ -153,14 +155,20 @@ HAL_StatusTypeDef AsyncAdc::read ()
 bool AsyncAdc::processConvCpltCallback ()
 {
     ++nrReadings;
-    if (nrReadings + 1 < ADC_BUFFER_LENGTH)
+    if (nrReadings == 1)
     {
-        return false;
+        HAL_ADC_Stop_DMA(&parameters);
+        return true;
     }
-
-    disableIrq();
-    HAL_ADC_Stop_DMA(&parameters);
-    return true;
+    return false;
 }
+
+
+uint32_t AsyncAdc::getMedian ()
+{
+    std::sort(adcBuffer.begin(), adcBuffer.end());
+    return adcBuffer[ADC_BUFFER_LENGTH/2];
+}
+
 
 #endif

@@ -114,7 +114,7 @@ class AsyncAdc : public BaseAdc, public SharedDevice
 {
 public:
 
-    static const size_t ADC_BUFFER_LENGTH = 100;
+    static const size_t ADC_BUFFER_LENGTH = 1000;
 
     AsyncAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32_t _samplingTime);
 
@@ -126,9 +126,32 @@ public:
 
     bool processConvCpltCallback ();
 
+    uint32_t getMedian ();
+
+    /**
+     * @brief Read analog value in a blocking mode (in Volts).
+     */
+    inline float getMedianV ()
+    {
+        return (vRef * (float)getMedian())/4095.0;
+    }
+
+    /**
+     * @brief Read analog value in a blocking mode (in Volts).
+     */
+    inline int getMedianMV ()
+    {
+        return (int)(getMedianV() * 1000);
+    }
+
+    inline void processInterrupt ()
+    {
+        HAL_ADC_IRQHandler(&parameters);
+    }
+
 private:
 
-    size_t nrReadings;
+    volatile size_t nrReadings;
     std::array<uint32_t, ADC_BUFFER_LENGTH> adcBuffer;
 };
 
