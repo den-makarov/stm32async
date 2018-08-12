@@ -43,6 +43,7 @@
 #include "stm32async/UsartLogger.h"
 #include "stm32async/EventQueue.h"
 
+#include "stm32async/Drivers/Led.h"
 #include "stm32async/Drivers/Ssd.h"
 #include "stm32async/Drivers/SdCardFat.h"
 #include "stm32async/Drivers/Esp8266.h"
@@ -74,7 +75,9 @@ public:
     MCO mco;
 
     // LEDs
-    IOPort ledGreen, ledBlue, ledRed;
+    Drivers::Led ledGreen;
+    Drivers::Led ledBlue;
+    Drivers::Led ledRed;
 
     // SPI
     HardwareLayout::Spi1 spi1;
@@ -117,7 +120,7 @@ public:
     bool initSdCard ();
     void printResourceOccupation ();
 
-    inline IOPort & getLedRed ()
+    inline Drivers::Led & getLedRed ()
     {
         return ledRed;
     }

@@ -29,27 +29,27 @@ using namespace Stm32async::Drivers;
  * Class Esp8266
  ************************************************************************/
 
-Esp8266::Esp8266 (const HardwareLayout::Usart & _device, const HardwareLayout::Port & _powerPort, uint32_t _powerPin) :
-        usart(_device),
-        pinPower(_powerPort, _powerPin, GPIO_MODE_OUTPUT_PP),
-        sendLed(NULL),
-        commState(CommState::NONE),
-        rxIndex(0),
-        listening(false),
-        mode(-1),
-        ip(NULL),
-        gatway(NULL),
-        mask(NULL),
-        ssid(NULL),
-        passwd(NULL),
-        protocol(NULL),
-        server(NULL),
-        port(NULL),
-        message(NULL),
-        messageSize(0),
-        operationEnd(INFINITY_TIME),
-        inputMessage(NULL),
-        inputMessageSize(0)
+Esp8266::Esp8266 (const HardwareLayout::Usart & _device, const HardwareLayout::Port & _powerPort, uint32_t _powerPin, Led * _sendLed) :
+        usart { _device },
+        pinPower { _powerPort, _powerPin, GPIO_MODE_OUTPUT_PP },
+        sendLed { _sendLed },
+        commState { CommState::NONE },
+        rxIndex { 0 },
+        listening { false },
+        mode { -1 },
+        ip { NULL },
+        gatway { NULL },
+        mask { NULL },
+        ssid { NULL },
+        passwd { NULL },
+        protocol { NULL },
+        server { NULL },
+        port { NULL },
+        message { NULL },
+        messageSize { 0 },
+        operationEnd { INFINITY_TIME },
+        inputMessage { NULL },
+        inputMessageSize { 0 }
 {
     // empty
 }
@@ -241,7 +241,7 @@ bool Esp8266::transmit (Esp8266::AsyncCmd cmd)
 
     if (sendLed != NULL)
     {
-        sendLed->setHigh();
+        sendLed->turnOn();
     }
 
     commState = CommState::TX;
@@ -352,7 +352,7 @@ bool Esp8266::getResponce (AsyncCmd cmd)
 
     if (sendLed != NULL)
     {
-        sendLed->setLow();
+        sendLed->turnOff();
     }
 
     return retValue;
@@ -433,15 +433,15 @@ void Esp8266::getInputMessage (char * buffer, size_t len)
  * Class EspSender
  ************************************************************************/
 
-EspSender::EspSender (Esp8266 & _esp, IOPort & _errorLed) :
-        esp(_esp),
-        errorLed(_errorLed),
-        espState(Esp8266::AsyncCmd::OFF),
-        outputMessage(NULL),
-        repeatDelay(0),
-        turnOffDelay(0),
-        nextOperationTime(0),
-        turnOffTime(INFINITY_TIME),
+EspSender::EspSender (Esp8266 & _esp, Led * _errorLed) :
+        esp { _esp },
+        errorLed { _errorLed },
+        espState { Esp8266::AsyncCmd::OFF },
+        outputMessage { NULL },
+        repeatDelay { 0 },
+        turnOffDelay { 0 },
+        nextOperationTime { 0 },
+        turnOffTime { INFINITY_TIME },
         asyncStates { {
             AsyncState(Esp8266::AsyncCmd::POWER_ON,       Esp8266::AsyncCmd::ECHO_OFF,       "power on"),
             AsyncState(Esp8266::AsyncCmd::ECHO_OFF,       Esp8266::AsyncCmd::ENSURE_READY,   "echo off"),
@@ -535,7 +535,10 @@ void EspSender::periodic ()
 
     if (!esp.isTransmissionStarted())
     {
-        errorLed.setLow();
+        if (errorLed != NULL)
+        {
+            errorLed->turnOff();
+        }
         const AsyncState * s = findState(espState);
         if (s == NULL)
         {
@@ -599,12 +602,18 @@ void EspSender::stateReport (bool result, const char * description)
 {
     if (result)
     {
-        errorLed.setLow();
+        if (errorLed != NULL)
+        {
+            errorLed->turnOff();
+        }
     }
     else
     {
         USART_DEBUG("ESP error: " << description << " -> ERROR" << UsartLogger::ENDL);
-        errorLed.setHigh();
+        if (errorLed != NULL)
+        {
+            errorLed->turnOn();
+        }
     }
 }
 

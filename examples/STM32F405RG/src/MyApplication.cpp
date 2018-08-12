@@ -35,7 +35,7 @@ MyApplication::MyApplication () :
     ntpMessage {},
     ntpRequestActive { false }
 {
-    // empty
+    streamer.setHandler(this);
 }
 
 
@@ -57,7 +57,6 @@ void MyApplication::run (uint32_t runId, uint32_t pllp)
     config.readConfiguration();
 
     // Prepare ESP11
-    esp.assignSendLed(&ledGreen);
     esp.setMode(1);
     esp.setIp(config.getThisIp());
     esp.setGatway(config.getGateIp());
@@ -69,7 +68,6 @@ void MyApplication::run (uint32_t runId, uint32_t pllp)
 
     // Start WAV player
     audioDac.powerOn();
-    streamer.setHandler(this);
     streamer.setVolume(0.5);
     streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM,
                    (runId < fileNames.size()? fileNames[runId] : config.getWavFile()));

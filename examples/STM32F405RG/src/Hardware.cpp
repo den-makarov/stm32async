@@ -33,9 +33,9 @@ Hardware::Hardware ():
     mco { portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5 },
 
     // LEDs
-    ledGreen { portC, GPIO_PIN_1, GPIO_MODE_OUTPUT_PP },
-    ledBlue { portC, GPIO_PIN_2, GPIO_MODE_OUTPUT_PP },
-    ledRed { portC, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP },
+    ledGreen { portB, GPIO_PIN_4, Drivers::Led::ConnectionType::CATHODE },
+    ledBlue { portB, GPIO_PIN_5, Drivers::Led::ConnectionType::CATHODE },
+    ledRed { portB, GPIO_PIN_8, Drivers::Led::ConnectionType::CATHODE },
 
     // SPI
     spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, UNUSED_PIN, /*remapped=*/ true, NULL,
@@ -70,8 +70,8 @@ Hardware::Hardware ():
              HardwareLayout::DmaStream { &dma1, DMA1_Stream5, DMA_CHANNEL_4,
                                          HardwareLayout::Interrupt { DMA1_Stream5_IRQn, 8, 0 } }
     },
-    esp { usart2, portA, GPIO_PIN_1 },
-    espSender { esp, ledRed },
+    esp { usart2, portA, GPIO_PIN_1, /*sendLed=*/ &ledGreen },
+    espSender { esp, /*errorLed=*/ &ledRed },
 
     // I2S2 Audio
     i2s2 { portB, /*I2S2_CK*/GPIO_PIN_10 | /*I2S2_WS*/GPIO_PIN_12 | /*I2S2_SD*/GPIO_PIN_15,
@@ -116,7 +116,7 @@ Hardware::Hardware ():
 
 void Hardware::abort ()
 {
-    getLedRed().setHigh();
+    ledRed.turnOn();
     while(1)
     {
         __NOP();
@@ -150,9 +150,11 @@ bool Hardware::start()
 
     // LEDs
     ledGreen.start();
+    ledGreen.turnOff();
     ledBlue.start();
+    ledBlue.turnOff();
     ledRed.start();
-    ledRed.setHigh();
+    ledRed.turnOn();
 
     // Logger
     usartLogger.initInstance();
@@ -198,7 +200,7 @@ bool Hardware::start()
     {
         return false;
     }
-    adc.setVRef(2.94);
+    adc.setVRef(3.236);
 
     // SD card
     pinSdDetect.start();
@@ -208,7 +210,7 @@ bool Hardware::start()
     }
 
     testPin.setLow();
-    ledRed.setLow();
+    ledRed.turnOff();
     USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL);
     return true;
 }

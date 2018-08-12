@@ -23,6 +23,7 @@
 
 #include "../Usart.h"
 #include "../Rtc.h"
+#include "Led.h"
 
 namespace Stm32async
 {
@@ -76,7 +77,7 @@ public:
 
 public:
     
-    Esp8266 (const HardwareLayout::Usart & _device, const HardwareLayout::Port & _powerPort, uint32_t _powerPin);
+    Esp8266 (const HardwareLayout::Usart & _device, const HardwareLayout::Port & _powerPort, uint32_t _powerPin, Led * _sendLed);
 
     inline void processRxCpltCallback ()
     {
@@ -213,11 +214,6 @@ public:
         this->messageSize = messageSize;
     }
 
-    inline void assignSendLed (IOPort * _sendLed)
-    {
-        sendLed = _sendLed;
-    }
-    
     inline bool isResponceAvailable ()
     {
         return commState == CommState::SUCC || commState == CommState::ERROR;
@@ -276,7 +272,7 @@ private:
 
     AsyncUsart usart;
     IOPort pinPower;
-    IOPort * sendLed;
+    Led * sendLed;
 
     __IO CommState commState;
     __IO size_t rxIndex;
@@ -340,7 +336,7 @@ class EspSender
 {
 public:
 
-    EspSender (Esp8266 & _esp, IOPort & _errorLed);
+    EspSender (Esp8266 & _esp, Led * _errorLed);
 
     inline bool isOutputMessageSent () const
     {
@@ -395,7 +391,7 @@ private:
     };
 
     Esp8266 & esp;
-    IOPort & errorLed;
+    Led * errorLed;
     Esp8266::AsyncCmd espState;
     const char * outputMessage;
     time_ms repeatDelay, turnOffDelay; // configured delays in millis
