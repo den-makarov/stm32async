@@ -36,6 +36,7 @@ MyApplication::MyApplication () :
     ntpRequestActive { false }
 {
     streamer.setHandler(this);
+    stopButton.setHandler(this);
 }
 
 
@@ -77,10 +78,11 @@ void MyApplication::run (uint32_t runId, uint32_t pllp)
 
     // Start main loop
     uint32_t start = HAL_GetTick();
-    uint32_t end = start + 60 * MILLIS_IN_SEC;
+    uint32_t end = start + 30 * MILLIS_IN_SEC;
     ntpRequestActive = true;
     while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF || streamer.isActive())
     {
+        stopButton.periodic();
         streamer.periodic();
         espSender.periodic();
 
@@ -157,6 +159,17 @@ void MyApplication::onFinishSteaming ()
     // empty
 }
 
+
+void MyApplication::onButtonPressed (const Drivers::Button * b, uint32_t /*numOccured*/)
+{
+    if (b == &stopButton)
+    {
+        if (streamer.isActive())
+        {
+            streamer.stop();
+        }
+    }
+}
 
 void MyApplication::handleNtpRequest ()
 {

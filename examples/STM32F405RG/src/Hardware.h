@@ -43,6 +43,7 @@
 #include "stm32async/UsartLogger.h"
 #include "stm32async/EventQueue.h"
 
+#include "stm32async/Drivers/Button.h"
 #include "stm32async/Drivers/Led.h"
 #include "stm32async/Drivers/Ssd.h"
 #include "stm32async/Drivers/SdCardFat.h"
@@ -99,6 +100,7 @@ public:
     AsyncI2S i2s;
     Drivers::AudioDac_UDA1334 audioDac;
     Drivers::WavStreamer streamer;
+    Drivers::Button stopButton;
 
     // ADC
     HardwareLayout::Adc1 adc1;

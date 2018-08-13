@@ -45,12 +45,11 @@ Hardware::Hardware ():
              HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_3,
                                          HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } }
     },
-    spi { spi1 },
-    ssd { spi, portC, GPIO_PIN_4, true },
+    spi { spi1, GPIO_NOPULL },
+    ssd { spi, portA, GPIO_PIN_6, true },
 
     // SD card
-    sdio1 {
-            portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
+    sdio1 { portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
             portD, /*SDIO_CMD*/GPIO_PIN_2,
             HardwareLayout::Interrupt { SDIO_IRQn, 3, 0 },
             HardwareLayout::DmaStream { &dma2, DMA2_Stream6, DMA_CHANNEL_4,
@@ -87,6 +86,7 @@ Hardware::Hardware ():
               /* mute     = */ portB, GPIO_PIN_13,
               /* smplFreq = */ portB, GPIO_PIN_14 },
     streamer { sdCard, audioDac },
+    stopButton { portB, GPIO_PIN_9, GPIO_PULLUP },
 
     // ADC
     adc1 { portA, GPIO_PIN_0, /*remapped=*/ false, NULL,
@@ -209,6 +209,8 @@ bool Hardware::start()
         return false;
     }
 
+    stopButton.start();
+
     testPin.setLow();
     ledRed.turnOff();
     USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL);
@@ -219,6 +221,7 @@ bool Hardware::start()
 void Hardware::stop ()
 {
     // Stop all devices
+    stopButton.stop();
     sdCard.stop();
     pinSdPower.setHigh();
     pinSdPower.stop();
