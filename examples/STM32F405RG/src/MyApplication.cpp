@@ -46,9 +46,9 @@ MyApplication::~MyApplication ()
 }
 
 
-void MyApplication::run (uint32_t runId, uint32_t pllp)
+void MyApplication::run (uint32_t runId, uint32_t frequency)
 {
-    initClock(pllp);
+    initClock(frequency);
     if (!start())
     {
         abort();

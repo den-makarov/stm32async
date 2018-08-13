@@ -39,15 +39,16 @@ int main (void)
     MyApplication app;
     appPtr = &app;
 
-    uint32_t pllp = 2, runId = 0;
+    std::array<uint32_t, 21> freqs = { 24, 30, 32, 36, 40, 42, 48, 54, 56, 60, 64, 72, 80, 84, 96,
+                                       108, 112, 120, 128, 144, 168 };
+    uint32_t runId = 0;
     while (true)
     {
-        app.run(runId++, pllp);
-        pllp += 2;
-        if (runId > 2)
+        app.run(runId, freqs[runId]);
+        runId++;
+        if (runId >= freqs.size())
         {
             runId = 0;
-            pllp = 2;
         }
     }
 }

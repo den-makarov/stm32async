@@ -20,8 +20,103 @@
 
 #include "Hardware.h"
 #include "MyApplication.h"
+#include <cmath>
 
 #define USART_DEBUG_MODULE "HRDW: "
+
+
+/************************************************************************
+ * Class ClockParameters
+ ************************************************************************/
+void ClockParameters::assign (const ClockParameters & f)
+{
+    M          = f.M;
+    N          = f.N;
+    Q          = f.Q;
+    P          = f.P;
+    PLLMout    = f.PLLMout;
+    PLLNout    = f.PLLNout;
+    clock48out = f.clock48out;
+    SYSCLC     = f.SYSCLC;
+    APB1       = f.APB1;
+    APB2       = f.APB2;
+}
+
+void ClockParameters::print ()
+{
+    USART_DEBUG("HSE=" << HSE_VALUE << " M=" << M << " N=" << N << " Q=" << Q << " P=" << P <<
+                " SYSCLC=" << SYSCLC << " APB1=" << APB1 << " APB2=" << APB2 << UsartLogger::ENDL);
+}
+
+void ClockParameters::searchBestParameters (uint32_t targetFreq)
+{
+    int maxM = 0;
+    float bestDiff = 9999.0;
+    float hse = HSE_VALUE / 1000000;
+    ClockParameters bestFactors;
+    for (int M = 2; M <= 63; ++M)
+    {
+        ClockParameters f;
+        f.M = M;
+        f.PLLMout = hse / (float)f.M;
+        if (f.PLLMout >= 0.95 && f.PLLMout <= 2.1)
+        {
+            for (int N = 50; N <= 432; ++N)
+            {
+                f.N = N;
+                f.PLLNout = hse * (float)f.N / (float)f.M;
+                if (f.PLLNout >= 100.0 && f.PLLNout <= 432.0)
+                {
+                    for (int Q = 2; Q <= 15; ++Q)
+                    {
+                        f.Q = Q;
+                        f.clock48out = f.PLLNout / (float)f.Q;
+                        int clock48out = (int)f.clock48out;
+                        if (f.clock48out - (float)clock48out == 0.0 && clock48out == 48)
+                        {
+                            for (int P = 2; P <= 8; ++P)
+                            {
+                                f.P = P;
+                                f.SYSCLC = f.PLLNout / (float)f.P;
+                                if (f.SYSCLC >= 24.0 && f.SYSCLC <= 168.0)
+                                {
+                                    float diff = ::fabs(f.SYSCLC - targetFreq);
+                                    if (diff < bestDiff || (diff == bestDiff && f.M > maxM))
+                                    {
+                                        maxM = f.M;
+                                        bestDiff = diff;
+                                        bestFactors.assign(f);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Adjust APB prescalers
+    while (true)
+    {
+        float pclk1 = bestFactors.SYSCLC / (float) bestFactors.APB1;
+        if (pclk1 <= 42 || bestFactors.APB1 == 16)
+        {
+            break;
+        }
+        bestFactors.APB1 *= 2;
+    }
+    while (true)
+    {
+        float pclk1 = bestFactors.SYSCLC / (float) bestFactors.APB2;
+        if (pclk1 <= 84 || bestFactors.APB2 == 16)
+        {
+            break;
+        }
+        bestFactors.APB2 *= 2;
+    }
+    assign(bestFactors);
+}
+
 
 /************************************************************************
  * Class Hardware
@@ -124,16 +219,18 @@ void Hardware::abort ()
 }
 
 
-void Hardware::initClock (uint32_t pllp)
+void Hardware::initClock (uint32_t frequency)
 {
+    ClockParameters clockParameters;
+    clockParameters.searchBestParameters(frequency);
     sysClock.setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);
     sysClock.getOscParameters().PLL.PLLState = RCC_PLL_ON;
     sysClock.getOscParameters().PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    sysClock.getOscParameters().PLL.PLLM = 16;
-    sysClock.getOscParameters().PLL.PLLN = 336;
-    sysClock.getOscParameters().PLL.PLLP = pllp;
-    sysClock.getOscParameters().PLL.PLLQ = 7;
-    sysClock.setAHB(RCC_SYSCLK_DIV1, RCC_HCLK_DIV8, RCC_HCLK_DIV8);
+    sysClock.getOscParameters().PLL.PLLM = clockParameters.M;
+    sysClock.getOscParameters().PLL.PLLN = clockParameters.N;
+    sysClock.getOscParameters().PLL.PLLP = clockParameters.P;
+    sysClock.getOscParameters().PLL.PLLQ = clockParameters.Q;
+    sysClock.setAHB(RCC_SYSCLK_DIV1, clockParameters.APB1, clockParameters.APB2);
     sysClock.setLatency(FLASH_LATENCY_7);
     sysClock.setRTC();
     sysClock.setI2S(192, 2);

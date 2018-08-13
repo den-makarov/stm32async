@@ -40,7 +40,7 @@ public:
 
     virtual ~MyApplication ();
 
-    void run (uint32_t runId, uint32_t pllp);
+    void run (uint32_t runId, uint32_t frequency);
 
     void handleSeconds ();
 

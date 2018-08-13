@@ -53,6 +53,30 @@
 using namespace Stm32async;
 
 /**
+ * @brief A class collecting clock parameters for STM32F405
+ */
+class ClockParameters
+{
+public:
+    int M, N, Q, P, APB1, APB2;
+    float PLLMout, PLLNout, clock48out, SYSCLC;
+    ClockParameters ():
+        M {0}, N {0}, Q {0}, P {0}, APB1{1}, APB2 {1},
+        PLLMout {0.0},
+        PLLNout {0.0},
+        clock48out {0.0},
+        SYSCLC {0.0}
+    {
+        // empty
+    }
+
+    void assign (const ClockParameters & f);
+    void print ();
+    void searchBestParameters (uint32_t targetFreq);
+};
+
+
+/**
  * @brief A class providing the map of used hardware
  */
 class Hardware
@@ -116,7 +140,7 @@ public:
     Hardware ();
 
     void abort ();
-    void initClock (uint32_t pllp);
+    void initClock (uint32_t frequency);
     bool start ();
     void stop ();
     bool initSdCard ();
