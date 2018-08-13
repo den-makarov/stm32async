@@ -27,11 +27,11 @@ using namespace Stm32async;
  * Class BaseSpi
  ************************************************************************/
 
-BaseSpi::BaseSpi (const HardwareLayout::Spi & _device) :
+BaseSpi::BaseSpi (const HardwareLayout::Spi & _device, uint32_t _pull) :
     IODevice { _device, {
-        IOPort { _device.sclkPin.port, _device.sclkPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP },
-        IOPort { _device.mosiPin.port, _device.mosiPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP },
-        IOPort { _device.misoPin.port, _device.misoPin.pins, GPIO_MODE_AF_PP, GPIO_PULLUP }
+        IOPort { _device.sclkPin.port, _device.sclkPin.pins, GPIO_MODE_AF_PP, _pull },
+        IOPort { _device.mosiPin.port, _device.mosiPin.pins, GPIO_MODE_AF_PP, _pull },
+        IOPort { _device.misoPin.port, _device.misoPin.pins, GPIO_MODE_AF_PP, _pull }
     } }
 {
     parameters.Instance = device.getInstance();
@@ -86,8 +86,8 @@ void BaseSpi::stop ()
  * Class AsyncSpi
  ************************************************************************/
 
-AsyncSpi::AsyncSpi (const HardwareLayout::Spi & _device) :
-    BaseSpi { _device },
+AsyncSpi::AsyncSpi (const HardwareLayout::Spi & _device, uint32_t _pull) :
+    BaseSpi { _device, _pull },
     SharedDevice { (isPortUsed(getMosiPin())? &device.txDma : NULL), 
                    (isPortUsed(getMisoPin())? &device.rxDma : NULL),
                    DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }

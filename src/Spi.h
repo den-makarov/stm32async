@@ -41,7 +41,7 @@ public:
     /**
      * @brief Default constructor.
      */
-    BaseSpi (const HardwareLayout::Spi & _device);
+    BaseSpi (const HardwareLayout::Spi & _device, uint32_t _pull = GPIO_PULLUP);
 
     /**
      * @brief Open transmission session with given parameters.
@@ -116,7 +116,7 @@ public:
     /**
      * @brief Default constructor.
      */
-    AsyncSpi (const HardwareLayout::Spi & _device);
+    AsyncSpi (const HardwareLayout::Spi & _device, uint32_t _pull);
 
     /**
      * @brief Open transmission session with given parameters.
