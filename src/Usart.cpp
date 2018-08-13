@@ -36,17 +36,6 @@ BaseUsart::BaseUsart (const HardwareLayout::Usart & _device) :
     parameters.Instance = device.getInstance();
     parameters.Init.HwFlowCtl = UART_HWCONTROL_NONE;
     parameters.Init.OverSampling = UART_OVERSAMPLING_16;
-
-    // detect TX/RX mode
-    mode = 0;
-    if (device.txPin.pins != UNUSED_PIN)
-    {
-        mode |= (uint32_t) Mode::TX;
-    }
-    if (device.rxPin.pins != UNUSED_PIN)
-    {
-        mode |= (uint32_t) Mode::RX;
-    }
 }
 
 DeviceStart::Status BaseUsart::start (uint32_t mode, uint32_t baudRate,
@@ -84,7 +73,8 @@ void BaseUsart::stop ()
 
 AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
     BaseUsart { _device },
-    SharedDevice { (isTxMode()? &device.txDma : NULL), (isRxMode()? &device.rxDma : NULL),
+    SharedDevice { (isPortUsed(getTxPin())? &device.txDma : NULL), 
+                   (isPortUsed(getRxPin())? &device.rxDma : NULL),
                    DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
 {
     // empty

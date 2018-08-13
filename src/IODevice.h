@@ -79,15 +79,6 @@ template <typename DEVICE, typename PARAMETERS, std::size_t PORTS> class IODevic
 public:
 
     /**
-     * @brief Bits that define TX/RX mode.
-     */
-    enum class Mode : uint32_t
-    {
-        TX = 1,
-        RX = 2
-    };
-
-    /**
      * @brief Standard initialization constructor.
      *
      * @param _device some device from namespace HardwareLayout.
@@ -95,7 +86,6 @@ public:
      */
     explicit IODevice (const DEVICE & _device, std::array<IOPort, PORTS> && _ports) :
         device { _device },
-        mode { (uint32_t)Mode::TX | (uint32_t)Mode::RX },
         halStatus { HAL_ERROR },
         ports { std::move(_ports) }
     {
@@ -108,22 +98,6 @@ public:
     inline PARAMETERS & getParameters ()
     {
         return parameters;
-    }
-
-    /**
-     * @brief Procedure checks whether a device has TX mode active.
-     */
-    inline bool isTxMode () const
-    {
-        return mode & (uint32_t)Mode::TX;
-    }
-
-    /**
-     * @brief Procedure checks whether a device has RX mode active.
-     */
-    inline bool isRxMode () const
-    {
-        return mode & (uint32_t)Mode::RX;
     }
 
     /**
@@ -192,11 +166,7 @@ protected:
 
     PARAMETERS parameters;
     const DEVICE & device;
-    uint32_t mode;
     HAL_StatusTypeDef halStatus;
-
-private:
-
     std::array<IOPort, PORTS> ports;
 };
 

@@ -35,8 +35,6 @@ BaseAdc::BaseAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32
     } },
     vRef { 0.0 }
 {
-    mode = (uint32_t) Mode::RX;
-
     parameters.Instance = device.getInstance();
     parameters.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV2;
     parameters.Init.Resolution = ADC_RESOLUTION_12B;

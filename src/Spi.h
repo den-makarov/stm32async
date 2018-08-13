@@ -56,6 +56,30 @@ public:
     void stop ();
 
     /**
+     * @brief Returns pointer to the system clock pin.
+     */
+    inline IOPort * getSclkPin ()
+    {
+        return &(ports[0]);
+    }
+
+   /**
+    * @brief Returns pointer to the MOSI pin.
+    */
+   inline IOPort * getMosiPin ()
+   {
+       return &(ports[1]);
+   }
+
+   /**
+    * @brief Returns pointer to the MISO pin.
+    */
+   inline IOPort * getMisoPin ()
+   {
+       return &(ports[2]);
+   }
+
+    /**
      * @brief Send an amount of data in blocking mode.
      */
     inline HAL_StatusTypeDef transmitBlocking (uint8_t * buffer, uint16_t n, uint32_t timeout = __UINT32_MAX__)

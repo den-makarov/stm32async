@@ -100,6 +100,30 @@ public:
     }
     
     /**
+     * @brief Procedure checks whether a given port of this device is used.
+     */
+    static bool isPortUsed (IOPort * p)
+    {
+        return p != NULL && p->getParameters().Pin != UNUSED_PIN;
+    }
+    
+    /**
+     * @brief Procedure checks whether a device has TX mode active.
+     */
+    inline bool isTxMode () const
+    {
+        return txStream != NULL;
+    }
+
+    /**
+     * @brief Procedure checks whether a device has RX mode active.
+     */
+    inline bool isRxMode () const
+    {
+        return txStream != NULL;
+    }
+
+    /**
      * @brief The method returns the current state.
      */
     inline State getCurrState () const

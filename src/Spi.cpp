@@ -44,17 +44,6 @@ BaseSpi::BaseSpi (const HardwareLayout::Spi & _device) :
     parameters.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
     parameters.Init.CRCPolynomial = 7;
     parameters.Init.NSS = SPI_NSS_SOFT;
-
-    // detect TX/RX mode
-    mode = 0;
-    if (device.mosiPin.pins != UNUSED_PIN)
-    {
-        mode |= (uint32_t) Mode::TX;
-    }
-    if (device.misoPin.pins != UNUSED_PIN)
-    {
-        mode |= (uint32_t) Mode::RX;
-    }
 }
 
 DeviceStart::Status BaseSpi::start (uint32_t direction, uint32_t prescaler,
@@ -99,7 +88,8 @@ void BaseSpi::stop ()
 
 AsyncSpi::AsyncSpi (const HardwareLayout::Spi & _device) :
     BaseSpi { _device },
-    SharedDevice { (isTxMode()? &device.txDma : NULL), (isRxMode()? &device.rxDma : NULL),
+    SharedDevice { (isPortUsed(getMosiPin())? &device.txDma : NULL), 
+                   (isPortUsed(getMisoPin())? &device.rxDma : NULL),
                    DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }
 {
     // empty

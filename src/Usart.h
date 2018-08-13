@@ -67,6 +67,22 @@ public:
     void stop ();
 
     /**
+     * @brief Returns pointer to the TX pin.
+     */
+    inline IOPort * getTxPin ()
+    {
+        return &(ports[0]);
+    }
+
+   /**
+    * @brief Returns pointer to the RX pin.
+    */
+   inline IOPort * getRxPin ()
+   {
+       return &(ports[1]);
+   }
+
+    /**
      * @brief Send an amount of data in blocking mode.
      */
     inline HAL_StatusTypeDef transmitBlocking (const char * buffer, size_t n,
