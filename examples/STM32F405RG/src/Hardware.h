@@ -95,6 +95,7 @@ public:
     HardwareLayout::Dma2 dma2;
 
     // System and MCO
+    ClockParameters clockParameters;
     SystemClock sysClock;
     Rtc rtc;
     MCO mco;

@@ -74,7 +74,7 @@ void ClockParameters::searchBestParameters (uint32_t targetFreq)
                         int clock48out = (int)f.clock48out;
                         if (f.clock48out - (float)clock48out == 0.0 && clock48out == 48)
                         {
-                            for (int P = 2; P <= 8; ++P)
+                            for (int P = 2; P <= 8; P+=2)
                             {
                                 f.P = P;
                                 f.SYSCLC = f.PLLNout / (float)f.P;
@@ -221,7 +221,6 @@ void Hardware::abort ()
 
 void Hardware::initClock (uint32_t frequency)
 {
-    ClockParameters clockParameters;
     clockParameters.searchBestParameters(frequency);
     sysClock.setSysClockSource(RCC_SYSCLKSOURCE_PLLCLK);
     sysClock.getOscParameters().PLL.PLLState = RCC_PLL_ON;
@@ -255,9 +254,9 @@ bool Hardware::start()
 
     // Logger
     usartLogger.initInstance();
-    USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL
-                << "Oscillator frequency: " << SystemClock::getInstance()->getHSEFreq()
-                << ", MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL);
+    USART_DEBUG("--------------------------------------------------------" << UsartLogger::ENDL);
+    USART_DEBUG("MCU frequency: " << SystemClock::getInstance()->getMcuFreq() << UsartLogger::ENDL);
+    clockParameters.print();
 
     // For RTC, it is necessary to reset the state since it will not be
     // automatically reset after MCU programming.
