@@ -77,7 +77,7 @@ public:
 
 public:
     
-    Esp8266 (const HardwareLayout::Usart & _device, const HardwareLayout::Port & _powerPort, uint32_t _powerPin, Led * _sendLed);
+    Esp8266 (const HardwareLayout::Usart & _device, const HardwareLayout::Port & _powerPort, uint32_t _powerPin, Led * _sendLed = NULL);
 
     inline void processRxCpltCallback ()
     {
@@ -336,7 +336,7 @@ class EspSender
 {
 public:
 
-    EspSender (Esp8266 & _esp, Led * _errorLed);
+    EspSender (Esp8266 & _esp, Led * _errorLed = NULL);
 
     inline bool isOutputMessageSent () const
     {

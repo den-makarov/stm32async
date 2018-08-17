@@ -130,7 +130,8 @@ public:
     DeviceStart::Status start (uint32_t mode, uint32_t baudRate,
                                uint32_t wordLength = UART_WORDLENGTH_8B,
                                uint32_t stopBits = UART_STOPBITS_1,
-                               uint32_t parity = UART_PARITY_NONE);
+                               uint32_t parity = UART_PARITY_NONE,
+                               bool isIrqEnabled = true);
 
     /**
      * @brief Close the transmission session.

@@ -43,6 +43,8 @@ DeviceStart::Status BaseUsart::start (uint32_t mode, uint32_t baudRate,
                                       uint32_t stopBits/* = UART_STOPBITS_1*/,
                                       uint32_t parity/* = UART_PARITY_NONE*/)
 {
+    __HAL_UART_ENABLE(&parameters);
+
     device.enableClock();
     IODevice::enablePorts();
 
@@ -65,6 +67,7 @@ void BaseUsart::stop ()
     HAL_UART_DeInit(&parameters);
     IODevice::disablePorts();
     device.disableClock();
+    __HAL_UART_DISABLE(&parameters);
 }
 
 /************************************************************************
@@ -83,7 +86,8 @@ AsyncUsart::AsyncUsart (const HardwareLayout::Usart & _device) :
 DeviceStart::Status AsyncUsart::start (uint32_t mode, uint32_t baudRate,
                                        uint32_t wordLength/* = UART_WORDLENGTH_8B*/,
                                        uint32_t stopBits/* = UART_STOPBITS_1*/,
-                                       uint32_t parity/* = UART_PARITY_NONE*/)
+                                       uint32_t parity/* = UART_PARITY_NONE*/,
+                                       bool isIrqEnabled/* = true*/)
 {
     DeviceStart::Status status = BaseUsart::start(mode, baudRate, wordLength, stopBits, parity);
     if (status == DeviceStart::OK)
@@ -97,7 +101,7 @@ DeviceStart::Status AsyncUsart::start (uint32_t mode, uint32_t baudRate,
             __HAL_LINKDMA(&parameters, hdmarx, rxDma);
         }
         status = startDma(halStatus);
-        if (status == DeviceStart::OK)
+        if (isIrqEnabled && status == DeviceStart::OK)
         {
             enableIrq();
         }
