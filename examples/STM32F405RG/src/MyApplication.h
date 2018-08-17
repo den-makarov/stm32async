@@ -31,7 +31,8 @@ public:
     enum class EventType
     {
         SECOND_INTERRUPT = 0,
-        ADC1_READY = 1
+        ADC1_READY = 1,
+        UPDATE_DISPLAY = 2
     };
 
 public:
@@ -40,9 +41,11 @@ public:
 
     virtual ~MyApplication ();
 
-    void run (uint32_t runId, uint32_t frequency);
+    void run (uint32_t frequency);
 
     void handleSeconds ();
+
+    void updateDisplay ();
 
     void initSdCard ();
 
@@ -65,10 +68,11 @@ private:
 
     EventQueue<EventType, 100> eventQueue;
     Config config;
-    std::array<const char *, 3> fileNames;
     Drivers::NtpMessage ntpMessage;
     bool ntpRequestActive;
     char messageBuffer[2048];
+    float temperature;
+    char lcdString[16];
 };
 
 #endif

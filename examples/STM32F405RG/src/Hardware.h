@@ -49,6 +49,7 @@
 #include "stm32async/Drivers/SdCardFat.h"
 #include "stm32async/Drivers/Esp8266.h"
 #include "stm32async/Drivers/WavStreamer.h"
+#include "stm32async/Drivers/Lcd_DOGM162.h"
 
 using namespace Stm32async;
 
@@ -109,6 +110,7 @@ public:
     HardwareLayout::Spi1 spi1;
     AsyncSpi spi;
     Drivers::Ssd_74XX595 ssd;
+    Drivers::Lcd_DOGM162 lcd;
 
     // SD Card
     HardwareLayout::Sdio1 sdio1;

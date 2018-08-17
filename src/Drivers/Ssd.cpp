@@ -41,7 +41,7 @@ Ssd_74XX595::SegmentsMask::SegmentsMask ()
 
 Ssd_74XX595::Ssd_74XX595 (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse) :
     spi { _spi },
-    csPin { _csPort, _csPin, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_HIGH },
+    csPin { _csPort, _csPin, GPIO_MODE_OUTPUT_PP },
     sm {},
     inverse { _inverse }
 {

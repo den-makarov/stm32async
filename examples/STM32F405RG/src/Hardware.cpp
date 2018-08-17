@@ -142,6 +142,7 @@ Hardware::Hardware ():
     },
     spi { spi1, GPIO_NOPULL },
     ssd { spi, portA, GPIO_PIN_6, true },
+    lcd { spi, portC, GPIO_PIN_4, portC, GPIO_PIN_5, false, 63 },
 
     // SD card
     sdio1 { portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
@@ -188,7 +189,7 @@ Hardware::Hardware ():
         HardwareLayout::DmaStream { &dma2, DMA2_Stream0, DMA_CHANNEL_0,
                                     HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 12, 0 } }
     },
-    adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_56CYCLES },
+    adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
 
     // USART logger
     usart1 { portB, GPIO_PIN_6, portB, UNUSED_PIN, /*remapped=*/ true, NULL,
@@ -269,12 +270,15 @@ bool Hardware::start()
     while (rtc.getHalStatus() != HAL_OK);
 
     // SPI
-    DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_64, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
+    DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_256, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
     USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
     {
         return false;
     }
+
+    devStatus = lcd.start(2);
+    USART_DEBUG("LCD status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
 
     // SSD
     Drivers::Ssd_74XX595::SegmentsMask sm;
@@ -296,7 +300,7 @@ bool Hardware::start()
     {
         return false;
     }
-    adc.setVRef(3.236);
+    adc.setVRef(3.25);
 
     // SD card
     pinSdDetect.start();
@@ -324,6 +328,7 @@ void Hardware::stop ()
     pinSdDetect.stop();
     adc.stop();
     ssd.stop();
+    lcd.stop();
     spi.stop();
     rtc.stop();
     ledBlue.stop();

@@ -31,9 +31,9 @@
 MyApplication::MyApplication () :
     Hardware {},
     config { "conf.txt" },
-    fileNames { { "NOLIMIT.WAV", "S44.WAV", "S48.WAV" } },
     ntpMessage {},
-    ntpRequestActive { false }
+    ntpRequestActive { false },
+    temperature { 0.0 }
 {
     streamer.setHandler(this);
     stopButton.setHandler(this);
@@ -46,7 +46,7 @@ MyApplication::~MyApplication ()
 }
 
 
-void MyApplication::run (uint32_t runId, uint32_t frequency)
+void MyApplication::run (uint32_t frequency)
 {
     initClock(frequency);
     if (!start())
@@ -70,8 +70,11 @@ void MyApplication::run (uint32_t runId, uint32_t frequency)
     // Start WAV player
     audioDac.powerOn();
     streamer.setVolume(0.5);
-    streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM,
-                   (runId < fileNames.size()? fileNames[runId] : config.getWavFile()));
+    {
+        char fName[16];
+        ::sprintf(fName, "f%ld.wav", frequency);
+        streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM, fName);
+    }
 
     // Finish initialization
     printResourceOccupation();
@@ -93,20 +96,15 @@ void MyApplication::run (uint32_t runId, uint32_t frequency)
             case EventType::SECOND_INTERRUPT:
                 handleSeconds();
                 handleNtpRequest();
-                if (rtc.getTimeSec() > 1000)
-                {
-                    adc.read();
-                }
+                adc.read();
+                break;
+
+            case EventType::UPDATE_DISPLAY:
+                updateDisplay();
                 break;
 
             case EventType::ADC1_READY:
-                {
-                    int mv = adc.getMedianMV();
-                    if (rtc.getTimeSec() % 60 == 0)
-                    {
-                        USART_DEBUG("ADC1: " <<  mv << " mV =" << (int)(lmt86Temperature(mv)*10.0) << UsartLogger::ENDL);
-                    }
-                }
+                temperature = lmt86Temperature(adc.getMedianMV());
                 break;
             }
         }
@@ -125,18 +123,26 @@ void MyApplication::run (uint32_t runId, uint32_t frequency)
 
 void MyApplication::handleSeconds ()
 {
-    /*
-    USART_DEBUG(Rtc::getInstance()->getLocalDate() << " "
-                << Rtc::getInstance()->getLocalTime()
-                << ": ESP state=" << (int)espSender.getEspState()
-                << ", message send=" << espSender.isOutputMessageSent()
-                << UsartLogger::ENDL);
-    */
     ledBlue.toggle();
 
-    spi.waitForRelease();
     const char * shortTime = Rtc::getInstance()->getLocalTime(0);
-    ssd.putString(shortTime + 2, NULL, 4);
+    spi.waitForRelease();
+    ssd.putString(shortTime, NULL, 4);
+    scheduleEvent(MyApplication::EventType::UPDATE_DISPLAY);
+}
+
+
+void MyApplication::updateDisplay ()
+{
+    const char * fullDate = Rtc::getInstance()->getLocalDate('.');
+    spi.waitForRelease();
+    lcd.putString(0, 0, fullDate, ::strlen(fullDate));
+    const char * fullTime = Rtc::getInstance()->getLocalTime(':');
+    spi.waitForRelease();
+    lcd.putString(0, 1, fullTime, ::strlen(fullTime));
+    ::sprintf(lcdString, "%02d%cC", (int)temperature, 0b11110010);
+    spi.waitForRelease();
+    lcd.putString(12, 1, lcdString, ::strlen(lcdString));
 }
 
 
@@ -171,6 +177,7 @@ void MyApplication::onButtonPressed (const Drivers::Button * b, uint32_t /*numOc
     }
 }
 
+
 void MyApplication::handleNtpRequest ()
 {
     if (ntpRequestActive && espSender.isOutputMessageSent())
@@ -182,5 +189,5 @@ void MyApplication::handleNtpRequest ()
 
 float MyApplication::lmt86Temperature (int mv)
 {
-    return 30.0 + (10.888 - ::sqrt(10.888*10.888 + 4.0*0.00347*(1777.3 - (float)mv)))/(-2.0*0.00347);
+    return 30.0 + (10.888 - ::sqrt(10.888*10.888 + 4.0*0.00347*(1777.3 - (float)mv)))/(-2.0*0.00347) - 1;
 }

@@ -104,6 +104,14 @@ public:
     {
         return (((parameters.Instance->SR) & (SPI_FLAG_BSY)) == (SPI_FLAG_BSY));
     }
+
+    /**
+     * @brief Send a char in blocking mode.
+     */
+    inline void putChar (uint8_t data)
+    {
+        HAL_SPI_Transmit(&parameters, &data, 1, __UINT32_MAX__);
+    }
 };
 
 /**
