@@ -35,6 +35,7 @@
 #include "stm32async/HardwareLayout/Sdio1.h"
 #include "stm32async/HardwareLayout/I2S2.h"
 #include "stm32async/HardwareLayout/Adc1.h"
+#include "stm32async/HardwareLayout/Timer3.h"
 
 #include "stm32async/SystemClock.h"
 #include "stm32async/Rtc.h"
@@ -42,6 +43,7 @@
 #include "stm32async/Adc.h"
 #include "stm32async/UsartLogger.h"
 #include "stm32async/EventQueue.h"
+#include "stm32async/Timer.h"
 
 #include "stm32async/Drivers/Button.h"
 #include "stm32async/Drivers/Led.h"
@@ -133,6 +135,10 @@ public:
     HardwareLayout::Adc1 adc1;
     AsyncAdc adc;
 
+    // Timer
+    HardwareLayout::Timer3 timer3;
+    InterruptTimer heartbeatTimer;
+
     // USART logger
     HardwareLayout::Usart1 usart1;
     UsartLogger usartLogger;
@@ -182,6 +188,11 @@ public:
     inline AsyncAdc & getAdc ()
     {
         return adc;
+    }
+
+    inline InterruptTimer & getHeartbeatTimer ()
+    {
+        return heartbeatTimer;
     }
 };
 

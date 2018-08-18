@@ -106,6 +106,10 @@ void MyApplication::run (uint32_t frequency)
             case EventType::ADC1_READY:
                 temperature = lmt86Temperature(adc.getMedianMV());
                 break;
+
+            case EventType::HEARTBEAT_INTERRUPT:
+                ledBlue.toggle();
+                break;
             }
         }
 
@@ -123,8 +127,8 @@ void MyApplication::run (uint32_t frequency)
 
 void MyApplication::handleSeconds ()
 {
-    ledBlue.toggle();
-
+    ledBlue.setLow();
+    heartbeatTimer.reset();
     const char * shortTime = Rtc::getInstance()->getLocalTime(0);
     spi.waitForRelease();
     ssd.putString(shortTime, NULL, 4);
@@ -134,15 +138,12 @@ void MyApplication::handleSeconds ()
 
 void MyApplication::updateDisplay ()
 {
-    const char * fullDate = Rtc::getInstance()->getLocalDate('.');
+    ::sprintf(lcdString1, "%10s  %02ldMH", Rtc::getInstance()->getLocalDate('.'), SystemClock::getInstance()->getMcuFreq() / 1000000);
     spi.waitForRelease();
-    lcd.putString(0, 0, fullDate, ::strlen(fullDate));
-    const char * fullTime = Rtc::getInstance()->getLocalTime(':');
+    lcd.putString(0, 0, lcdString1, ::strlen(lcdString1));
+    ::sprintf(lcdString2, "%8s    %02d%cC", Rtc::getInstance()->getLocalTime(':'), (int)temperature, 0b11110010);
     spi.waitForRelease();
-    lcd.putString(0, 1, fullTime, ::strlen(fullTime));
-    ::sprintf(lcdString, "%02d%cC", (int)temperature, 0b11110010);
-    spi.waitForRelease();
-    lcd.putString(12, 1, lcdString, ::strlen(lcdString));
+    lcd.putString(0, 1, lcdString2, ::strlen(lcdString2));
 }
 
 
@@ -152,7 +153,7 @@ bool MyApplication::onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s)
     {
         if (!sdCard.isCardInserted())
         {
-            USART_DEBUG("SD Card is not inserted");
+            USART_DEBUG("SD Card is not inserted" << UsartLogger::ENDL);
             return false;
         }
     }

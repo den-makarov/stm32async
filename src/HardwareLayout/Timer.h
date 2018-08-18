@@ -17,22 +17,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "IODevice.h"
+#ifndef HARDWARE_LAYOUT_TIMER_H_
+#define HARDWARE_LAYOUT_TIMER_H_
 
-using namespace Stm32async;
+#include "HardwareLayout.h"
 
-const char * DeviceStart::strings[] = {
-    "Device started",
-    "Can not initialize device",
-    "Can not initialize TX DMA channel",
-    "Can not initialize RX DMA channel",
-    "SD Card is not inserted",
-    "Can not initialize SD Wide Bus Operation",
-    "Can not read SD Card status",
-    "Can not link FAT FS driver",
-    "Can not mount FAT FS volume",
-    "Can not retrieve FAT FS volume label",
-    "Can not retrieve FAT FS current directory",
-    "Can not configure ACD channel",
-    "Can not start timer"
+#ifdef HAL_TIM_MODULE_ENABLED
+
+namespace Stm32async
+{
+namespace HardwareLayout
+{
+
+/**
+ * @brief Parameters of a timer.
+ */
+class Timer : public HalDevice
+{
+    DECLARE_INSTANCE(TIM_TypeDef)
+
+public:
+
+    /**
+     * @brief Interrupt Number Definition
+     */
+    Interrupt timerIrq;
+
+    explicit Timer (size_t _id, TIM_TypeDef * _instance, Interrupt && _timerIrq) :
+        HalDevice { _id, false },
+        instance { _instance },
+        timerIrq { std::move(_timerIrq) }
+    {
+        // empty
+    }
 };
+
+} // end of namespace HardwareLayout
+} // end of namespace Stm32async
+
+#endif
+#endif

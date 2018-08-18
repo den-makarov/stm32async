@@ -17,22 +17,47 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#include "IODevice.h"
+#ifndef HARDWARE_LAYOUT_TIM3_H_
+#define HARDWARE_LAYOUT_TIM3_H_
 
-using namespace Stm32async;
+#include "Timer.h"
 
-const char * DeviceStart::strings[] = {
-    "Device started",
-    "Can not initialize device",
-    "Can not initialize TX DMA channel",
-    "Can not initialize RX DMA channel",
-    "SD Card is not inserted",
-    "Can not initialize SD Wide Bus Operation",
-    "Can not read SD Card status",
-    "Can not link FAT FS driver",
-    "Can not mount FAT FS volume",
-    "Can not retrieve FAT FS volume label",
-    "Can not retrieve FAT FS current directory",
-    "Can not configure ACD channel",
-    "Can not start timer"
+#ifdef HAL_UART_MODULE_ENABLED
+#ifdef TIM3
+
+namespace Stm32async
+{
+namespace HardwareLayout
+{
+
+/**
+ * @brief Wrapper class for TIM3 module.
+ *
+ * Implementation shall provide wrappers for TIM3 clock enable/disable macros
+ */
+class Timer3 : public HardwareLayout::Timer
+{
+public:
+    explicit Timer3 (Interrupt && _timerIrq) :
+        Timer { 3, TIM3, std::move(_timerIrq) }
+    {
+        // empty
+    }
+
+    virtual void enableClock () const
+    {
+        __HAL_RCC_TIM3_CLK_ENABLE();
+    }
+
+    virtual void disableClock () const
+    {
+        __HAL_RCC_TIM3_CLK_DISABLE();
+    }
 };
+
+} // end of namespace HardwareLayout
+} // end of namespace Stm32async
+
+#endif
+#endif
+#endif

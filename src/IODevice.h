@@ -47,7 +47,8 @@ public:
         FAT_VOLUME_NOT_MOUNTED   = 8,
         FAT_VOLUME_STATUS_ERROR  = 9,
         FAT_DIR_STATUS_ERROR     = 10,
-        ADC_CHANNEL_ERROR        = 11
+        ADC_CHANNEL_ERROR        = 11,
+        TIMER_START_ERROR        = 12
     };
 
     /**
@@ -55,7 +56,7 @@ public:
      */
     enum
     {
-        size = 12
+        size = 13
     };
 
     /**

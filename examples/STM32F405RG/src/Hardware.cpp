@@ -136,9 +136,9 @@ Hardware::Hardware ():
     spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, UNUSED_PIN, /*remapped=*/ true, NULL,
              HardwareLayout::Interrupt { SPI1_IRQn, 1, 0 },
              HardwareLayout::DmaStream { &dma2, DMA2_Stream5, DMA_CHANNEL_3,
-                                         HardwareLayout::Interrupt { DMA2_Stream5_IRQn, 2, 0 } },
+                                         HardwareLayout::Interrupt { DMA2_Stream5_IRQn, 1, 1 } },
              HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_3,
-                                         HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } }
+                                         HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 1, 2 } }
     },
     spi { spi1, GPIO_NOPULL },
     ssd { spi, portA, GPIO_PIN_6, true },
@@ -147,11 +147,11 @@ Hardware::Hardware ():
     // SD card
     sdio1 { portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
             portD, /*SDIO_CMD*/GPIO_PIN_2,
-            HardwareLayout::Interrupt { SDIO_IRQn, 3, 0 },
+            HardwareLayout::Interrupt { SDIO_IRQn, 2, 0 },
             HardwareLayout::DmaStream { &dma2, DMA2_Stream6, DMA_CHANNEL_4,
-                                        HardwareLayout::Interrupt { DMA2_Stream6_IRQn, 4, 0 } },
+                                        HardwareLayout::Interrupt { DMA2_Stream6_IRQn, 3, 0 } },
             HardwareLayout::DmaStream { &dma2, DMA2_Stream3, DMA_CHANNEL_4,
-                                        HardwareLayout::Interrupt { DMA2_Stream3_IRQn, 5, 0 } }
+                                        HardwareLayout::Interrupt { DMA2_Stream3_IRQn, 3, 1 } }
     },
     pinSdPower { portA, GPIO_PIN_15, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP },
     pinSdDetect { portB, GPIO_PIN_3, GPIO_MODE_INPUT, GPIO_PULLUP },
@@ -159,11 +159,11 @@ Hardware::Hardware ():
 
     //ESP
     usart2 { portA, GPIO_PIN_2, portA, GPIO_PIN_3, /*remapped=*/ true, NULL,
-             HardwareLayout::Interrupt { USART2_IRQn, 6, 0 },
+             HardwareLayout::Interrupt { USART2_IRQn, 4, 0 },
              HardwareLayout::DmaStream { &dma1, DMA1_Stream6, DMA_CHANNEL_4,
-                                         HardwareLayout::Interrupt { DMA1_Stream6_IRQn, 7, 0 } },
+                                         HardwareLayout::Interrupt { DMA1_Stream6_IRQn, 5, 0 } },
              HardwareLayout::DmaStream { &dma1, DMA1_Stream5, DMA_CHANNEL_4,
-                                         HardwareLayout::Interrupt { DMA1_Stream5_IRQn, 8, 0 } }
+                                         HardwareLayout::Interrupt { DMA1_Stream5_IRQn, 5, 1 } }
     },
     esp { usart2, portA, GPIO_PIN_1, /*sendLed=*/ &ledGreen },
     espSender { esp, /*errorLed=*/ &ledRed },
@@ -172,9 +172,9 @@ Hardware::Hardware ():
     i2s2 { portB, /*I2S2_CK*/GPIO_PIN_10 | /*I2S2_WS*/GPIO_PIN_12 | /*I2S2_SD*/GPIO_PIN_15,
           /*remapped=*/ true, NULL,
           HardwareLayout::DmaStream { &dma1, DMA1_Stream4, DMA_CHANNEL_0,
-                                      HardwareLayout::Interrupt { DMA1_Stream4_IRQn, 9, 0 } },
+                                      HardwareLayout::Interrupt { DMA1_Stream4_IRQn, 6, 0 } },
           HardwareLayout::DmaStream { &dma1, DMA1_Stream3, DMA_CHANNEL_0,
-                                      HardwareLayout::Interrupt { DMA1_Stream3_IRQn, 9, 0 } }
+                                      HardwareLayout::Interrupt { DMA1_Stream3_IRQn, 6, 0 } }
     },
     i2s { i2s2 },
     audioDac { i2s,
@@ -187,9 +187,13 @@ Hardware::Hardware ():
     // ADC
     adc1 { portA, GPIO_PIN_0, /*remapped=*/ false, NULL,
         HardwareLayout::DmaStream { &dma2, DMA2_Stream0, DMA_CHANNEL_0,
-                                    HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 12, 0 } }
+                                    HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 7, 0 } }
     },
     adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
+
+    // Timers
+    timer3 { HardwareLayout::Interrupt { TIM3_IRQn, 8, 0 } },
+    heartbeatTimer { timer3 },
 
     // USART logger
     usart1 { portB, GPIO_PIN_6, portB, UNUSED_PIN, /*remapped=*/ true, NULL,
@@ -302,6 +306,15 @@ bool Hardware::start()
     }
     adc.setVRef(3.25);
 
+    // start timers
+    uint32_t timerPrescaler = SystemCoreClock/10000 - 1;
+    devStatus = heartbeatTimer.start(TIM_COUNTERMODE_UP, timerPrescaler, 5000 - 1);
+    USART_DEBUG("TIM3 status: " << DeviceStart::asString(devStatus) << " (" << heartbeatTimer.getHalStatus() << ")" << UsartLogger::ENDL);
+    if (devStatus != DeviceStart::Status::OK)
+    {
+        return false;
+    }
+
     // SD card
     pinSdDetect.start();
     if (sdCard.isCardInserted() && !initSdCard())
@@ -326,6 +339,7 @@ void Hardware::stop ()
     pinSdPower.setHigh();
     pinSdPower.stop();
     pinSdDetect.stop();
+    heartbeatTimer.stopCounter();
     adc.stop();
     ssd.stop();
     lcd.stop();
@@ -544,4 +558,12 @@ extern "C"
             appPtr->scheduleEvent(MyApplication::EventType::ADC1_READY);
         }
     }
+
+    // Timers
+    void TIM3_IRQHandler ()
+    {
+        appPtr->getHeartbeatTimer().processInterrupt();
+        appPtr->scheduleEvent(MyApplication::EventType::HEARTBEAT_INTERRUPT);
+    }
+
 }

@@ -32,7 +32,8 @@ public:
     {
         SECOND_INTERRUPT = 0,
         ADC1_READY = 1,
-        UPDATE_DISPLAY = 2
+        UPDATE_DISPLAY = 2,
+        HEARTBEAT_INTERRUPT = 3
     };
 
 public:
@@ -72,7 +73,7 @@ private:
     bool ntpRequestActive;
     char messageBuffer[2048];
     float temperature;
-    char lcdString[16];
+    char lcdString1[16], lcdString2[16];
 };
 
 #endif
