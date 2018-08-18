@@ -162,6 +162,14 @@ public:
     }
 
     /**
+     * @brief Returns device ID.
+     */
+    inline size_t getId () const
+    {
+        return id;
+    }
+
+    /**
      * @brief Method that enables device-specific clock.
      *
      * This method shall be implemented in a derived class. For example, a device that implements

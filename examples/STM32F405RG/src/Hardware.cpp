@@ -275,7 +275,7 @@ bool Hardware::start()
 
     // SPI
     DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_256, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
-    USART_DEBUG("SPI1 status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
+    USART_DEBUG("SPI" << spi.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
     {
         return false;
@@ -299,7 +299,7 @@ bool Hardware::start()
 
     // ADC
     devStatus = adc.start();
-    USART_DEBUG("ADC1 status: " << DeviceStart::asString(devStatus) << " (" << adc.getHalStatus() << ")" << UsartLogger::ENDL);
+    USART_DEBUG("ADC" << adc.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << adc.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
     {
         return false;
@@ -309,7 +309,7 @@ bool Hardware::start()
     // start timers
     uint32_t timerPrescaler = SystemCoreClock/10000 - 1;
     devStatus = heartbeatTimer.start(TIM_COUNTERMODE_UP, timerPrescaler, 5000 - 1);
-    USART_DEBUG("TIM3 status: " << DeviceStart::asString(devStatus) << " (" << heartbeatTimer.getHalStatus() << ")" << UsartLogger::ENDL);
+    USART_DEBUG("TIM" << heartbeatTimer.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << heartbeatTimer.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
     {
         return false;

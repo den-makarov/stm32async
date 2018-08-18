@@ -94,6 +94,14 @@ public:
     }
 
     /**
+     * @brief Returns device ID.
+     */
+    inline size_t getId () const
+    {
+        return device.getId();
+    }
+
+    /**
      * @brief Getter for the device parameters
      */
     inline PARAMETERS & getParameters ()

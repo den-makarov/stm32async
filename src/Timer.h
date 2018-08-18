@@ -46,6 +46,14 @@ public:
 
     void stopCounter ();
 
+    /**
+     * @brief Returns device ID.
+     */
+    inline size_t getId () const
+    {
+        return device.getId();
+    }
+
     inline TIM_HandleTypeDef & getParameters ()
     {
         return parameters;
