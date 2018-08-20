@@ -17,59 +17,58 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef HARDWARE_LAYOUT_TIMER_H_
-#define HARDWARE_LAYOUT_TIMER_H_
+#ifndef STM32ASYNC_DAC_H_
+#define STM32ASYNC_DAC_H_
 
-#include "HardwareLayout.h"
+#include "HardwareLayout/Dac.h"
 
-#ifdef HAL_TIM_MODULE_ENABLED
+#ifdef HAL_DAC_MODULE_ENABLED
+
+#include "IODevice.h"
 
 namespace Stm32async
 {
-namespace HardwareLayout
-{
 
 /**
- * @brief Parameters of a timer.
+ * @brief Base class that implements digital-toanalog converter
  */
-class Timer : public HalDevice
+class BaseDac : public IODevice<HardwareLayout::Dac, DAC_HandleTypeDef, 1>
 {
-    DECLARE_INSTANCE(TIM_TypeDef)
-
 public:
 
     /**
-     * @brief Interrupt Number Definition
+     * @brief Default constructor.
      */
-    Interrupt timerIrq;
-
-    explicit Timer (size_t _id, TIM_TypeDef * _instance, Interrupt && _timerIrq) :
-        HalDevice { _id, false },
-        instance { _instance },
-        timerIrq { std::move(_timerIrq) }
-    {
-        // empty
-    }
+    BaseDac (const HardwareLayout::Dac & _device, uint32_t _channel);
 
     /**
-     * @brief Helper method used to enable all interrupts for the module
+     * @brief Start this DAC device.
      */
-    void enableIrq () const
-    {
-        timerIrq.enable();
-    }
+    DeviceStart::Status start ();
 
     /**
-     * @brief Helper method used to disable all interrupts for the module
+     * @brief Stop this DAC device.
      */
-    void disableIrq () const
+    void stop ();
+
+    HAL_StatusTypeDef setValue (uint32_t v);
+
+    /**
+     * @brief Procedure returns the parameters of DAC channel.
+     */
+    inline DAC_ChannelConfTypeDef & getDacChannel ()
     {
-        timerIrq.disable();
+        return dacChannel;
     }
+
+protected:
+
+    DAC_ChannelConfTypeDef dacChannel;
+    uint32_t channelIdx;
 };
 
-} // end of namespace HardwareLayout
-} // end of namespace Stm32async
 
+
+} // end namespace
 #endif
 #endif

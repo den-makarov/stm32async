@@ -58,8 +58,8 @@ BaseAdc::BaseAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32
 
 DeviceStart::Status BaseAdc::start ()
 {
+    HAL_ADC_Stop(&parameters);
     HAL_ADC_DeInit(&parameters);
-    __HAL_ADC_ENABLE(&parameters);
 
     device.enableClock();
     IODevice::enablePorts();
@@ -76,30 +76,32 @@ DeviceStart::Status BaseAdc::start ()
         return DeviceStart::ADC_CHANNEL_ERROR;
     }
 
+    halStatus = HAL_ADC_Start(&parameters);
+    if (halStatus != HAL_OK)
+    {
+        return DeviceStart::ADC_CHANNEL_ERROR;
+    }
+
     return DeviceStart::OK;
 }
 
 
 void BaseAdc::stop ()
 {
+    HAL_ADC_Stop(&parameters);
     HAL_ADC_DeInit(&parameters);
     IODevice::disablePorts();
     device.disableClock();
-    __HAL_ADC_DISABLE(&parameters);
 }
 
 
 uint32_t BaseAdc::readBlocking ()
 {
     uint32_t value = INVALID_VALUE;
-    if (HAL_ADC_Start(&parameters) == HAL_OK)
+    if (HAL_ADC_PollForConversion(&parameters, TIMEOUT) == HAL_OK)
     {
-        if (HAL_ADC_PollForConversion(&parameters, TIMEOUT) == HAL_OK)
-        {
-            value = HAL_ADC_GetValue(&parameters);
-        }
+        value = HAL_ADC_GetValue(&parameters);
     }
-    HAL_ADC_Stop(&parameters);
     return value;
 }
 
@@ -129,6 +131,7 @@ DeviceStart::Status AsyncAdc::start ()
             enableIrq();
         }
     }
+    HAL_ADC_Stop(&parameters);
     return status;
 }
 

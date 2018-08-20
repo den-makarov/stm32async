@@ -184,12 +184,14 @@ Hardware::Hardware ():
     streamer { sdCard, audioDac },
     stopButton { portB, GPIO_PIN_9, GPIO_PULLUP },
 
-    // ADC
+    // ADC/DAC
     adc1 { portA, GPIO_PIN_0, /*remapped=*/ false, NULL,
         HardwareLayout::DmaStream { &dma2, DMA2_Stream0, DMA_CHANNEL_0,
                                     HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 7, 0 } }
     },
     adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
+    dac1 { portA, GPIO_PIN_0 },
+    dac { dac1, DAC_CHANNEL_1 },
 
     // Timers
     timer3 { HardwareLayout::Interrupt { TIM3_IRQn, 8, 0 } },
@@ -297,7 +299,7 @@ bool Hardware::start()
     ssd.setSegmentsMask(sm);
     ssd.start();
 
-    // ADC
+    // ADC/DAC
     devStatus = adc.start();
     USART_DEBUG("ADC" << adc.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << adc.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
@@ -305,6 +307,13 @@ bool Hardware::start()
         return false;
     }
     adc.setVRef(3.25);
+
+    devStatus = dac.start();
+    USART_DEBUG("DAC" << dac.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << dac.getHalStatus() << ")" << UsartLogger::ENDL);
+    if (devStatus != DeviceStart::Status::OK)
+    {
+        return false;
+    }
 
     // start timers
     uint32_t timerPrescaler = SystemCoreClock/10000 - 1;
@@ -340,6 +349,7 @@ void Hardware::stop ()
     pinSdPower.stop();
     pinSdDetect.stop();
     heartbeatTimer.stopCounter();
+    dac.stop();
     adc.stop();
     ssd.stop();
     lcd.stop();

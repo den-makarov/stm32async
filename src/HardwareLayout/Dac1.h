@@ -17,12 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef HARDWARE_LAYOUT_TIMER_H_
-#define HARDWARE_LAYOUT_TIMER_H_
+#ifndef HARDWARE_LAYOUT_DAC1_H_
+#define HARDWARE_LAYOUT_DAC1_H_
 
-#include "HardwareLayout.h"
+#include "Dac.h"
 
-#ifdef HAL_TIM_MODULE_ENABLED
+#ifdef HAL_DAC_MODULE_ENABLED
+#ifdef DAC1
 
 namespace Stm32async
 {
@@ -30,46 +31,31 @@ namespace HardwareLayout
 {
 
 /**
- * @brief Parameters of a timer.
+ * @brief Wrapper class for DAC1 module.
  */
-class Timer : public HalDevice
+class Dac1 : public HardwareLayout::Dac
 {
-    DECLARE_INSTANCE(TIM_TypeDef)
-
 public:
-
-    /**
-     * @brief Interrupt Number Definition
-     */
-    Interrupt timerIrq;
-
-    explicit Timer (size_t _id, TIM_TypeDef * _instance, Interrupt && _timerIrq) :
-        HalDevice { _id, false },
-        instance { _instance },
-        timerIrq { std::move(_timerIrq) }
+    explicit Dac1 (HardwareLayout::Port & _Port, uint32_t _Pin) :
+        Dac { 1, DAC1, _Port, _Pin }
     {
         // empty
     }
 
-    /**
-     * @brief Helper method used to enable all interrupts for the module
-     */
-    void enableIrq () const
+    virtual void enableClock () const
     {
-        timerIrq.enable();
+        __HAL_RCC_DAC_CLK_ENABLE();
     }
 
-    /**
-     * @brief Helper method used to disable all interrupts for the module
-     */
-    void disableIrq () const
+    virtual void disableClock () const
     {
-        timerIrq.disable();
+        __HAL_RCC_DAC_CLK_DISABLE();
     }
 };
 
 } // end of namespace HardwareLayout
 } // end of namespace Stm32async
 
+#endif
 #endif
 #endif

@@ -34,5 +34,9 @@ const char * DeviceStart::strings[] = {
     "Can not retrieve FAT FS volume label",
     "Can not retrieve FAT FS current directory",
     "Can not configure ACD channel",
-    "Can not start timer"
+    "Can not start ACD channel",
+    "Can not configure DAC channel",
+    "Can not start DAC channel",
+    "Can not start timer",
+    "Unknown error"
 };

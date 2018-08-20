@@ -119,6 +119,8 @@ void MyApplication::run (uint32_t frequency)
             ntpMessage.decodeResponce(messageBuffer);
             ntpRequestActive = false;
         }
+
+        dac.setValue(1200 + (1400 * heartbeatTimer.getValue()/5000));
     }
 
     stop ();

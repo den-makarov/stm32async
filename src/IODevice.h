@@ -37,18 +37,22 @@ public:
     enum Status
     {
         OK = 0,
-        DEVICE_INIT_ERROR        = 1,
-        TX_DMA_INIT_ERROR        = 2,
-        RX_DMA_INIT_ERROR        = 3,
-        SD_NOT_INSERTED          = 4,
-        SD_WIDE_BUS_ERROR        = 5,
-        SD_READ_STATUS_ERROR     = 6,
-        FAT_DRIVER_NOT_LINKED    = 7,
-        FAT_VOLUME_NOT_MOUNTED   = 8,
-        FAT_VOLUME_STATUS_ERROR  = 9,
-        FAT_DIR_STATUS_ERROR     = 10,
-        ADC_CHANNEL_ERROR        = 11,
-        TIMER_START_ERROR        = 12
+        DEVICE_INIT_ERROR,
+        TX_DMA_INIT_ERROR,
+        RX_DMA_INIT_ERROR,
+        SD_NOT_INSERTED,
+        SD_WIDE_BUS_ERROR,
+        SD_READ_STATUS_ERROR,
+        FAT_DRIVER_NOT_LINKED,
+        FAT_VOLUME_NOT_MOUNTED,
+        FAT_VOLUME_STATUS_ERROR,
+        FAT_DIR_STATUS_ERROR,
+        ADC_CHANNEL_ERROR,
+        ADC_START_ERROR,
+        DAC_CHANNEL_ERROR,
+        DAC_START_ERROR,
+        TIMER_START_ERROR,
+        UNDEFINED_ERROR
     };
 
     /**
@@ -56,7 +60,7 @@ public:
      */
     enum
     {
-        size = 13
+        size = Status::UNDEFINED_ERROR
     };
 
     /**

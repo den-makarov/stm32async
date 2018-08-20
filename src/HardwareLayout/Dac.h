@@ -17,12 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
-#ifndef HARDWARE_LAYOUT_TIMER_H_
-#define HARDWARE_LAYOUT_TIMER_H_
+#ifndef HARDWARE_LAYOUT_DAC_H_
+#define HARDWARE_LAYOUT_DAC_H_
 
 #include "HardwareLayout.h"
 
-#ifdef HAL_TIM_MODULE_ENABLED
+#ifdef HAL_DAC_MODULE_ENABLED
 
 namespace Stm32async
 {
@@ -30,41 +30,31 @@ namespace HardwareLayout
 {
 
 /**
- * @brief Parameters of a timer.
+ * @brief Parameters of Digital-to-Analog converter.
  */
-class Timer : public HalDevice
+class Dac : public HalDevice
 {
-    DECLARE_INSTANCE(TIM_TypeDef)
+    DECLARE_INSTANCE(DAC_TypeDef)
 
 public:
 
     /**
-     * @brief Interrupt Number Definition
+     * @brief Pin related to this DAC
      */
-    Interrupt timerIrq;
+    Pins pin;
 
-    explicit Timer (size_t _id, TIM_TypeDef * _instance, Interrupt && _timerIrq) :
+    /**
+     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
+     */
+    Afio * afio;
+
+    explicit Dac (size_t _id, DAC_TypeDef *_instance, Port & _port, uint32_t _pin) :
         HalDevice { _id, false },
         instance { _instance },
-        timerIrq { std::move(_timerIrq) }
+        pin { _port, _pin },
+        afio { NULL }
     {
         // empty
-    }
-
-    /**
-     * @brief Helper method used to enable all interrupts for the module
-     */
-    void enableIrq () const
-    {
-        timerIrq.enable();
-    }
-
-    /**
-     * @brief Helper method used to disable all interrupts for the module
-     */
-    void disableIrq () const
-    {
-        timerIrq.disable();
     }
 };
 
