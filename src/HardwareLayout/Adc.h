@@ -32,7 +32,7 @@ namespace HardwareLayout
 /**
  * @brief Parameters of Analog-to-Digital converter.
  */
-class Adc : public HalDevice
+class Adc : public HalAfioDevice
 {
     DECLARE_INSTANCE(ADC_TypeDef)
 
@@ -44,21 +44,15 @@ public:
     Pins pin;
 
     /**
-     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
-     */
-    Afio * afio;
-
-    /**
      * @brief RX DMA channel
      */
     DmaStream rxDma;
 
     explicit Adc (size_t _id, ADC_TypeDef *_instance, Port & _port, uint32_t _pin, bool _remapped,
                   Afio * _afio, DmaStream && _rxDma) :
-        HalDevice { _id, _remapped },
+        HalAfioDevice { _id, _remapped, _afio },
         instance { _instance },
         pin { _port, _pin },
-        afio { _afio },
         rxDma { std::move(_rxDma) }
     {
         // empty

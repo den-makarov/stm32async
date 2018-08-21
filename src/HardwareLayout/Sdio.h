@@ -32,7 +32,7 @@ namespace HardwareLayout
 /**
  * @brief Configuration of SDIO device.
  */
-class Sdio : public HalDevice
+class Sdio : public HalAfioDevice
 {
 DECLARE_INSTANCE(SD_TypeDef)
 
@@ -42,11 +42,6 @@ public:
      * @brief Pins from two ports
      */
     Pins pins1, pins2;
-
-    /**
-     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
-     */
-    Afio * afio;
 
     /**
      * @brief SDIO global interrupt configuration
@@ -69,11 +64,10 @@ public:
                    bool _remapped, Afio * _afio,
                    Interrupt && _txRxIrq,
                    DmaStream && _txDma, DmaStream && _rxDma) :
-        HalDevice { _id, _remapped },
+        HalAfioDevice { _id, _remapped, _afio },
         instance { _instance },
         pins1 { _port1, _port1pins },
         pins2 { _port2, _port2pins },
-        afio { _afio },
         txRxIrq { std::move(_txRxIrq) },
         txDma { std::move(_txDma) },
         rxDma { std::move(_rxDma) }

@@ -143,12 +143,8 @@ public:
      * @brief Standard initialization constructor.
      *
      * @param _id a numerical device ID used for logging purpose.
-     * @param _remapped a boolean flag indicating that IO port used
-     *         by this device shall be re-mapped to alternative pins.
      */
-    HalDevice (size_t _id, bool _remapped = false) :
-        id { _id },
-        remapped { _remapped }
+    HalDevice (size_t _id) : id { _id }
     {
         // empty
     }
@@ -195,41 +191,12 @@ public:
      */
     virtual void disableClock () const =0;
 
-    /**
-     * @brief Method that performs the pin re-mapping for this device, if necessary.
-     *
-     * If the implementing device can use alternative pins, this method shall be
-     * implemented in a derived class. The implementation of this method may depend
-     * on the STM32 MCU family.
-     */
-    virtual void remapPins (GPIO_InitTypeDef &) const
-    {
-        // default implementation is empty
-    }
-
-    /**
-     * @brief Method that performs the pin un-mapping for this device, if necessary.
-     *
-     * If the implementing device uses alternative pins, and these pins shall be set
-     * to the default (un-remapped) state, this method shall be  implemented in a derived
-     * class. The implementation of this method may depend on the STM32 MCU family.
-     */
-    virtual void unremapPins (GPIO_InitTypeDef &) const
-    {
-        // default implementation is empty
-    }
-
 protected:
 
     /**
      * @brief Numerical device ID used for logging purpose.
      */
     size_t id;
-
-    /**
-     * @brief Peripheral to be re-mapped to the selected pins.
-     */
-    bool remapped;
 };
 
 /**
@@ -486,6 +453,72 @@ public:
     {
         // empty
     }
+};
+
+
+class HalAfioDevice : public HalDevice
+{
+public:
+
+    /**
+     * @brief Standard initialization constructor.
+     *
+     * @param _id a numerical device ID used for logging purpose.
+     * @param _remapped a boolean flag indicating that IO port used
+     *         by this device shall be re-mapped to alternative pins.
+     * @param _afio pointer to the AFIO module if it necessary for remapping.
+     */
+    HalAfioDevice (size_t _id, bool _remapped, Afio * _afio) :
+        HalDevice { _id },
+        afio { _afio },
+        remapped { _remapped }
+    {
+        // empty
+    }
+
+    /**
+     * @brief Method that performs the pin re-mapping for this device, if necessary.
+     *
+     * If the implementing device can use alternative pins, this method shall be
+     * implemented in a derived class. The implementation of this method may depend
+     * on the STM32 MCU family.
+     */
+    virtual void remapPins (GPIO_InitTypeDef &) const
+    {
+        // default implementation is empty
+    }
+
+    /**
+     * @brief Method that performs the pin un-mapping for this device, if necessary.
+     *
+     * If the implementing device uses alternative pins, and these pins shall be set
+     * to the default (un-remapped) state, this method shall be  implemented in a derived
+     * class. The implementation of this method may depend on the STM32 MCU family.
+     */
+    virtual void unremapPins (GPIO_InitTypeDef &) const
+    {
+        // default implementation is empty
+    }
+
+    /**
+     * @brief Getter for the optional AFIO module.
+     */
+    inline const Afio * getAfio () const
+    {
+        return afio;
+    }
+
+protected:
+
+    /**
+     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
+     */
+    Afio * afio;
+
+    /**
+     * @brief Peripheral to be re-mapped to the selected pins.
+     */
+    bool remapped;
 };
 
 /**

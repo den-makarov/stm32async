@@ -32,7 +32,7 @@ namespace HardwareLayout
 /**
  * @brief Configuration of Serial Peripheral Interface (I2S instance).
  */
-class I2S : public HalDevice
+class I2S : public HalAfioDevice
 {
     DECLARE_INSTANCE(SPI_TypeDef)
 
@@ -42,11 +42,6 @@ public:
      * @brief Pins from corresponding ports
      */
     Pins pins;
-
-    /**
-     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
-     */
-    Afio * afio;
 
     /**
      * @brief TX DMA channel
@@ -65,10 +60,9 @@ public:
                   Port & _port, uint32_t _pins,
                   bool _remapped, Afio * _afio,
                   DmaStream && _txDma, DmaStream && _rxDma) :
-        HalDevice { _id, _remapped },
+        HalAfioDevice { _id, _remapped, _afio },
         instance { _instance },
         pins { _port, _pins },
-        afio { _afio },
         txDma { std::move(_txDma) },
         rxDma { std::move(_rxDma) }
     {

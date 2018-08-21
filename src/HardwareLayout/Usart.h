@@ -39,7 +39,7 @@ namespace HardwareLayout
  * Since USART is able to use alternative pins, the derived class shall implement virtual
  * remapPins() and unremapPins() methods from the base class.
  */
-class Usart : public HalDevice
+class Usart : public HalAfioDevice
 {
     DECLARE_INSTANCE(USART_TypeDef)
 
@@ -54,11 +54,6 @@ public:
      * @brief RX pin
      */
     Pins rxPin;
-
-    /**
-     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
-     */
-    Afio * afio;
 
     /**
      * @brief USART global interrupt configuration
@@ -95,11 +90,10 @@ public:
                     bool _remapped, Afio * _afio,
                     Interrupt && _txRxIrq,
                     DmaStream && _txDma, DmaStream && _rxDma) :
-        HalDevice { _id, _remapped },
+        HalAfioDevice { _id, _remapped, _afio },
         instance { _instance },
         txPin { _txPort, _txPin },
         rxPin { _rxPort, _rxPin },
-        afio { _afio },
         txRxIrq { std::move(_txRxIrq) },
         txDma { std::move(_txDma) },
         rxDma { std::move(_rxDma) }

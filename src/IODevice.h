@@ -126,9 +126,9 @@ public:
      */
     void enablePorts ()
     {
-        if (device.afio != NULL)
+        if (device.getAfio() != NULL)
         {
-            device.afio->enableClock();
+            device.getAfio()->enableClock();
         }
         for (auto & p : ports)
         {
@@ -153,9 +153,9 @@ public:
                 device.unremapPins(p.getParameters());
             }
         }
-        if (device.afio != NULL)
+        if (device.getAfio() != NULL)
         {
-            device.afio->disableClock();
+            device.getAfio()->disableClock();
         }
     }
 

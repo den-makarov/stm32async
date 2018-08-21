@@ -32,7 +32,7 @@ namespace HardwareLayout
 /**
  * @brief Parameters of Digital-to-Analog converter.
  */
-class Dac : public HalDevice
+class Dac : public HalAfioDevice
 {
     DECLARE_INSTANCE(DAC_TypeDef)
 
@@ -43,16 +43,10 @@ public:
      */
     Pins pin;
 
-    /**
-     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
-     */
-    Afio * afio;
-
     explicit Dac (size_t _id, DAC_TypeDef *_instance, Port & _port, uint32_t _pin) :
-        HalDevice { _id, false },
+        HalAfioDevice { _id, false, NULL },
         instance { _instance },
-        pin { _port, _pin },
-        afio { NULL }
+        pin { _port, _pin }
     {
         // empty
     }

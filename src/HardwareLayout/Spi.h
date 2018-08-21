@@ -32,7 +32,7 @@ namespace HardwareLayout
 /**
  * @brief Configuration of Serial Peripheral Interface.
  */
-class Spi : public HalDevice
+class Spi : public HalAfioDevice
 {
     DECLARE_INSTANCE(SPI_TypeDef)
 
@@ -52,11 +52,6 @@ public:
      * @brief Master In Slave Out (MISO, data output from slave) pin
      */
     Pins misoPin;
-
-    /**
-     * @brief AFIO module. Set to NULL in case it's not required (for example, on STM32F4 MCU)
-     */
-    Afio * afio;
 
     /**
      * @brief USART global interrupt configuration
@@ -97,12 +92,11 @@ public:
                   bool _remapped, Afio * _afio,
                   Interrupt && _txRxIrq,
                   DmaStream && _txDma, DmaStream && _rxDma) :
-        HalDevice { _id, _remapped },
+        HalAfioDevice { _id, _remapped, _afio },
         instance { _instance },
         sclkPin { _sclkPort, _sclkPin },
         mosiPin { _mosiPort, _mosiPin },
         misoPin { _misoPort, _misoPin },
-        afio { _afio },
         txRxIrq { std::move(_txRxIrq) },
         txDma { std::move(_txDma) },
         rxDma { std::move(_rxDma) }
