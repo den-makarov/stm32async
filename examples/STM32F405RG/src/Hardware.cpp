@@ -190,7 +190,7 @@ Hardware::Hardware ():
                                     HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 7, 0 } }
     },
     adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
-    dac1 { portA, GPIO_PIN_0 },
+    dac1 { portA, GPIO_PIN_4 },
     dac { dac1, DAC_CHANNEL_1 },
 
     // Timers

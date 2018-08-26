@@ -22,6 +22,7 @@
 
 #include <functional>
 #include <cmath>
+#include <ctime>
 
 #define USART_DEBUG_MODULE "APP: "
 
@@ -119,8 +120,6 @@ void MyApplication::run (uint32_t frequency)
             ntpMessage.decodeResponce(messageBuffer);
             ntpRequestActive = false;
         }
-
-        dac.setValue(1200 + (1400 * heartbeatTimer.getValue()/5000));
     }
 
     stop ();
@@ -135,6 +134,14 @@ void MyApplication::handleSeconds ()
     spi.waitForRelease();
     ssd.putString(shortTime, NULL, 4);
     scheduleEvent(MyApplication::EventType::UPDATE_DISPLAY);
+
+    {
+        time_t total_secs = Rtc::getInstance()->getTimeSec();
+        struct ::tm * now = ::gmtime(&total_secs);
+        float v0 = 2730;
+        float v1 = 3080;
+        dac.setValue(v0 + ((v1 - v0) * (float)now->tm_sec/60.0));
+    }
 }
 
 
