@@ -43,7 +43,7 @@ public:
      */
     Interrupt timerIrq;
 
-    explicit Timer (size_t _id, TIM_TypeDef * _instance, Interrupt && _timerIrq) :
+    Timer (size_t _id, TIM_TypeDef * _instance, Interrupt && _timerIrq) :
         HalDevice { _id },
         instance { _instance },
         timerIrq { std::move(_timerIrq) }

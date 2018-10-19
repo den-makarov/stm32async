@@ -41,12 +41,6 @@ MyApplication::MyApplication () :
 }
 
 
-MyApplication::~MyApplication ()
-{
-    // empty
-}
-
-
 void MyApplication::run (uint32_t frequency)
 {
     initClock(frequency);

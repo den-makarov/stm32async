@@ -71,9 +71,9 @@ public:
         ERROR   = 5
     };
 
-    static const uint32_t ESP_BAUDRATE = 115200;
-    static const time_ms ESP_TIMEOUT = 30000L;
-    static const uint32_t BUFFER_SIZE = 1024;
+    static constexpr uint32_t ESP_BAUDRATE = 115200;
+    static constexpr time_ms ESP_TIMEOUT = 30000L;
+    static constexpr uint32_t BUFFER_SIZE = 1024;
 
 public:
     
@@ -363,7 +363,7 @@ public:
 
 private:
 
-    static const size_t STATE_NUMBER = 17;
+    static constexpr size_t STATE_NUMBER = 17;
 
     class AsyncState
     {
@@ -421,7 +421,7 @@ class NtpMessage
 {
 public:
 
-    static const size_t NTP_PACKET_SIZE = 48;  // NTP time is in the first 48 bytes of message
+    static constexpr size_t NTP_PACKET_SIZE = 48;  // NTP time is in the first 48 bytes of message
     struct NtpPacket {
             uint8_t flags;
             uint8_t stratum;
@@ -442,10 +442,7 @@ public:
 
     struct NtpPacket ntpPacket;
 
-    NtpMessage ()
-    {
-        // empty
-    }
+    NtpMessage () = default;
 
     const char * getRequest ();
     void decodeResponce (const char * responce);

@@ -80,8 +80,8 @@ class Config
 {
 public:
     
-    static const char SEPARATOR = '=';
-    static const size_t MAX_LINE_LENGTH = 32;
+    static constexpr char SEPARATOR = '=';
+    static constexpr size_t MAX_LINE_LENGTH = 32;
 
     Config (const char * _fileName);
     bool readConfiguration ();

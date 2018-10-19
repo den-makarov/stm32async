@@ -39,7 +39,7 @@ namespace HardwareLayout
 class Spi1 : public HardwareLayout::Spi
 {
 public:
-    explicit Spi1 (HardwareLayout::Port & _sclkPort, uint32_t _sclkPin,
+    Spi1 (HardwareLayout::Port & _sclkPort, uint32_t _sclkPin,
                    HardwareLayout::Port & _mosiPort, uint32_t _mosiPin,
                    HardwareLayout::Port & _misoPort, uint32_t _misoPin, bool _remapped,
                    HardwareLayout::Afio * _afio, HardwareLayout::Interrupt && txRxIrq,

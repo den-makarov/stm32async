@@ -56,7 +56,7 @@ public:
     /**
      * @brief Standard initialization constructor.
      */
-    explicit I2S (size_t _id,  SPI_TypeDef *_instance,
+    I2S (size_t _id,  SPI_TypeDef *_instance,
                   Port & _port, uint32_t _pins,
                   bool _remapped, Afio * _afio,
                   DmaStream && _txDma, DmaStream && _rxDma) :

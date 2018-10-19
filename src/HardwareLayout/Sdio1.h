@@ -38,7 +38,7 @@ namespace HardwareLayout
 class Sdio1 : public HardwareLayout::Sdio
 {
 public:
-    explicit Sdio1 (HardwareLayout::Port & port1, uint32_t port1pins,
+    Sdio1 (HardwareLayout::Port & port1, uint32_t port1pins,
                     HardwareLayout::Port & port2, uint32_t port2pins,
                     HardwareLayout::Interrupt && txRxIrq,
                     HardwareLayout::DmaStream && txDma, HardwareLayout::DmaStream && rxDma) :

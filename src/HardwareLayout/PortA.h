@@ -37,7 +37,7 @@ namespace HardwareLayout
 class PortA : public HardwareLayout::Port
 {
 public:
-    explicit PortA () :
+    PortA () :
         Port { 0, GPIOA }
     {
         // empty

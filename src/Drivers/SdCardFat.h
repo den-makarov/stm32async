@@ -40,8 +40,8 @@ class SdCardFat
 
 public:
 
-    static const uint32_t SDHC_BLOCK_SIZE = 512;
-    static const size_t FAT_FS_OBJECT_LENGHT = 64;
+    static constexpr uint32_t SDHC_BLOCK_SIZE = 512;
+    static constexpr size_t FAT_FS_OBJECT_LENGHT = 64;
 
     typedef struct
     {

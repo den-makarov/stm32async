@@ -85,7 +85,7 @@ public:
      * @param _txDma link to the transmitter DMA stream.
      * @param _rxDma to the receiver DMA stream.
      */
-    explicit Spi (size_t _id,  SPI_TypeDef *_instance,
+    Spi (size_t _id,  SPI_TypeDef *_instance,
                   Port & _sclkPort, uint32_t _sclkPin,
                   Port & _mosiPort, uint32_t _mosiPin,
                   Port & _misoPort, uint32_t _misoPin,

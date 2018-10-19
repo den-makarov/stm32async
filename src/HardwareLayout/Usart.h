@@ -85,7 +85,7 @@ public:
      * @param _txDma link to the transmitter DMA stream.
      * @param _rxDma to the receiver DMA stream.
      */
-    explicit Usart (size_t _id,  USART_TypeDef *_instance,
+    Usart (size_t _id,  USART_TypeDef *_instance,
                     Port & _txPort, uint32_t _txPin, Port & _rxPort, uint32_t _rxPin,
                     bool _remapped, Afio * _afio,
                     Interrupt && _txRxIrq,

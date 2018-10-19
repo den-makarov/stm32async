@@ -36,7 +36,7 @@ namespace HardwareLayout
 class Dac1 : public HardwareLayout::Dac
 {
 public:
-    explicit Dac1 (HardwareLayout::Port & _Port, uint32_t _Pin) :
+    Dac1 (HardwareLayout::Port & _Port, uint32_t _Pin) :
         Dac { 1, DAC1, _Port, _Pin }
     {
         // empty

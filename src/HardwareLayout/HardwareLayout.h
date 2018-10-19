@@ -54,7 +54,7 @@ namespace HardwareLayout
 /**
  * @brief Helper class used to configure interrupt parameters.
  */
-class Interrupt
+class Interrupt final
 {
 public:
 
@@ -65,28 +65,10 @@ public:
      * @param _prio The preemption priority for the IRQn channel. This parameter can be a value between 0 and 15.
      * @param _subPrio The sub-priority level for the IRQ channel. This parameter can be a value between 0 and 15.
      */
-    Interrupt (IRQn_Type _irqn, uint32_t _prio, uint32_t _subPrio) :
+    Interrupt (IRQn_Type _irqn, uint32_t _prio, uint32_t _subPrio = 0) :
         irqn { _irqn },
         prio { _prio },
         subPrio { _subPrio }
-    {
-        // empty
-    }
-
-    /**
-     * @brief Move constructor.
-     *
-     * This constructor can be used in order to initialize some device that needs an
-     * interrupt using anonymous class:
-     *
-     *    device { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } }
-     *
-     * @param _irq source object to be moved into this object.
-     */
-    Interrupt (Interrupt && _irq) :
-        irqn { _irq.irqn },
-        prio { _irq.prio },
-        subPrio { _irq.subPrio }
     {
         // empty
     }
@@ -152,10 +134,7 @@ public:
     /**
      * @brief Standard destructor.
      */
-    virtual ~HalDevice ()
-    {
-        // empty
-    }
+    virtual ~HalDevice () = default;
 
     /**
      * @brief Returns device ID.
@@ -338,7 +317,7 @@ public:
  * This class is aimed to establish a link between DMA module, DMA stream,
  * and DMA channel.
  */
-class DmaStream
+class DmaStream final
 {
 public:
 
@@ -378,30 +357,6 @@ public:
     {
         // empty
     }
-
-    /**
-     * @brief Move constructor.
-     *
-     * This constructor can be used in order to initialize some device that needs a
-     * DMA stream using anonymous class:
-     *
-     *    usart6 { portC, GPIO_PIN_6, portC, GPIO_PIN_7,
-     *           HardwareLayout::Interrupt { USART6_IRQn, 1, 0 },
-     *           HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_5,
-     *                                       HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 2, 0 } },
-     *           HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_5,
-     *                                       HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 2, 0 } } }
-     *
-     * @param _dmaStream source object to be moved into this object.
-     */
-    DmaStream (DmaStream && _dmaStream) :
-        dma { _dmaStream.dma },
-        stream { _dmaStream.stream },
-        channel { _dmaStream.channel },
-        dmaIrq { std::move(_dmaStream.dmaIrq) }
-    {
-        // empty
-    }
 };
 
 /**
@@ -419,7 +374,7 @@ public:
      * @param _id a numerical device ID used for logging purpose.
      * @param _instance pointer to the HAL GPIO definition structure
      */
-    explicit Port (size_t _id, GPIO_TypeDef * _instance) :
+    Port (size_t _id, GPIO_TypeDef * _instance) :
         HalSharedDevice { _id },
         instance { _instance }
     {
@@ -447,7 +402,7 @@ public:
      * @param _id a numerical device ID used for logging purpose.
      * @param _instance pointer to the HAL AFIO definition structure
      */
-    explicit Afio (size_t _id, AFIO_TypeDef * _instance) :
+    Afio (size_t _id, AFIO_TypeDef * _instance) :
         HalSharedDevice { _id },
         instance { _instance }
     {
@@ -543,7 +498,7 @@ public:
      * @param _port a link to the GPIO port.
      * @param _pins pin indices
      */
-    explicit Pins (Port & _port, uint32_t _pins) :
+    Pins (Port & _port, uint32_t _pins) :
         port { _port },
         pins { _pins }
     {

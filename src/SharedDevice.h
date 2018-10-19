@@ -57,10 +57,7 @@ public:
     {
     public:
 
-        virtual ~DeviceClient ()
-        {
-            // empty
-        }
+        virtual ~DeviceClient () = default;
 
         virtual bool onTransmissionFinished (State state) =0;
     };

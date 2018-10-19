@@ -36,7 +36,7 @@ namespace HardwareLayout
 class I2S2 : public HardwareLayout::I2S
 {
 public:
-    explicit I2S2 (HardwareLayout::Port & _port, uint32_t _pins,
+    I2S2 (HardwareLayout::Port & _port, uint32_t _pins,
                    bool _remapped, HardwareLayout::Afio * _afio,
                    HardwareLayout::DmaStream && _txDma, HardwareLayout::DmaStream && _rxDma) :
         I2S { 2, SPI2, _port, _pins, _remapped, _afio, std::move(_txDma), std::move(_rxDma) }

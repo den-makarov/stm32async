@@ -38,7 +38,7 @@ namespace HardwareLayout
 class AfioModule : public HardwareLayout::Afio
 {
 public:
-    explicit AfioModule () :
+    AfioModule () :
         Afio { 0, AFIO }
     {
         // empty

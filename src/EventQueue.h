@@ -30,14 +30,12 @@ template <typename T, std::size_t N> class EventQueue
 private:
 
     std::array<T, N + 1> buffer;
-    size_t head, tail;
+    size_t head = 0;
+    size_t tail = 0;
 
 public:
 
-    explicit EventQueue() : head{0}, tail{0}
-    {
-        //empty
-    }
+    EventQueue() = default;
 
     void put (T item)
     {

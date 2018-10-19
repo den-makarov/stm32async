@@ -39,7 +39,7 @@ namespace HardwareLayout
 class Adc1 : public HardwareLayout::Adc
 {
 public:
-    explicit Adc1 (HardwareLayout::Port & _Port, uint32_t _Pin,
+    Adc1 (HardwareLayout::Port & _Port, uint32_t _Pin,
                    bool _remapped, HardwareLayout::Afio * _afio,
                    HardwareLayout::DmaStream && rxDma) :
         Adc { 1, ADC1, _Port, _Pin, _remapped, _afio, std::move(rxDma) }

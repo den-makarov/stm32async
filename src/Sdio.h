@@ -37,7 +37,7 @@ class Sdio : public IODevice<HardwareLayout::Sdio, SD_HandleTypeDef, 2>, public 
 {
 public:
 
-    static const uint32_t TIMEOUT = 10000;
+    static constexpr uint32_t TIMEOUT = 10000;
 
     /**
      * @brief Default constructor.

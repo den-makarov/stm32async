@@ -37,7 +37,7 @@ namespace HardwareLayout
 class PortD : public HardwareLayout::Port
 {
 public:
-    explicit PortD () :
+    PortD () :
         Port { 4, GPIOD }
     {
         // empty

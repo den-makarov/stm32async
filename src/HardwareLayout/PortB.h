@@ -37,7 +37,7 @@ namespace HardwareLayout
 class PortB : public HardwareLayout::Port
 {
 public:
-    explicit PortB () :
+    PortB () :
         Port { 1, GPIOB }
     {
         // empty

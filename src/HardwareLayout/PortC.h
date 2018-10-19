@@ -37,7 +37,7 @@ namespace HardwareLayout
 class PortC : public HardwareLayout::Port
 {
 public:
-    explicit PortC () :
+    PortC () :
         Port { 2, GPIOC }
     {
         // empty

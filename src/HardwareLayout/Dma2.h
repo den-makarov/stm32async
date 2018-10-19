@@ -37,7 +37,7 @@ namespace HardwareLayout
 class Dma2 : public HardwareLayout::Dma
 {
 public:
-    explicit Dma2 () :
+    Dma2 () :
         Dma { 2, DMA2 }
     {
         // empty

@@ -48,7 +48,7 @@ public:
      */
     DmaStream rxDma;
 
-    explicit Adc (size_t _id, ADC_TypeDef *_instance, Port & _port, uint32_t _pin, bool _remapped,
+    Adc (size_t _id, ADC_TypeDef *_instance, Port & _port, uint32_t _pin, bool _remapped,
                   Afio * _afio, DmaStream && _rxDma) :
         HalAfioDevice { _id, _remapped, _afio },
         instance { _instance },

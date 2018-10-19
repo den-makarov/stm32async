@@ -58,7 +58,7 @@ public:
      */
     DmaStream rxDma;
 
-    explicit Sdio (size_t _id,  SD_TypeDef *_instance,
+    Sdio (size_t _id,  SD_TypeDef *_instance,
                    Port & _port1, uint32_t _port1pins,
                    Port & _port2, uint32_t _port2pins,
                    bool _remapped, Afio * _afio,

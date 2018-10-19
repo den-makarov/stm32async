@@ -49,7 +49,7 @@ public:
         SegmentsMask ();
     };
 
-    static const int SEG_NUMBER = 5;
+    static constexpr int SEG_NUMBER = 5;
 
     Ssd_74XX595 (AsyncSpi & _spi, const HardwareLayout::Port & _csPort, uint32_t _csPin, bool _inverse);
 

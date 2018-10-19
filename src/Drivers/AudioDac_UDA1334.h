@@ -32,10 +32,10 @@ class AudioDac_UDA1334 : public SharedDevice::DeviceClient
 {
 public:
     
-    static const uint32_t BLOCK_SIZE = 2048;
-    static const uint32_t BLOCK_SIZE2 = BLOCK_SIZE / 2;
-    static const uint32_t MSB_OFFSET = 0xFFFF / 2 + 1;
-    static const uint32_t START_DELAY = 50;
+    static constexpr uint32_t BLOCK_SIZE = 2048;
+    static constexpr uint32_t BLOCK_SIZE2 = BLOCK_SIZE / 2;
+    static constexpr uint32_t MSB_OFFSET = 0xFFFF / 2 + 1;
+    static constexpr uint32_t START_DELAY = 50;
 
     enum class SourceType
     {

@@ -37,8 +37,8 @@ class BaseAdc : public IODevice<HardwareLayout::Adc, ADC_HandleTypeDef, 1>
 {
 public:
 
-    static const uint32_t INVALID_VALUE = __UINT32_MAX__;
-    static const uint32_t TIMEOUT = 10000;
+    static constexpr uint32_t INVALID_VALUE = __UINT32_MAX__;
+    static constexpr uint32_t TIMEOUT = 10000;
 
     /**
      * @brief Default constructor.
@@ -114,7 +114,7 @@ class AsyncAdc : public BaseAdc, public SharedDevice
 {
 public:
 
-    static const size_t ADC_BUFFER_LENGTH = 1000;
+    static constexpr size_t ADC_BUFFER_LENGTH = 1000;
 
     AsyncAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32_t _samplingTime);
 

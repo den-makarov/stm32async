@@ -74,7 +74,7 @@ public:
     static AsStringClass<Status, size, strings> asString;
 };
 
-static const uint16_t UNUSED_PIN = 0;
+static constexpr uint16_t UNUSED_PIN = 0;
 
 /**
  * @brief A base class that represents IO device working on some IOPort.
@@ -89,7 +89,7 @@ public:
      * @param _device some device from namespace HardwareLayout.
      * @param _ports array containing the associated ports.
      */
-    explicit IODevice (const DEVICE & _device, std::array<IOPort, PORTS> && _ports) :
+    IODevice (const DEVICE & _device, std::array<IOPort, PORTS> && _ports) :
         device { _device },
         halStatus { HAL_ERROR },
         ports { std::move(_ports) }

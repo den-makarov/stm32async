@@ -123,8 +123,8 @@ void ClockParameters::searchBestParameters (uint32_t targetFreq)
  ************************************************************************/
 Hardware::Hardware ():
     // System, RTC and MCO
-    sysClock { HardwareLayout::Interrupt { SysTick_IRQn, 0, 0 } },
-    rtc { HardwareLayout::Interrupt { RTC_WKUP_IRQn, 15, 0 } },
+    sysClock { HardwareLayout::Interrupt { SysTick_IRQn, 0 } },
+    rtc { HardwareLayout::Interrupt { RTC_WKUP_IRQn, 15 } },
     mco { portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5 },
 
     // LEDs
@@ -147,7 +147,7 @@ Hardware::Hardware ():
     // SD card
     sdio1 { portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
             portD, /*SDIO_CMD*/GPIO_PIN_2,
-            HardwareLayout::Interrupt { SDIO_IRQn, 2, 0 },
+            HardwareLayout::Interrupt { SDIO_IRQn, 2 },
             HardwareLayout::DmaStream { &dma2, DMA2_Stream6, DMA_CHANNEL_4,
                                         HardwareLayout::Interrupt { DMA2_Stream6_IRQn, 3, 0 } },
             HardwareLayout::DmaStream { &dma2, DMA2_Stream3, DMA_CHANNEL_4,
@@ -172,9 +172,9 @@ Hardware::Hardware ():
     i2s2 { portB, /*I2S2_CK*/GPIO_PIN_10 | /*I2S2_WS*/GPIO_PIN_12 | /*I2S2_SD*/GPIO_PIN_15,
           /*remapped=*/ true, NULL,
           HardwareLayout::DmaStream { &dma1, DMA1_Stream4, DMA_CHANNEL_0,
-                                      HardwareLayout::Interrupt { DMA1_Stream4_IRQn, 6, 0 } },
+                                      HardwareLayout::Interrupt { DMA1_Stream4_IRQn, 6 } },
           HardwareLayout::DmaStream { &dma1, DMA1_Stream3, DMA_CHANNEL_0,
-                                      HardwareLayout::Interrupt { DMA1_Stream3_IRQn, 6, 0 } }
+                                      HardwareLayout::Interrupt { DMA1_Stream3_IRQn, 6 } }
     },
     i2s { i2s2 },
     audioDac { i2s,
@@ -187,7 +187,7 @@ Hardware::Hardware ():
     // ADC/DAC
     adc1 { portA, GPIO_PIN_0, /*remapped=*/ false, NULL,
         HardwareLayout::DmaStream { &dma2, DMA2_Stream0, DMA_CHANNEL_0,
-                                    HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 7, 0 } }
+                                    HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 7 } }
     },
     adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
     dac1 { portA, GPIO_PIN_4 },
@@ -201,9 +201,9 @@ Hardware::Hardware ():
     usart1 { portB, GPIO_PIN_6, portB, UNUSED_PIN, /*remapped=*/ true, NULL,
              HardwareLayout::Interrupt { USART1_IRQn, 13, 0 },
              HardwareLayout::DmaStream { &dma2, DMA2_Stream7, DMA_CHANNEL_4,
-                                         HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 14, 0 } },
+                                         HardwareLayout::Interrupt { DMA2_Stream7_IRQn, 14 } },
              HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_4,
-                                         HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 14, 0 } }
+                                         HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 14 } }
     },
     usartLogger { usart1, 115200 },
 

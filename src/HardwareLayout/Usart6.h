@@ -39,7 +39,7 @@ namespace HardwareLayout
 class Usart6 : public HardwareLayout::Usart
 {
 public:
-    explicit Usart6 (HardwareLayout::Port & txPort, uint32_t txPin, HardwareLayout::Port & rxPort,
+    Usart6 (HardwareLayout::Port & txPort, uint32_t txPin, HardwareLayout::Port & rxPort,
                      uint32_t rxPin, bool _remapped, HardwareLayout::Afio * _afio,
                      HardwareLayout::Interrupt && txRxIrq, HardwareLayout::DmaStream && txDma,
                      HardwareLayout::DmaStream && rxDma) :

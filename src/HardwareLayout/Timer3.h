@@ -38,7 +38,7 @@ namespace HardwareLayout
 class Timer3 : public HardwareLayout::Timer
 {
 public:
-    explicit Timer3 (Interrupt && _timerIrq) :
+    Timer3 (Interrupt && _timerIrq) :
         Timer { 3, TIM3, std::move(_timerIrq) }
     {
         // empty

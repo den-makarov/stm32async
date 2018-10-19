@@ -40,7 +40,7 @@ public:
 
     MyApplication ();
 
-    virtual ~MyApplication ();
+    virtual ~MyApplication () = default;
 
     void run (uint32_t frequency);
 

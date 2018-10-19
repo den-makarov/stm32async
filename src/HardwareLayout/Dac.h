@@ -43,7 +43,7 @@ public:
      */
     Pins pin;
 
-    explicit Dac (size_t _id, DAC_TypeDef *_instance, Port & _port, uint32_t _pin) :
+    Dac (size_t _id, DAC_TypeDef *_instance, Port & _port, uint32_t _pin) :
         HalAfioDevice { _id, false, NULL },
         instance { _instance },
         pin { _port, _pin }

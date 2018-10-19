@@ -37,7 +37,7 @@ namespace HardwareLayout
 class PortH : public HardwareLayout::Port
 {
 public:
-    explicit PortH () :
+    PortH () :
         Port { 8, GPIOH }
     {
         // empty

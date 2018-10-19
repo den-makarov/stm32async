@@ -36,7 +36,7 @@ class WavStreamer final
 {
 public:
     
-    static const uint32_t BLOCK_SIZE = 2048;
+    static constexpr uint32_t BLOCK_SIZE = 2048;
 
     class EventHandler
     {
