@@ -24,7 +24,7 @@
 #include "Hardware.h"
 #include "Config.h"
 
-class MyApplication : public Hardware, public Drivers::WavStreamer::EventHandler, public Drivers::Button::EventHandler
+class MyApplication : public Hardware, public Drivers::WavStreamer::EventHandler
 {
 public:
 
@@ -53,8 +53,6 @@ public:
     virtual bool onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s);
 
     virtual void onFinishSteaming ();
-
-    virtual void onButtonPressed (const Drivers::Button * b, uint32_t numOccured);
 
     void handleNtpRequest ();
 

@@ -37,7 +37,6 @@ MyApplication::MyApplication () :
     temperature { 0.0 }
 {
     streamer.setHandler(this);
-    stopButton.setHandler(this);
 }
 
 
@@ -80,7 +79,14 @@ void MyApplication::run (uint32_t frequency)
     ntpRequestActive = true;
     while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF || streamer.isActive())
     {
-        stopButton.periodic();
+        stopButton.periodic([&](uint32_t /*numOccured*/)
+        {
+            if (streamer.isActive())
+            {
+                streamer.stop();
+            }
+        });
+
         streamer.periodic();
         espSender.periodic();
 
@@ -91,15 +97,15 @@ void MyApplication::run (uint32_t frequency)
             case EventType::SECOND_INTERRUPT:
                 handleSeconds();
                 handleNtpRequest();
-                adc.read();
+                adcTemperature.read();
                 break;
 
             case EventType::UPDATE_DISPLAY:
                 updateDisplay();
                 break;
 
-            case EventType::ADC1_READY:
-                temperature = lmt86Temperature(adc.getMedianMV());
+            case EventType::ADCTEMP_READY:
+                temperature = lmt86Temperature(adcTemperature.getMedianMV());
                 break;
 
             case EventType::HEARTBEAT_INTERRUPT:
@@ -170,18 +176,6 @@ void MyApplication::onFinishSteaming ()
 }
 
 
-void MyApplication::onButtonPressed (const Drivers::Button * b, uint32_t /*numOccured*/)
-{
-    if (b == &stopButton)
-    {
-        if (streamer.isActive())
-        {
-            streamer.stop();
-        }
-    }
-}
-
-
 void MyApplication::handleNtpRequest ()
 {
     if (ntpRequestActive && espSender.isOutputMessageSent())
@@ -195,3 +189,4 @@ float MyApplication::lmt86Temperature (int mv)
 {
     return 30.0 + (10.888 - ::sqrt(10.888*10.888 + 4.0*0.00347*(1777.3 - (float)mv)))/(-2.0*0.00347) - 1;
 }
+

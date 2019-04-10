@@ -135,7 +135,7 @@ public:
 
     // ADC/DAC
     HardwareLayout::Adc1 adc1;
-    AsyncAdc adc;
+    AsyncAdc adcTemperature;
     HardwareLayout::Dac1 dac1;
     BaseDac dac;
 
@@ -189,9 +189,9 @@ public:
         return i2s;
     }
 
-    inline AsyncAdc & getAdc ()
+    inline AsyncAdc & getAdcTemp ()
     {
-        return adc;
+        return adcTemperature;
     }
 
     inline InterruptTimer & getHeartbeatTimer ()

@@ -189,7 +189,7 @@ Hardware::Hardware ():
         HardwareLayout::DmaStream { &dma2, DMA2_Stream0, DMA_CHANNEL_0,
                                     HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 7 } }
     },
-    adc { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
+    adcTemperature { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
     dac1 { portA, GPIO_PIN_4 },
     dac { dac1, DAC_CHANNEL_1 },
 
@@ -300,13 +300,13 @@ bool Hardware::start()
     ssd.start();
 
     // ADC/DAC
-    devStatus = adc.start();
-    USART_DEBUG("ADC" << adc.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << adc.getHalStatus() << ")" << UsartLogger::ENDL);
+    devStatus = adcTemperature.start();
+    USART_DEBUG("ADC" << adcTemperature.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << adcTemperature.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
     {
         return false;
     }
-    adc.setVRef(3.25);
+    adcTemperature.setVRef(3.25);
 
     devStatus = dac.start();
     USART_DEBUG("DAC" << dac.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << dac.getHalStatus() << ")" << UsartLogger::ENDL);
@@ -350,7 +350,7 @@ void Hardware::stop ()
     pinSdDetect.stop();
     heartbeatTimer.stopCounter();
     dac.stop();
-    adc.stop();
+    adcTemperature.stop();
     ssd.stop();
     lcd.stop();
     spi.stop();
@@ -558,14 +558,14 @@ extern "C"
     // ADC
     void DMA2_Stream0_IRQHandler()
     {
-        appPtr->getAdc().processDmaRxInterrupt();
+        appPtr->getAdcTemp().processDmaRxInterrupt();
     }
 
     void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef * /*channel*/)
     {
-        if (appPtr->getAdc().processConvCpltCallback())
+        if (appPtr->getAdcTemp().processConvCpltCallback())
         {
-            appPtr->scheduleEvent(MyApplication::EventType::ADC1_READY);
+            appPtr->scheduleEvent(MyApplication::EventType::ADCTEMP_READY);
         }
     }
 
