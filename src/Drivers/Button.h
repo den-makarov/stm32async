@@ -21,6 +21,7 @@
 #define DRIVERS_BUTTON_H_
 
 #include "../IOPort.h"
+#include "../Rtc.h"
 
 namespace Stm32async
 {
@@ -34,21 +35,10 @@ class Button : public IOPort
 {
 public:
 
-    class EventHandler
-    {
-    public:
-
-        virtual void onButtonPressed (const Button *, uint32_t numOccured) =0;
-    };
-
     Button (const HardwareLayout::Port & _port, uint32_t _pin, uint32_t _pull, duration_ms _pressDelay = 50, duration_ms _pressDuration = 300);
 
-    inline void setHandler (EventHandler * _handler)
-    {
-        handler = _handler;
-    }
-
-    void periodic ();
+    template <typename HANDLER>
+    void periodic (HANDLER h);
 
 private:
 
@@ -56,8 +46,47 @@ private:
     time_ms pressTime;
     bool currentState;
     uint32_t numOccured;
-    EventHandler * handler;
 };
+
+template <typename HANDLER>
+void Button::periodic (HANDLER h)
+{
+    bool newState = (parameters.Pull == GPIO_PULLUP) ? !getBit() : getBit();
+    time_ms currentTime = Rtc::getInstance()->getUpTimeMillisec();
+    if (currentState == newState)
+    {
+        // state is not changed: check for periodical press event
+        if (currentState && pressTime != INFINITY_TIME)
+        {
+            duration_ms d = currentTime - pressTime;
+            if (d >= pressDuration)
+            {
+                h(numOccured);
+                pressTime = currentTime;
+                ++numOccured;
+            }
+        }
+    }
+    else if (!currentState && newState)
+    {
+        pressTime = currentTime;
+        numOccured = 0;
+    }
+    else
+    {
+        duration_ms d = currentTime - pressTime;
+        if (d < pressDelay)
+        {
+            // nothing to do
+        }
+        else if (numOccured == 0)
+        {
+            h(numOccured);
+        }
+        pressTime = INFINITY_TIME;
+    }
+    currentState = newState;
+}
 
 } // end of namespace Drivers
 } // end of namespace Stm32async

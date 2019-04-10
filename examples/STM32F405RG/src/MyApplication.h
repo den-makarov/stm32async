@@ -31,7 +31,7 @@ public:
     enum class EventType
     {
         SECOND_INTERRUPT = 0,
-        ADC1_READY = 1,
+        ADCTEMP_READY = 1,
         UPDATE_DISPLAY = 2,
         HEARTBEAT_INTERRUPT = 3
     };

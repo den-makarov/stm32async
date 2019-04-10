@@ -19,7 +19,6 @@
  ******************************************************************************/
 
 #include "Button.h"
-#include "../Rtc.h"
 
 using namespace Stm32async::Drivers;
 
@@ -34,52 +33,8 @@ Button::Button (const HardwareLayout::Port & _port, uint32_t _pin, uint32_t _pul
     pressDuration { _pressDuration },
     pressTime { INFINITY_TIME },
     currentState { false },
-    numOccured { 0 },
-    handler { NULL }
+    numOccured { 0 }
 {
     // empty
 }
 
-void Button::periodic ()
-{
-    if (handler == NULL)
-    {
-        return;
-    }
-
-    bool newState = (parameters.Pull == GPIO_PULLUP) ? !getBit() : getBit();
-    time_ms currentTime = Rtc::getInstance()->getUpTimeMillisec();
-    if (currentState == newState)
-    {
-        // state is not changed: check for periodical press event
-        if (currentState && pressTime != INFINITY_TIME)
-        {
-            duration_ms d = currentTime - pressTime;
-            if (d >= pressDuration)
-            {
-                handler->onButtonPressed(this, numOccured);
-                pressTime = currentTime;
-                ++numOccured;
-            }
-        }
-    }
-    else if (!currentState && newState)
-    {
-        pressTime = currentTime;
-        numOccured = 0;
-    }
-    else
-    {
-        duration_ms d = currentTime - pressTime;
-        if (d < pressDelay)
-        {
-            // nothing to do
-        }
-        else if (numOccured == 0)
-        {
-            handler->onButtonPressed(this, numOccured);
-        }
-        pressTime = INFINITY_TIME;
-    }
-    currentState = newState;
-}
