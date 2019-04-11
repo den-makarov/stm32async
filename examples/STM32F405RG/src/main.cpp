@@ -20,6 +20,9 @@
 
 #include "MyApplication.h"
 
+#define SINGLE_FREQUENCE 96
+
+
 MyApplication * appPtr = NULL;
 
 int main (void)
@@ -39,15 +42,19 @@ int main (void)
     MyApplication app;
     appPtr = &app;
 
+#ifdef SINGLE_FREQUENCE
+    app.run(SINGLE_FREQUENCE, false);
+#else
     std::array<uint32_t, 10> freqs = { 40, 42, 48, 54, 56, 60, 64, 72, 84, 96 };
     uint32_t runId = 0;
     while (true)
     {
-        app.run(freqs[freqs.size() - 1 - runId]);
+        app.run(freqs[freqs.size() - 1 - runId], true);
         runId++;
         if (runId >= freqs.size())
         {
             runId = 0;
         }
     }
+#endif
 }

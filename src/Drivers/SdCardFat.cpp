@@ -140,9 +140,33 @@ Diskio_drvTypeDef SdCardFat::fatFsDriver =
 
 SdCardFat::SdCardFat (const HardwareLayout::Sdio & _device, IOPort & _sdDetect, uint32_t _clockDiv):
     sdio { _device, _clockDiv },
-    sdDetect { _sdDetect }
+    sdDetect { _sdDetect },
+    sdCardInserted { false },
+    handler { NULL }
 {
     instance = this;
+}
+
+
+void SdCardFat::periodic ()
+{
+    bool s = isCardInserted();
+    if (sdCardInserted != s)
+    {
+        sdCardInserted = s;
+        USART_DEBUG("SD card " << (s? "inserted" : "de-attached") << UsartLogger::ENDL);
+        if (handler != NULL)
+        {
+            if (sdCardInserted)
+            {
+                handler->onSdCardAttach();
+            }
+            else
+            {
+                handler->onSdCardDeAttach();
+            }
+        }
+    }
 }
 
 

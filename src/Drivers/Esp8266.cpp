@@ -659,6 +659,7 @@ void NtpMessage::decodeResponce (const char * responce)
     ntpPacket.trans_ts_sec = ENDIAN_SWAP32(ntpPacket.trans_ts_sec);
     ntpPacket.trans_ts_frac = ENDIAN_SWAP32(ntpPacket.trans_ts_frac);
     time_t total_secs = ntpPacket.recv_ts_sec - UNIX_OFFSET; /* convert to unix time */;
-    Rtc::getInstance()->setTimeSec(total_secs);
+    lastUpdateTime = total_secs + localOffsetSec;
+    Rtc::getInstance()->setTimeSec(lastUpdateTime);
     USART_DEBUG("NTP time: " << Rtc::getInstance()->getLocalTime() << UsartLogger::ENDL);
 }

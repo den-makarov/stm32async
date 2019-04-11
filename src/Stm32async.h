@@ -32,12 +32,11 @@
 namespace Stm32async
 {
 
-typedef int32_t duration_sec;
 typedef uint64_t time_ms;
 typedef int64_t duration_ms;
 
 #define UNDEFINED_PRIO __UINT32_MAX__
-#define INFINITY_SEC __UINT32_MAX__
+#define INFINITY_SEC __INT32_MAX__
 #define INFINITY_TIME __UINT64_MAX__
 #define FIRST_CALENDAR_YEAR 1900
 #define MILLIS_IN_SEC 1000L

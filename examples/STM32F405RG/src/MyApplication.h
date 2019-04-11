@@ -24,16 +24,20 @@
 #include "Hardware.h"
 #include "Config.h"
 
-class MyApplication : public Hardware, public Drivers::WavStreamer::EventHandler
+class MyApplication : 
+	public Hardware, 
+	public Drivers::WavStreamer::EventHandler, 
+	public Drivers::SdCardFat::EventHandler
 {
 public:
 
     enum class EventType
     {
         SECOND_INTERRUPT = 0,
-        ADCTEMP_READY = 1,
-        UPDATE_DISPLAY = 2,
-        HEARTBEAT_INTERRUPT = 3
+        HEARTBEAT_INTERRUPT = 2,
+        ADC_TEMP_READY = 3,
+        SD_CARD_ATTACHED = 5,
+        SD_CARD_DEATTACHED = 6
     };
 
 public:
@@ -42,13 +46,13 @@ public:
 
     virtual ~MyApplication () = default;
 
-    void run (uint32_t frequency);
+    void run (uint32_t frequency, bool exitIfFinished);
+
+    void updateConfiguration ();
 
     void handleSeconds ();
 
-    void updateDisplay ();
-
-    void initSdCard ();
+    void handleHeartbeat ();
 
     virtual bool onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s);
 
@@ -57,6 +61,16 @@ public:
     void handleNtpRequest ();
 
     float lmt86Temperature (int mv);
+
+    virtual void onSdCardAttach ()
+    {
+        scheduleEvent(MyApplication::EventType::SD_CARD_ATTACHED);
+    }
+
+    virtual void onSdCardDeAttach ()
+    {
+        scheduleEvent(MyApplication::EventType::SD_CARD_DEATTACHED);
+    }
 
     inline void scheduleEvent (EventType t)
     {
@@ -68,7 +82,7 @@ private:
     EventQueue<EventType, 100> eventQueue;
     Config config;
     Drivers::NtpMessage ntpMessage;
-    bool ntpRequestActive;
+    bool pendingNtpRequest;
     char messageBuffer[2048];
     float temperature;
     char lcdString1[16], lcdString2[16];

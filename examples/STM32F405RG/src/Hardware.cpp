@@ -128,9 +128,9 @@ Hardware::Hardware ():
     mco { portA, GPIO_PIN_8, RCC_MCO1SOURCE_PLLCLK, RCC_MCODIV_5 },
 
     // LEDs
-    ledGreen { portB, GPIO_PIN_4, Drivers::Led::ConnectionType::CATHODE },
-    ledBlue { portB, GPIO_PIN_5, Drivers::Led::ConnectionType::CATHODE },
-    ledRed { portB, GPIO_PIN_8, Drivers::Led::ConnectionType::CATHODE },
+    ledGreen { portC, GPIO_PIN_1, Drivers::Led::ConnectionType::ANODE },
+    ledBlue { portC, GPIO_PIN_2, Drivers::Led::ConnectionType::ANODE },
+    ledRed { portC, GPIO_PIN_3, Drivers::Led::ConnectionType::ANODE },
 
     // SPI
     spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, UNUSED_PIN, /*remapped=*/ true, NULL,
@@ -141,8 +141,6 @@ Hardware::Hardware ():
                                          HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 1, 2 } }
     },
     spi { spi1, GPIO_NOPULL },
-    ssd { spi, portA, GPIO_PIN_6, true },
-    lcd { spi, portC, GPIO_PIN_4, portC, GPIO_PIN_5, false, 63 },
 
     // SD card
     sdio1 { portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
@@ -189,7 +187,7 @@ Hardware::Hardware ():
         HardwareLayout::DmaStream { &dma2, DMA2_Stream0, DMA_CHANNEL_0,
                                     HardwareLayout::Interrupt { DMA2_Stream0_IRQn, 7 } }
     },
-    adcTemperature { adc1, /*channel=*/ 0, ADC_SAMPLETIME_144CYCLES },
+    adcTemp { adc1, /*channel=*/ 0, ADC_SAMPLETIME_480CYCLES },
     dac1 { portA, GPIO_PIN_4 },
     dac { dac1, DAC_CHANNEL_1 },
 
@@ -283,30 +281,14 @@ bool Hardware::start()
         return false;
     }
 
-    devStatus = lcd.start(2);
-    USART_DEBUG("LCD status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
-
-    // SSD
-    Drivers::Ssd_74XX595::SegmentsMask sm;
-    sm.top = 3;
-    sm.rightTop = 5;
-    sm.rightBottom = 7;
-    sm.bottom = 4;
-    sm.leftBottom = 1;
-    sm.leftTop = 2;
-    sm.center = 6;
-    sm.dot = 0;
-    ssd.setSegmentsMask(sm);
-    ssd.start();
-
     // ADC/DAC
-    devStatus = adcTemperature.start();
-    USART_DEBUG("ADC" << adcTemperature.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << adcTemperature.getHalStatus() << ")" << UsartLogger::ENDL);
+    devStatus = adcTemp.start();
+    USART_DEBUG("ADC" << adcTemp.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << adcTemp.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
     {
         return false;
     }
-    adcTemperature.setVRef(3.25);
+    adcTemp.setVRef(V_REF);
 
     devStatus = dac.start();
     USART_DEBUG("DAC" << dac.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << dac.getHalStatus() << ")" << UsartLogger::ENDL);
@@ -325,11 +307,8 @@ bool Hardware::start()
     }
 
     // SD card
+    pinSdPower.start();
     pinSdDetect.start();
-    if (sdCard.isCardInserted() && !initSdCard())
-    {
-        return false;
-    }
 
     stopButton.start();
 
@@ -344,15 +323,12 @@ void Hardware::stop ()
 {
     // Stop all devices
     stopButton.stop();
-    sdCard.stop();
-    pinSdPower.setHigh();
+    stopSdCard();
     pinSdPower.stop();
     pinSdDetect.stop();
     heartbeatTimer.stopCounter();
     dac.stop();
-    adcTemperature.stop();
-    ssd.stop();
-    lcd.stop();
+    adcTemp.stop();
     spi.stop();
     rtc.stop();
     ledBlue.stop();
@@ -370,9 +346,8 @@ void Hardware::stop ()
 }
 
 
-bool Hardware::initSdCard ()
+bool Hardware::startSdCard ()
 {
-    pinSdPower.start();
     pinSdPower.setLow();
     HAL_Delay(250);
     DeviceStart::Status devStatus = sdCard.start();
@@ -388,7 +363,15 @@ bool Hardware::initSdCard ()
             return true;
         }
     }
+    stopSdCard();
     return false;
+}
+
+
+void Hardware::stopSdCard ()
+{
+    sdCard.stop();
+    pinSdPower.setHigh();
 }
 
 
@@ -565,7 +548,7 @@ extern "C"
     {
         if (appPtr->getAdcTemp().processConvCpltCallback())
         {
-            appPtr->scheduleEvent(MyApplication::EventType::ADCTEMP_READY);
+            appPtr->scheduleEvent(MyApplication::EventType::ADC_TEMP_READY);
         }
     }
 

@@ -446,6 +446,21 @@ public:
 
     const char * getRequest ();
     void decodeResponce (const char * responce);
+
+    inline void setLocalOffsetSec (time_t localOffsetSec = 0)
+    {
+        this->localOffsetSec = localOffsetSec;
+    }
+
+    inline time_t getLastUpdateTime () const
+    {
+        return lastUpdateTime;
+    }
+
+private:
+
+    time_t localOffsetSec = 0;
+    time_t lastUpdateTime = 0;
 };
 
 } // end of namespace Drivers

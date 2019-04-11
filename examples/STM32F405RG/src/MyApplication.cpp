@@ -33,14 +33,15 @@ MyApplication::MyApplication () :
     Hardware {},
     config { "conf.txt" },
     ntpMessage {},
-    ntpRequestActive { false },
+    pendingNtpRequest { false },
     temperature { 0.0 }
 {
     streamer.setHandler(this);
+    sdCard.setHandler(this);
 }
 
 
-void MyApplication::run (uint32_t frequency)
+void MyApplication::run (uint32_t frequency, bool exitIfFinished)
 {
     initClock(frequency);
     if (!start())
@@ -48,27 +49,16 @@ void MyApplication::run (uint32_t frequency)
         abort();
     }
 
-    // read configuration
-    config.readConfiguration();
-
-    // Prepare ESP11
-    esp.setMode(1);
-    esp.setIp(config.getThisIp());
-    esp.setGatway(config.getGateIp());
-    esp.setMask(config.getIpMask());
-    esp.setSsid(config.getWlanName());
-    esp.setPasswd(config.getWlanPass());
-    espSender.setRepeatDelay(config.getRepeatDelay() * MILLIS_IN_SEC);
-    espSender.setTurnOffDelay(config.getTurnOffDelay() * MILLIS_IN_SEC);
+    // inspect SD card
+    if (!sdCard.isCardInserted())
+    {
+        USART_DEBUG("SD card not detected" << UsartLogger::ENDL);
+        pinSdPower.setHigh();
+    }
 
     // Start WAV player
     audioDac.powerOn();
     streamer.setVolume(0.5);
-    {
-        char fName[16];
-        ::sprintf(fName, "f%ld.wav", frequency);
-        streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM, fName);
-    }
 
     // Finish initialization
     printResourceOccupation();
@@ -76,9 +66,16 @@ void MyApplication::run (uint32_t frequency)
     // Start main loop
     uint32_t start = HAL_GetTick();
     uint32_t end = start + 30 * MILLIS_IN_SEC;
-    ntpRequestActive = true;
-    while (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF || streamer.isActive())
+    while (true)
     {
+        if (exitIfFinished)
+        {
+            if (HAL_GetTick() < end || espSender.getEspState() != Drivers::Esp8266::AsyncCmd::OFF || streamer.isActive())
+            {
+                break;
+            }
+        }
+
         stopButton.periodic([&](uint32_t /*numOccured*/)
         {
             if (streamer.isActive())
@@ -88,6 +85,7 @@ void MyApplication::run (uint32_t frequency)
         });
 
         streamer.periodic();
+        sdCard.periodic();
         espSender.periodic();
 
         if (!eventQueue.empty())
@@ -97,19 +95,22 @@ void MyApplication::run (uint32_t frequency)
             case EventType::SECOND_INTERRUPT:
                 handleSeconds();
                 handleNtpRequest();
-                adcTemperature.read();
-                break;
-
-            case EventType::UPDATE_DISPLAY:
-                updateDisplay();
-                break;
-
-            case EventType::ADCTEMP_READY:
-                temperature = lmt86Temperature(adcTemperature.getMedianMV());
+                adcTemp.read();
                 break;
 
             case EventType::HEARTBEAT_INTERRUPT:
-                ledBlue.toggle();
+                handleHeartbeat();
+                break;
+
+            case EventType::ADC_TEMP_READY:
+                temperature = lmt86Temperature(adcTemp.getMedianMV());
+                break;
+                
+            case EventType::SD_CARD_ATTACHED:
+                updateConfiguration();
+                break;
+
+            case EventType::SD_CARD_DEATTACHED:
                 break;
             }
         }
@@ -118,7 +119,7 @@ void MyApplication::run (uint32_t frequency)
         {
             esp.getInputMessage(messageBuffer, esp.getInputMessageSize());
             ntpMessage.decodeResponce(messageBuffer);
-            ntpRequestActive = false;
+            pendingNtpRequest = false;
         }
     }
 
@@ -126,35 +127,39 @@ void MyApplication::run (uint32_t frequency)
 }
 
 
-void MyApplication::handleSeconds ()
+void MyApplication::updateConfiguration ()
 {
-    ledBlue.setLow();
-    heartbeatTimer.reset();
-    const char * shortTime = Rtc::getInstance()->getLocalTime(0);
-    spi.waitForRelease();
-    ssd.putString(shortTime, NULL, 4);
-    scheduleEvent(MyApplication::EventType::UPDATE_DISPLAY);
-
+    if (startSdCard())
     {
-        time_t total_secs = Rtc::getInstance()->getTimeSec();
-        struct ::tm * now = ::gmtime(&total_secs);
-        float v0 = 2730;
-        float v1 = 3080;
-        dac.setValue(v0 + ((v1 - v0) * (float)now->tm_sec/60.0));
+        config.readConfiguration();
+        esp.setMode(1);
+        esp.setIp(config.getThisIp());
+        esp.setGatway(config.getGateIp());
+        esp.setMask(config.getIpMask());
+        esp.setSsid(config.getWlanName());
+        esp.setPasswd(config.getWlanPass());
+        espSender.setRepeatDelay(config.getRepeatDelay() * MILLIS_IN_SEC);
+        espSender.setTurnOffDelay(config.getTurnOffDelay() * MILLIS_IN_SEC);
+        pendingNtpRequest = true;
+        if(!streamer.start(Drivers::AudioDac_UDA1334::SourceType::STREAM, config.getWavFile()))
+        {
+            stopSdCard();
+        }
     }
 }
 
 
-void MyApplication::updateDisplay ()
+void MyApplication::handleSeconds ()
 {
-    ::sprintf(lcdString1, "%10s  %02ldMH", Rtc::getInstance()->getLocalDate('.'), SystemClock::getInstance()->getMcuFreq() / 1000000);
-    spi.waitForRelease();
-    lcd.putString(0, 0, lcdString1, ::strlen(lcdString1));
-    ::sprintf(lcdString2, "%8s    %02d%cC", Rtc::getInstance()->getLocalTime(':'), (int)temperature, 0b11110010);
-    spi.waitForRelease();
-    lcd.putString(0, 1, lcdString2, ::strlen(lcdString2));
+    heartbeatTimer.reset();
+    ledBlue.setLow();
 }
 
+
+void MyApplication::handleHeartbeat ()
+{
+    ledBlue.toggle();
+}
 
 bool MyApplication::onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s)
 {
@@ -172,13 +177,23 @@ bool MyApplication::onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s)
 
 void MyApplication::onFinishSteaming ()
 {
-    // empty
+    stopSdCard();
 }
 
 
 void MyApplication::handleNtpRequest ()
 {
-    if (ntpRequestActive && espSender.isOutputMessageSent())
+    ntpMessage.setLocalOffsetSec(3600);
+
+    if (espSender.getEspState() == Drivers::Esp8266::AsyncCmd::OFF &&
+        ntpMessage.getLastUpdateTime() > 0 &&
+        Rtc::getInstance()->getTimeSec() - ntpMessage.getLastUpdateTime() > 300)
+    {
+        USART_DEBUG("Periodic NTP request" << UsartLogger::ENDL);
+        pendingNtpRequest = true;
+    }
+
+    if (pendingNtpRequest && espSender.isOutputMessageSent())
     {
         espSender.sendMessage("UDP", config.getNtpServer(), "123", ntpMessage.getRequest(), Drivers::NtpMessage::NTP_PACKET_SIZE);
     }
@@ -187,6 +202,7 @@ void MyApplication::handleNtpRequest ()
 
 float MyApplication::lmt86Temperature (int mv)
 {
-    return 30.0 + (10.888 - ::sqrt(10.888*10.888 + 4.0*0.00347*(1777.3 - (float)mv)))/(-2.0*0.00347) - 1;
+    return 25.0 + (10.888 - ::sqrt(10.888*10.888 + 4.0*0.00347*(1777.3 - (float)mv)))/(-2.0*0.00347);
 }
+
 

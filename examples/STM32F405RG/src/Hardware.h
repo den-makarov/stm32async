@@ -88,6 +88,8 @@ class Hardware
 {
 public:
 
+    const float V_REF = 3.256f;
+
     // Used ports
     HardwareLayout::PortA portA;
     HardwareLayout::PortB portB;
@@ -113,8 +115,6 @@ public:
     // SPI
     HardwareLayout::Spi1 spi1;
     AsyncSpi spi;
-    Drivers::Ssd_74XX595 ssd;
-    Drivers::Lcd_DOGM162 lcd;
 
     // SD Card
     HardwareLayout::Sdio1 sdio1;
@@ -135,7 +135,7 @@ public:
 
     // ADC/DAC
     HardwareLayout::Adc1 adc1;
-    AsyncAdc adcTemperature;
+    AsyncAdc adcTemp;
     HardwareLayout::Dac1 dac1;
     BaseDac dac;
 
@@ -156,7 +156,8 @@ public:
     void initClock (uint32_t frequency);
     bool start ();
     void stop ();
-    bool initSdCard ();
+    bool startSdCard ();
+    void stopSdCard ();
     void printResourceOccupation ();
 
     inline Drivers::Led & getLedRed ()
@@ -191,7 +192,7 @@ public:
 
     inline AsyncAdc & getAdcTemp ()
     {
-        return adcTemperature;
+        return adcTemp;
     }
 
     inline InterruptTimer & getHeartbeatTimer ()

@@ -40,6 +40,13 @@ class SdCardFat
 
 public:
 
+    class EventHandler
+    {
+    public:
+        virtual void onSdCardAttach () =0;
+        virtual void onSdCardDeAttach () =0;
+    };
+
     static constexpr uint32_t SDHC_BLOCK_SIZE = 512;
     static constexpr size_t FAT_FS_OBJECT_LENGHT = 64;
 
@@ -57,8 +64,19 @@ public:
      */
     SdCardFat (const HardwareLayout::Sdio & _device, IOPort & _sdDetect, uint32_t _clockDiv);
 
+    void periodic ();
     DeviceStart::Status mountFatFs ();
     void listFiles ();
+
+    inline void setHandler (EventHandler * handler)
+    {
+        this->handler = handler;
+    }
+
+    inline EventHandler * getHandler () const
+    {
+        return handler;
+    }
 
     inline Sdio & getSdio ()
     {
@@ -93,6 +111,8 @@ private:
 
     Sdio sdio;
     IOPort & sdDetect;
+    bool sdCardInserted;
+    EventHandler * handler;
     static Diskio_drvTypeDef fatFsDriver;
     FatFs fatFs;
 };

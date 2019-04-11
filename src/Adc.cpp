@@ -39,14 +39,14 @@ BaseAdc::BaseAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint32
     parameters.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV2;
     parameters.Init.Resolution = ADC_RESOLUTION_12B;
     parameters.Init.ScanConvMode = DISABLE;
-    parameters.Init.ContinuousConvMode = ENABLE;
+    parameters.Init.ContinuousConvMode = DISABLE;
     parameters.Init.DiscontinuousConvMode = DISABLE;
     parameters.Init.NbrOfDiscConversion = 0;
     parameters.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
     parameters.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
     parameters.Init.DataAlign = ADC_DATAALIGN_RIGHT;
     parameters.Init.NbrOfConversion = 1;
-    parameters.Init.DMAContinuousRequests = ENABLE;
+    parameters.Init.DMAContinuousRequests = DISABLE;
     parameters.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 
     adcChannel.Channel = _channel; // each channel is connected to the specific pin, see pin descriptions
@@ -114,6 +114,8 @@ AsyncAdc::AsyncAdc (const HardwareLayout::Adc & _device, uint32_t _channel, uint
     SharedDevice { NULL, &device.rxDma, DMA_PDATAALIGN_WORD, DMA_MDATAALIGN_WORD },
     nrReadings { 0 }
 {
+    parameters.Init.ContinuousConvMode = ENABLE;
+    parameters.Init.DMAContinuousRequests = ENABLE;
     rxDma.Init.Mode = DMA_CIRCULAR;
 }
 
