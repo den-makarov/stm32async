@@ -74,6 +74,11 @@ public:
         return usart;
     }
 
+    UsartLogger & operator << (const uint8_t * buffer)
+    {
+        return operator << ((const char * ) buffer);
+    }
+
     UsartLogger & operator << (const char * buffer);
     UsartLogger & operator << (int n);
     UsartLogger & operator << (Manupulator m);

@@ -27,15 +27,19 @@ using namespace Stm32async;
  * Class BaseSpi
  ************************************************************************/
 
-BaseSpi::BaseSpi (const HardwareLayout::Spi & _device, uint32_t _pull) :
+BaseSpi::BaseSpi (Type _type, const HardwareLayout::Spi & _device, uint32_t _pull) :
     IODevice { _device, {
-        IOPort { _device.sclkPin.port, _device.sclkPin.pins, GPIO_MODE_AF_PP, _pull },
-        IOPort { _device.mosiPin.port, _device.mosiPin.pins, GPIO_MODE_AF_PP, _pull },
-        IOPort { _device.misoPin.port, _device.misoPin.pins, GPIO_MODE_AF_PP, _pull }
+        IOPort { _device.sclkPin.port, _device.sclkPin.pins,
+            _type == MASTER ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
+            _pull, GPIO_SPEED_HIGH },
+        IOPort { _device.mosiPin.port, _device.mosiPin.pins,
+            _type == MASTER ? GPIO_MODE_AF_PP : GPIO_MODE_AF_OD,
+            _pull, GPIO_SPEED_HIGH },
+        IOPort { _device.misoPin.port, _device.misoPin.pins, GPIO_MODE_AF_PP, _pull, GPIO_SPEED_HIGH }
     } }
 {
     parameters.Instance = device.getInstance();
-    parameters.Init.Mode = SPI_MODE_MASTER;
+    parameters.Init.Mode = _type == MASTER ? SPI_MODE_MASTER : SPI_MODE_SLAVE;
     parameters.Init.DataSize = SPI_DATASIZE_8BIT;
     parameters.Init.CLKPolarity = SPI_POLARITY_HIGH;
     parameters.Init.CLKPhase = SPI_PHASE_1EDGE;
@@ -86,8 +90,8 @@ void BaseSpi::stop ()
  * Class AsyncSpi
  ************************************************************************/
 
-AsyncSpi::AsyncSpi (const HardwareLayout::Spi & _device, uint32_t _pull) :
-    BaseSpi { _device, _pull },
+AsyncSpi::AsyncSpi (Type _type, const HardwareLayout::Spi & _device, uint32_t _pull) :
+    BaseSpi { _type, _device, _pull },
     SharedDevice { (isPortUsed(getMosiPin())? &device.txDma : NULL), 
                    (isPortUsed(getMisoPin())? &device.rxDma : NULL),
                    DMA_PDATAALIGN_BYTE, DMA_MDATAALIGN_BYTE }

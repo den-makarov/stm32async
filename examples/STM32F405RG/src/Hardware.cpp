@@ -133,14 +133,16 @@ Hardware::Hardware ():
     ledRed { portC, GPIO_PIN_3, Drivers::Led::ConnectionType::ANODE },
 
     // SPI
-    spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, UNUSED_PIN, /*remapped=*/ true, NULL,
+    spiCs { portC, SPI_CS_PIN, GPIO_MODE_IT_FALLING, GPIO_NOPULL },
+    extCsInterrupt { EXTI4_IRQn, 1 , 0},
+    spi1 { portA, GPIO_PIN_5, portA, GPIO_PIN_7, portA, GPIO_PIN_6, /*remapped=*/ true, NULL,
              HardwareLayout::Interrupt { SPI1_IRQn, 1, 0 },
              HardwareLayout::DmaStream { &dma2, DMA2_Stream5, DMA_CHANNEL_3,
                                          HardwareLayout::Interrupt { DMA2_Stream5_IRQn, 1, 1 } },
              HardwareLayout::DmaStream { &dma2, DMA2_Stream2, DMA_CHANNEL_3,
                                          HardwareLayout::Interrupt { DMA2_Stream2_IRQn, 1, 2 } }
     },
-    spi { spi1, GPIO_NOPULL },
+    spi { AsyncSpi::SLAVE, spi1, GPIO_NOPULL },
 
     // SD card
     sdio1 { portC, /*SDIO_D0*/GPIO_PIN_8 | /*SDIO_D1*/GPIO_PIN_9 | /*SDIO_D2*/GPIO_PIN_10 | /*SDIO_D3*/GPIO_PIN_11 | /*SDIO_CK*/GPIO_PIN_12,
@@ -274,15 +276,10 @@ bool Hardware::start()
     while (rtc.getHalStatus() != HAL_OK);
 
     // SPI
-    DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_1LINE, SPI_BAUDRATEPRESCALER_256, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
-    USART_DEBUG("SPI" << spi.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << spi.getHalStatus() << ")" << UsartLogger::ENDL);
-    if (devStatus != DeviceStart::Status::OK)
-    {
-        return false;
-    }
+    spiCs.start();
 
     // ADC/DAC
-    devStatus = adcTemp.start();
+    DeviceStart::Status devStatus = adcTemp.start();
     USART_DEBUG("ADC" << adcTemp.getId() << " status: " << DeviceStart::asString(devStatus) << " (" << adcTemp.getHalStatus() << ")" << UsartLogger::ENDL);
     if (devStatus != DeviceStart::Status::OK)
     {
@@ -329,7 +326,8 @@ void Hardware::stop ()
     heartbeatTimer.stopCounter();
     dac.stop();
     adcTemp.stop();
-    spi.stop();
+    extCsInterrupt.disable();
+    spiCs.stop();
     rtc.stop();
     ledBlue.stop();
     ledRed.stop();
@@ -511,6 +509,21 @@ extern "C"
         appPtr->getSpi().processCallback(SharedDevice::State::TX_CMPL);
     }
 
+    void DMA2_Stream2_IRQHandler (void)
+    {
+        appPtr->getSpi().processDmaRxInterrupt();
+    }
+
+    void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef * /*channel*/)
+    {
+        appPtr->getSpi().processCallback(SharedDevice::State::RX_CMPL);
+    }
+
+    void HAL_SPI_ErrorCallback (SPI_HandleTypeDef * /*channel*/)
+    {
+        appPtr->getSpi().processCallback(SharedDevice::State::ERROR);
+    }
+
     // SD card
     void DMA2_Stream3_IRQHandler (void)
     {
@@ -557,6 +570,15 @@ extern "C"
     {
         appPtr->getHeartbeatTimer().processInterrupt();
         appPtr->scheduleEvent(MyApplication::EventType::HEARTBEAT_INTERRUPT);
+    }
+
+    void EXTI4_IRQHandler ()
+    {
+        if (__HAL_GPIO_EXTI_GET_FLAG(Hardware::SPI_CS_PIN))
+        {
+	    appPtr->scheduleEvent(MyApplication::EventType::SPI_CS);
+        }
+        HAL_GPIO_EXTI_IRQHandler(Hardware::SPI_CS_PIN);
     }
 
 }

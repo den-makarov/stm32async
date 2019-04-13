@@ -20,7 +20,7 @@
 
 #include "MyApplication.h"
 
-#define SINGLE_FREQUENCE 96
+#define SINGLE_FREQUENCE 64
 
 
 MyApplication * appPtr = NULL;

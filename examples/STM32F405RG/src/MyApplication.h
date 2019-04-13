@@ -37,7 +37,8 @@ public:
         HEARTBEAT_INTERRUPT = 2,
         ADC_TEMP_READY = 3,
         SD_CARD_ATTACHED = 5,
-        SD_CARD_DEATTACHED = 6
+        SD_CARD_DEATTACHED = 6,
+        SPI_CS = 7
     };
 
 public:
@@ -77,6 +78,8 @@ public:
         eventQueue.put(t);
     }
 
+    void receiveSpiData();
+
 private:
 
     EventQueue<EventType, 100> eventQueue;
@@ -85,7 +88,7 @@ private:
     bool pendingNtpRequest;
     char messageBuffer[2048];
     float temperature;
-    char lcdString1[16], lcdString2[16];
+    uint8_t inBuffer[32];
 };
 
 #endif

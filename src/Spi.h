@@ -38,10 +38,16 @@ class BaseSpi : public IODevice<HardwareLayout::Spi, SPI_HandleTypeDef, 3>
 {
 public:
 
+    enum Type
+    {
+        MASTER,
+        SLAVE
+    };
+
     /**
      * @brief Default constructor.
      */
-    BaseSpi (const HardwareLayout::Spi & _device, uint32_t _pull = GPIO_PULLUP);
+    BaseSpi (Type _type, const HardwareLayout::Spi & _device, uint32_t _pull);
 
     /**
      * @brief Open transmission session with given parameters.
@@ -124,7 +130,7 @@ public:
     /**
      * @brief Default constructor.
      */
-    AsyncSpi (const HardwareLayout::Spi & _device, uint32_t _pull);
+    AsyncSpi (Type _type, const HardwareLayout::Spi & _device, uint32_t _pull);
 
     /**
      * @brief Open transmission session with given parameters.

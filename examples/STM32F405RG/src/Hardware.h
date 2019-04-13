@@ -89,6 +89,7 @@ class Hardware
 public:
 
     const float V_REF = 3.256f;
+    static const uint16_t SPI_CS_PIN = GPIO_PIN_4;
 
     // Used ports
     HardwareLayout::PortA portA;
@@ -113,6 +114,8 @@ public:
     Drivers::Led ledRed;
 
     // SPI
+    IOPort spiCs;
+    HardwareLayout::Interrupt extCsInterrupt;
     HardwareLayout::Spi1 spi1;
     AsyncSpi spi;
 

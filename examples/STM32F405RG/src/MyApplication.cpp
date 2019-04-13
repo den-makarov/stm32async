@@ -112,6 +112,10 @@ void MyApplication::run (uint32_t frequency, bool exitIfFinished)
 
             case EventType::SD_CARD_DEATTACHED:
                 break;
+
+            case EventType::SPI_CS:
+                receiveSpiData();
+                break;
             }
         }
 
@@ -120,6 +124,7 @@ void MyApplication::run (uint32_t frequency, bool exitIfFinished)
             esp.getInputMessage(messageBuffer, esp.getInputMessageSize());
             ntpMessage.decodeResponce(messageBuffer);
             pendingNtpRequest = false;
+            extCsInterrupt.enable();
         }
     }
 
@@ -160,6 +165,7 @@ void MyApplication::handleHeartbeat ()
 {
     ledBlue.toggle();
 }
+
 
 bool MyApplication::onStartSteaming (Drivers::AudioDac_UDA1334::SourceType s)
 {
@@ -205,4 +211,21 @@ float MyApplication::lmt86Temperature (int mv)
     return 25.0 + (10.888 - ::sqrt(10.888*10.888 + 4.0*0.00347*(1777.3 - (float)mv)))/(-2.0*0.00347);
 }
 
+
+void MyApplication::receiveSpiData ()
+{
+    DeviceStart::Status devStatus = spi.start(SPI_DIRECTION_2LINES, SPI_BAUDRATEPRESCALER_2, SPI_DATASIZE_8BIT, SPI_PHASE_2EDGE);
+    if (devStatus == DeviceStart::Status::OK)
+    {
+        if (spi.receiveBlocking(inBuffer, 16) == HAL_OK)
+        {
+            USART_DEBUG("-> SPI: " << inBuffer << UsartLogger::ENDL);
+        }
+        else
+        {
+            USART_DEBUG("Can not receive SPI request" << UsartLogger::ENDL);
+        }
+        spi.stop();
+    }
+}
 
